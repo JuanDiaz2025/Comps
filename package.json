@@ -2,10 +2,15 @@
   "name": "twin-comp-ai",
   "version": "1.0.0",
   "private": true,
-  "description": "Twin Home Buyer comp engine: ChatGPT finds the comps by API, the page values them.",
+  "description": "Twin Home Buyer comp engine: Claude finds the comps with live web search, the page values them.",
   "scripts": {
     "start": "node server.js",
     "mock": "MOCK=1 node server.js"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0"
+  }
 }

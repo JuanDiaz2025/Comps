@@ -1,19 +1,20 @@
-// POST /api/comps — ChatGPT (OpenAI Responses API + web search) finds and verifies comps.
-// Env: OPENAI_API_KEY (required), OPENAI_MODEL (default gpt-5.5), OPENAI_REASONING (low|medium|high|none),
-//      APP_PASSWORD (optional; the page must send it), MOCK=1 (return sample data without calling OpenAI).
+// POST /api/comps — Claude (Anthropic API + live web search and web fetch) finds and verifies comps.
+// Env: ANTHROPIC_API_KEY (required), CLAUDE_MODEL (default claude-opus-5), CLAUDE_EFFORT (low|medium|high, default high),
+//      CLAUDE_MAX_SEARCHES (default 12), APP_PASSWORD (optional; the page must send it), MOCK=1 (sample data, no API call).
 
-const OPENAI_URL = "https://api.openai.com/v1/responses";
+const AnthropicSDK = require("@anthropic-ai/sdk");
+const Anthropic = AnthropicSDK.default || AnthropicSDK;
 
 const CONDITION_SCALE = "1 heavy fixer, 2 dated/original, 3 clean cosmetic, 4 updated kitchen and baths, 5 high-end remodel";
 
 function buildPrompt(subject, rules) {
   const v = x => (x === null || x === undefined || x === "" ? "unknown, look it up" : x);
   const today = new Date().toISOString().slice(0, 10);
-  return `You are the comp researcher for Twin Home Buyer, a Bay Area fix-and-flip company. Search the web now for real sales. Do the work of four people:
+  return `You are the comp researcher for Twin Home Buyer, a Bay Area fix-and-flip company. Search the web now for real sales (Redfin, Zillow, Realtor.com, Compass, county records). Do the work of four people:
 
 1. FACT CHECK THE SUBJECT. Look up the subject's beds, baths, living sf, lot sf, year built, property type and coordinates in public records and listing sites. Report them in "subject_facts".
 2. APPRAISER. Find 10-15 real SOLD comps. Search outward: 0.25 mi, 0.5, 0.75, then ${rules.radius || 1} mi. Sold in the last 90 days first, then 180, then 12 months only if needed (max ${rules.months || 12} months). Match property type, living area (within about 20%), beds/baths, lot, age/style and condition. We need TWO sets: AS-IS comps (condition 1-3, like the subject today) and ARV comps (renovated and staged, condition 4-5). Also list PENDING and ACTIVE listings nearby that the subject would compete with after renovation.
-3. VERIFIER. Confirm each comp's sale price, date, sf and beds/baths on at least one source (county records, Redfin, Zillow, Realtor.com, brokerage). Put the source URL in "source_urls". If sources disagree, say so in "notes". Judge condition from listing photos and remarks.
+3. VERIFIER. Confirm each comp's sale price, date, sf and beds/baths on at least one source (county records, Redfin, Zillow, Realtor.com, brokerage). Open the listing or record pages to confirm the numbers, and put those page URLs in "source_urls". If sources disagree, say so in "notes". Judge condition from listing photos and remarks.
 4. DEVIL'S ADVOCATE AND LOCAL EXPERT. Flag busy streets, freeway/rail noise, commercial next door, views, slope, corner lot, cul-de-sac, school or neighborhood boundaries, unpermitted additions and outlier sales. Put nearby sales that should NOT be used in "reject" with the reason. List the biggest risks to the value in "risks".
 
 SUBJECT PROPERTY
@@ -90,53 +91,59 @@ module.exports = async function handler(req, res) {
     await new Promise(r => setTimeout(r, 1500));
     return send(res, 200, { ...mockResult(subject), model: "mock", elapsed_ms: Date.now() - started, mock: true });
   }
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) return send(res, 500, { error: "The server has no OPENAI_API_KEY. Add it in the hosting settings (see README)." });
+  if (!process.env.ANTHROPIC_API_KEY) return send(res, 500, { error: "The server has no ANTHROPIC_API_KEY. Add it in the hosting settings (see README)." });
 
-  const model = process.env.OPENAI_MODEL || "gpt-5.5";
-  const effort = process.env.OPENAI_REASONING || "medium";
-  const payload = {
+  const client = new Anthropic({ timeout: 285000, maxRetries: 1 });
+  const model = process.env.CLAUDE_MODEL || "claude-opus-5";
+  const effort = process.env.CLAUDE_EFFORT || "high";
+  const maxSearches = Number(process.env.CLAUDE_MAX_SEARCHES || 12);
+  const prompt = buildPrompt(subject, rules);
+  const params = {
     model,
-    tools: [{ type: "web_search", search_context_size: "high", user_location: { type: "approximate", country: "US", region: "California" } }],
-    input: buildPrompt(subject, rules),
+    max_tokens: 32000,
+    thinking: { type: "adaptive" },
+    output_config: { effort },
+    // If a safety classifier declines, the API re-runs the request on a fallback model.
+    betas: ["server-side-fallback-2026-07-01"],
+    fallbacks: "default",
+    tools: [
+      { type: "web_search_20260209", name: "web_search", max_uses: maxSearches,
+        user_location: { type: "approximate", country: "US", region: "California", timezone: "America/Los_Angeles" } },
+      { type: "web_fetch_20260209", name: "web_fetch", max_uses: 10 },
+    ],
   };
-  if (effort !== "none") payload.reasoning = { effort };
 
-  let data;
+  let msg, messages = [{ role: "user", content: prompt }];
+  const texts = [], citations = [], searched = [];
   try {
-    const r = await fetch(OPENAI_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(285000),
-    });
-    data = await r.json().catch(() => ({}));
-    if (!r.ok) {
-      const msg = (data.error && data.error.message) || `OpenAI returned ${r.status}.`;
-      return send(res, 502, { error: `ChatGPT error: ${msg}` });
+    // Web search runs a server-side loop; a long run pauses (pause_turn) and is resumed by re-sending.
+    for (let turn = 0; turn < 4; turn++) {
+      msg = await client.beta.messages.stream({ ...params, messages }).finalMessage();
+      for (const b of msg.content) {
+        if (b.type === "text") {
+          texts.push(b.text);
+          for (const c of b.citations || []) if (c.url) citations.push({ url: c.url, title: c.title || "" });
+        } else if (b.type === "web_search_tool_result" && Array.isArray(b.content)) {
+          for (const r of b.content) if (r.url) searched.push(r.url);
+        }
+      }
+      if (msg.stop_reason !== "pause_turn") break;
+      messages = [{ role: "user", content: prompt }, { role: "assistant", content: msg.content }];
     }
   } catch (e) {
-    const timeout = e && (e.name === "TimeoutError" || e.name === "AbortError");
-    return send(res, 504, { error: timeout ? "ChatGPT took too long. Try again, or set OPENAI_REASONING=low." : `Could not reach OpenAI: ${e.message}` });
+    if (e instanceof Anthropic.AuthenticationError) return send(res, 502, { error: "Claude rejected the API key. Check ANTHROPIC_API_KEY." });
+    if (e instanceof Anthropic.RateLimitError) return send(res, 429, { error: "Claude is rate limited right now. Try again in a minute." });
+    if (e instanceof Anthropic.APIConnectionTimeoutError) return send(res, 504, { error: "Claude took too long. Try again, or set CLAUDE_EFFORT=medium." });
+    if (e instanceof Anthropic.APIError) return send(res, 502, { error: `Claude error ${e.status || ""}: ${e.message}` });
+    return send(res, 502, { error: `Could not reach Claude: ${e.message}` });
   }
+  if (msg.stop_reason === "refusal") return send(res, 502, { error: "Claude declined this request." });
 
-  // Collect the answer text and any cited URLs from the Responses output.
-  let text = data.output_text || "";
-  const citations = [];
-  for (const item of data.output || []) {
-    if (item.type !== "message") continue;
-    for (const part of item.content || []) {
-      if (part.type === "output_text") {
-        if (!data.output_text) text += part.text;
-        for (const a of part.annotations || []) if (a.type === "url_citation" && a.url) citations.push({ url: a.url, title: a.title || "" });
-      }
-    }
-  }
-  const json = extractJSON(text);
-  if (!json) return send(res, 502, { error: "ChatGPT's answer wasn't in the expected format. Run it again.", raw: text.slice(0, 2000) });
+  const text = texts.join("\n");
+  const json = extractJSON(texts[texts.length - 1]) || extractJSON(text);
+  if (!json) return send(res, 502, { error: "Claude's answer wasn't in the expected format. Run it again.", raw: text.slice(0, 2000) });
 
-  send(res, 200, { ...json, citations, model: data.model || model, elapsed_ms: Date.now() - started, usage: data.usage || null });
+  send(res, 200, { ...json, citations, searched: [...new Set(searched)].slice(0, 60), model: msg.model || model, elapsed_ms: Date.now() - started, usage: msg.usage || null });
 };
-
 module.exports.buildPrompt = buildPrompt;
 module.exports.extractJSON = extractJSON;

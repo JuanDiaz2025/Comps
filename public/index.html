@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Twin Comp AI</title>
-<meta name="description" content="Type an address, press Run comps. ChatGPT finds and verifies the comps; the page gives one ARV, five comps, one confidence score and one buy price.">
+<meta name="description" content="Type an address, press Run comps. Claude finds and verifies the comps; the page gives one ARV, five comps, one confidence score and one buy price.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
@@ -211,7 +211,7 @@ details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(
 
   <!-- STEP 1 -->
   <section class="panel" aria-labelledby="h1s">
-    <div class="ph"><h2 id="h1s"><span class="step">1</span>The property</h2><span class="sub">Only the address is required. ChatGPT looks up the rest.</span></div>
+    <div class="ph"><h2 id="h1s"><span class="step">1</span>The property</h2><span class="sub">Only the address is required. Claude looks up the rest.</span></div>
     <div class="pb">
       <div class="prop-grid">
         <label class="f span-all">Address<input type="text" class="big" id="s_address" placeholder="123 Main St, San Mateo, CA 94401"></label>
@@ -231,7 +231,7 @@ details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(
           <label class="f">Type<select id="s_type"><option>SFR</option><option>Condo</option><option>Townhome</option><option>2-4 Unit</option></select></label>
           <label class="f">Latitude<input type="number" step="any" id="s_lat"></label>
           <label class="f">Longitude<input type="number" step="any" id="s_lng"></label>
-          <label class="f" style="grid-column:1/-1">Anything ChatGPT must know<input type="text" id="s_notes" placeholder="cul-de-sac, bay view, backs to freeway, unpermitted ADU…"></label>
+          <label class="f" style="grid-column:1/-1">Anything Claude must know<input type="text" id="s_notes" placeholder="cul-de-sac, bay view, backs to freeway, unpermitted ADU…"></label>
         </div>
       </details>
       <div class="btnrow">
@@ -366,7 +366,7 @@ details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(
   <details class="adv" id="advLog">
     <summary>Deal log &amp; backtest <span class="sub" id="logSub"></span></summary>
     <div class="adv-body">
-      <p class="small" style="margin:0;max-width:75ch">To test the system, run houses Twin already sold without telling the AIs the sale price. Save each one, then type the real sale price here. The error columns show who is most accurate: the engine, ChatGPT or Juan.</p>
+      <p class="small" style="margin:0;max-width:75ch">To test the system, run houses Twin already sold without telling the AIs the sale price. Save each one, then type the real sale price here. The error columns show who is most accurate: the engine, Claude or Juan.</p>
       <div class="kpis" id="accuracy" style="grid-template-columns:repeat(3,minmax(0,1fr))"></div>
       <div class="tblwrap"><table id="logTable"></table></div>
       <span class="status" id="logStatus"></span>
@@ -383,24 +383,24 @@ const CONDS = [[1,"Fixer","heavy work"],[2,"Dated","original"],[3,"Clean","cosme
 const condLabel = c => { const f=CONDS.find(x=>x[0]===Number(c)); return f?f[1]:"—"; };
 const TYPES = ["SFR","Condo","Townhome","2-4 Unit"];
 const RADII = [0.25,0.5,1,2,3];
-const AGENTS = [{key:"chatgpt",name:"ChatGPT"},{key:"mls",name:"MLS"}];
+const AGENTS = [{key:"ai",name:"Claude"},{key:"mls",name:"MLS"}];
 
 const EXAMPLE = {
   subject:{address:"1466 Scenic Ave, Berkeley, CA 94708",lat:37.8792,lng:-122.2594,beds:3,baths:2,sqft:1036,lot:7290,year:1924,type:"SFR",cond:2,ask:1050000,notes:"Berkeley Hills edge, quiet street, some bay view potential"},
   comps:[
-    {address:"1444 Scenic Ave, Berkeley, CA 94708",status:"Sold",price:1300000,date:"2026-01-07",beds:4,baths:2,sqft:1583,lot:7200,year:1925,type:"SFR",cond:3,lat:37.8781,lng:-122.2590,agents:["chatgpt","perplexity","grok","gemini"],src:["https://www.redfin.com/"],notes:""},
-    {address:"1079 Keith Ave, Berkeley, CA 94708",status:"Sold",price:1145000,date:"2025-11-15",beds:2,baths:1,sqft:1012,lot:5000,year:1924,type:"SFR",cond:3,lat:37.8832,lng:-122.2695,agents:["chatgpt","perplexity","gemini"],src:["https://www.zillow.com/"],notes:""},
-    {address:"2925 Shasta Rd, Berkeley, CA 94708",status:"Sold",price:1225000,date:"2025-10-28",beds:3,baths:1,sqft:1196,lot:5200,year:1930,type:"SFR",cond:3,lat:37.8887,lng:-122.2508,agents:["chatgpt","grok"],src:[],notes:"Upper hills, winding road"},
-    {address:"1460 Olympus Ave, Berkeley, CA 94708",status:"Sold",price:1250000,date:"2025-09-12",beds:3,baths:2,sqft:1248,lot:6000,year:1932,type:"SFR",cond:3,lat:37.8761,lng:-122.2552,agents:["chatgpt","perplexity","gemini"],src:["https://www.redfin.com/"],notes:""},
+    {address:"1444 Scenic Ave, Berkeley, CA 94708",status:"Sold",price:1300000,date:"2026-01-07",beds:4,baths:2,sqft:1583,lot:7200,year:1925,type:"SFR",cond:3,lat:37.8781,lng:-122.2590,agents:["ai","perplexity","grok","gemini"],src:["https://www.redfin.com/"],notes:""},
+    {address:"1079 Keith Ave, Berkeley, CA 94708",status:"Sold",price:1145000,date:"2025-11-15",beds:2,baths:1,sqft:1012,lot:5000,year:1924,type:"SFR",cond:3,lat:37.8832,lng:-122.2695,agents:["ai","perplexity","gemini"],src:["https://www.zillow.com/"],notes:""},
+    {address:"2925 Shasta Rd, Berkeley, CA 94708",status:"Sold",price:1225000,date:"2025-10-28",beds:3,baths:1,sqft:1196,lot:5200,year:1930,type:"SFR",cond:3,lat:37.8887,lng:-122.2508,agents:["ai","grok"],src:[],notes:"Upper hills, winding road"},
+    {address:"1460 Olympus Ave, Berkeley, CA 94708",status:"Sold",price:1250000,date:"2025-09-12",beds:3,baths:2,sqft:1248,lot:6000,year:1932,type:"SFR",cond:3,lat:37.8761,lng:-122.2552,agents:["ai","perplexity","gemini"],src:["https://www.redfin.com/"],notes:""},
     {address:"1622 Scenic Ave, Berkeley, CA 94709",status:"Sold",price:1727000,date:"2025-08-03",beds:3,baths:2,sqft:1815,lot:7150,year:1928,type:"SFR",cond:5,lat:37.8704,lng:-122.2629,agents:["perplexity","grok"],src:["https://www.realtor.com/"],notes:"Full remodel, staged"},
-    {address:"1510 Arch St, Berkeley, CA 94708",status:"Sold",price:1495000,date:"2026-04-18",beds:3,baths:2,sqft:1310,lot:6100,year:1926,type:"SFR",cond:4,lat:37.8768,lng:-122.2695,agents:["chatgpt","gemini","grok"],src:["https://www.redfin.com/"],notes:"Updated kitchen and baths"},
-    {address:"1350 Hawthorne Ter, Berkeley, CA 94708",status:"Sold",price:1560000,date:"2026-06-02",beds:3,baths:2,sqft:1240,lot:5800,year:1935,type:"SFR",cond:4,lat:37.8827,lng:-122.2552,agents:["chatgpt","perplexity"],src:["https://www.zillow.com/"],notes:"Renovated 2024"},
+    {address:"1510 Arch St, Berkeley, CA 94708",status:"Sold",price:1495000,date:"2026-04-18",beds:3,baths:2,sqft:1310,lot:6100,year:1926,type:"SFR",cond:4,lat:37.8768,lng:-122.2695,agents:["ai","gemini","grok"],src:["https://www.redfin.com/"],notes:"Updated kitchen and baths"},
+    {address:"1350 Hawthorne Ter, Berkeley, CA 94708",status:"Sold",price:1560000,date:"2026-06-02",beds:3,baths:2,sqft:1240,lot:5800,year:1935,type:"SFR",cond:4,lat:37.8827,lng:-122.2552,agents:["ai","perplexity"],src:["https://www.zillow.com/"],notes:"Renovated 2024"},
     {address:"1400 Le Roy Ave, Berkeley, CA 94708",status:"Sold",price:1080000,date:"2026-03-09",beds:3,baths:1,sqft:1100,lot:5500,year:1922,type:"SFR",cond:2,lat:37.8810,lng:-122.2574,agents:["grok","gemini"],src:["https://www.redfin.com/"],notes:"Original condition, estate sale"},
-    {address:"1520 Euclid Ave #3, Berkeley, CA 94708",status:"Sold",price:865000,date:"2026-02-20",beds:2,baths:2,sqft:1080,lot:0,year:1972,type:"Condo",cond:3,lat:37.8739,lng:-122.2618,agents:["chatgpt"],src:[],notes:"Condo, wrong type"},
+    {address:"1520 Euclid Ave #3, Berkeley, CA 94708",status:"Sold",price:865000,date:"2026-02-20",beds:2,baths:2,sqft:1080,lot:0,year:1972,type:"Condo",cond:3,lat:37.8739,lng:-122.2618,agents:["ai"],src:[],notes:"Condo, wrong type"},
     {address:"1733 Spruce St, Berkeley, CA 94709",status:"Sold",price:1395000,date:"2026-05-14",beds:3,baths:2,sqft:1420,lot:4800,year:1915,type:"SFR",cond:4,lat:37.8689,lng:-122.2750,agents:["gemini"],src:["https://www.redfin.com/"],notes:"Busier street, across Spruce"},
     {address:"1195 Oxford St, Berkeley, CA 94707",status:"Sold",price:1610000,date:"2025-05-30",beds:4,baths:3,sqft:1980,lot:6500,year:1938,type:"SFR",cond:4,lat:37.8920,lng:-122.2750,agents:["grok"],src:[],notes:"Older sale, larger"},
-    {address:"1488 Scenic Ave, Berkeley, CA 94708",status:"Active",price:1549000,date:"2026-09-02",beds:3,baths:2,sqft:1290,lot:6900,year:1927,type:"SFR",cond:4,lat:37.8801,lng:-122.2603,agents:["chatgpt","grok"],src:["https://www.redfin.com/"],notes:"Renovated flip on market, 22 DOM"},
-    {address:"1360 Cedar St, Berkeley, CA 94702",status:"Pending",price:1325000,date:"2026-08-20",beds:3,baths:2,sqft:1260,lot:5000,year:1924,type:"SFR",cond:4,lat:37.8744,lng:-122.2893,agents:["chatgpt"],src:[],notes:""}
+    {address:"1488 Scenic Ave, Berkeley, CA 94708",status:"Active",price:1549000,date:"2026-09-02",beds:3,baths:2,sqft:1290,lot:6900,year:1927,type:"SFR",cond:4,lat:37.8801,lng:-122.2603,agents:["ai","grok"],src:["https://www.redfin.com/"],notes:"Renovated flip on market, 22 DOM"},
+    {address:"1360 Cedar St, Berkeley, CA 94702",status:"Pending",price:1325000,date:"2026-08-20",beds:3,baths:2,sqft:1260,lot:5000,year:1924,type:"SFR",cond:4,lat:37.8744,lng:-122.2893,agents:["ai"],src:[],notes:""}
   ],
   agentReports:{
     chatgpt:{value_as_is:1160000,value_arv:1385000},
@@ -573,7 +573,7 @@ function render(){
   $("condRow").innerHTML = CONDS.map(([v,l,d])=>`<button type="button" class="condbtn" aria-pressed="${Number(s.cond)===v}" data-v="${v}"><b>${l}</b><span>${d}</span></button>`).join("");
   $("condRow").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.subject.cond=Number(b.dataset.v); render();});
   renderAnswer(); renderPool(); renderMap(); renderRules();
-  const rep=S.agentReports.chatgpt; $("summaryLine").textContent = rep&&rep.summary? rep.summary : "";
+  const rep=S.agentReports.ai; $("summaryLine").textContent = rep&&rep.summary? rep.summary : "";
 }
 function renderRules(){
   const f=R.f;
@@ -585,7 +585,7 @@ function renderRules(){
   $("methods").innerHTML = set.value? `<table><tbody>${Object.entries(set.methods).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${kmoney(v)}</td><td class="n muted">${v?((v-set.value)/set.value>=0?"+":"")+pct((v-set.value)/set.value):""}</td></tr>`).join("")}</tbody></table><p class="muted" style="margin:6px 0 0">ARV by five methods. If they spread more than 5%, the comps disagree.</p>` : `<span class="muted">No value yet.</span>`;
 }
 
-/* ---------- run comps (ChatGPT via /api/comps) ---------- */
+/* ---------- run comps (Claude + web search via /api/comps) ---------- */
 const mapType = t=>{ t=String(t||"").toLowerCase(); if(t.includes("condo")) return "Condo"; if(t.includes("town")) return "Townhome"; if(/duplex|triplex|2-4|multi|fourplex/.test(t)) return "2-4 Unit"; return "SFR"; };
 const mapStatus = t=>{ t=String(t||"sold").toLowerCase(); if(t.startsWith("pend")||t.includes("contract")) return "Pending"; if(t.startsWith("act")||t.includes("list")) return "Active"; if(t.startsWith("with")||t.startsWith("exp")) return "Withdrawn"; return "Sold"; };
 const agentName = k => (AGENTS.find(a=>a.key===k)||{name:k?k:"import"}).name;
@@ -624,8 +624,12 @@ let runCtl=null, tick=null;
 async function runComps(){
   const s=S.subject, st=$("runStatus");
   if(!s.address||s.address.trim().length<6){ toast("Type the full address first"); $("s_address").focus(); return; }
+  if(S.factsFor!==normAddr(s.address)){ // new address: drop the previous house's details and comps
+    Object.assign(s,{beds:null,baths:null,sqft:null,lot:null,year:null,lat:null,lng:null});
+    S.comps=S.comps.filter(c=>(c.agents||[]).includes("mls")); S.agentReports={};
+  }
   runCtl=new AbortController();
-  $("runBtn").disabled=true; $("cancelRun").hidden=false; st.className="status"; st.textContent="ChatGPT is searching sold records and checking sources… usually 1–3 minutes.";
+  $("runBtn").disabled=true; $("cancelRun").hidden=false; st.className="status"; st.textContent="Claude is searching sold records online and checking each source… usually 1–4 minutes.";
   const t0=Date.now(); clearInterval(tick); tick=setInterval(()=>{ const sec=Math.round((Date.now()-t0)/1000); $("elapsed").textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`; },1000);
   try{
     const r=await fetch("/api/comps",{method:"POST",headers:{"Content-Type":"application/json","x-app-password":getPw()},signal:runCtl.signal,
@@ -633,17 +637,17 @@ async function runComps(){
     const j=await r.json().catch(()=>({error:"The server sent back something unreadable."}));
     if(r.status===401){ $("pwRow").hidden=false; $("pwIn").focus(); throw new Error("Enter the team password, then press Save password."); }
     if(!r.ok) throw new Error(j.error||`Server error ${r.status}.`);
-    // A new run replaces ChatGPT's earlier comps; your own MLS rows and hand-added comps stay.
-    S.comps=S.comps.filter(c=>!(c.agents||[]).includes("chatgpt")||(c.agents||[]).length>1).map(c=>({...c,agents:(c.agents||[]).filter(a=>a!=="chatgpt")}));
+    // A new run replaces Claude's earlier comps; your own MLS rows and hand-added comps stay.
+    S.comps=S.comps.filter(c=>!(c.agents||[]).includes("ai")||(c.agents||[]).length>1).map(c=>({...c,agents:(c.agents||[]).filter(a=>a!=="ai")}));
     if(S.example){ S.comps=[]; S.example=false; }
-    const nf=fillSubject(j.subject_facts);
-    const m=mergeComps(j.comps||[],"chatgpt");
+    const nf=fillSubject(j.subject_facts); S.factsFor=normAddr(s.address);
+    const m=mergeComps(j.comps||[],"ai");
     const cites=(j.citations||[]).map(c=>c.url);
-    for(const c of S.comps) if((c.agents||[]).includes("chatgpt")&&!(c.src||[]).length){ const hit=cites.find(u=>u.toLowerCase().includes(normAddr(c.address).split(" ").slice(0,2).join("-"))); if(hit) c.src=[hit]; }
-    for(const x of j.reject||[]){ const ex=S.comps.find(c=>normAddr(c.address)===normAddr(x.address)); if(ex){ ex.include=false; ex.conflicts=[...(ex.conflicts||[]),`ChatGPT: ${x.reason}`]; } }
-    S.agentReports={chatgpt:{value_as_is:num(j.value_as_is),value_arv:num(j.value_arv),risks:j.risks||[],summary:j.summary||"",count:(j.comps||[]).length,model:j.model}};
+    for(const c of S.comps) if((c.agents||[]).includes("ai")&&!(c.src||[]).length){ const hit=cites.find(u=>u.toLowerCase().includes(normAddr(c.address).split(" ").slice(0,2).join("-"))); if(hit) c.src=[hit]; }
+    for(const x of j.reject||[]){ const ex=S.comps.find(c=>normAddr(c.address)===normAddr(x.address)); if(ex){ ex.include=false; ex.conflicts=[...(ex.conflicts||[]),`Claude: ${x.reason}`]; } }
+    S.agentReports={ai:{value_as_is:num(j.value_as_is),value_arv:num(j.value_arv),risks:j.risks||[],summary:j.summary||"",count:(j.comps||[]).length,model:j.model}};
     render();
-    st.className="status ok"; st.textContent=`Done. ${m.added} comps found${nf?`, ${nf} property details filled in`:""}${j.mock?" (MOCK DATA, no OpenAI key set)":""}.`;
+    st.className="status ok"; st.textContent=`Done. ${m.added} comps found${nf?`, ${nf} property details filled in`:""}${j.mock?" (MOCK DATA, no API key set)":""}.`;
     $("h3s").scrollIntoView({behavior:"smooth",block:"start"});
   }catch(e){
     if(e.name==="AbortError"){ st.className="status"; st.textContent="Cancelled."; }
@@ -681,7 +685,7 @@ function renderAnswer(){
   $("basisChips").innerHTML = S.claude&&S.claude.arv && !S.deal.juan ? [["1","Claude's ARV"],["0","Engine ARV"]].map(([v,l])=>`<button type="button" class="chipbtn" aria-pressed="${String(!!S.deal.useClaude?1:0)===v}" data-v="${v}">${l}</button>`).join("") : (S.deal.juan?`<span class="pill info">Using Juan's ARV</span>`:"");
   $("basisChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.deal.useClaude=b.dataset.v==="1"; render();});
   if(!cur.v){
-    $("verdict").innerHTML=`<div class="verdict review"><span class="big">WAITING</span><span class="line">Type the address and press <b>Run comps</b>. The value shows up here when ChatGPT is done.</span></div>`;
+    $("verdict").innerHTML=`<div class="verdict review"><span class="big">WAITING</span><span class="line">Type the address and press <b>Run comps</b>. The value shows up here when Claude is done.</span></div>`;
     $("kpis").innerHTML=""; $("alerts").innerHTML=""; $("compList").innerHTML=""; return;
   }
   const dm=dealMath(cur.v);
@@ -716,7 +720,7 @@ function renderAnswer(){
   if(S.claude&&S.claude.arv) ests.push({n:"Claude",v:S.claude.arv});
   if(ests.length){ const all=[...ests.map(e=>e.v),arv.value]; const spread=(Math.max(...all)-Math.min(...all))/arv.value;
     const list=ests.map(e=>`${esc(e.n)} ${kmoney(e.v)}`).join(" · ")+` · Comp math ${kmoney(arv.value)}`;
-    al.push(spread>0.07?`<div class="alert warn"><b>ChatGPT's own ARV and the comp math are ${pct(spread,0)} apart.</b> ${list}. Look at which comps drive the difference.</div>`:`<div class="alert good"><b>ChatGPT's own ARV and the comp math agree within ${pct(spread,0)}.</b> ${list}</div>`); }
+    al.push(spread>0.07?`<div class="alert warn"><b>Claude's own ARV and the comp math are ${pct(spread,0)} apart.</b> ${list}. Look at which comps drive the difference.</div>`:`<div class="alert good"><b>Claude's own ARV and the comp math agree within ${pct(spread,0)}.</b> ${list}</div>`); }
   if(arv.used.length<3) al.push(`<div class="alert bad"><b>Only ${arv.used.length} comp${arv.used.length===1?"":"s"} pass the rules.</b> Run it again, add your MLS export, or widen the radius under All comps &amp; rules.</div>`);
   const comp=R.competition;
   al.push(comp.length? `<div class="alert ${comp.length>4?'warn':'good'}"><b>${comp.length} competing listing${comp.length===1?"":"s"} nearby:</b> ${comp.map(c=>`${esc(street(c.address))} ${c.status.toLowerCase()} at ${kmoney(c.price)}`).join(" · ")}</div>`
@@ -838,15 +842,15 @@ const lsLog=()=>{ try{ return JSON.parse(localStorage.getItem(LOG_LS)||"[]"); }c
 const lsSave=rows=>{ try{ localStorage.setItem(LOG_LS,JSON.stringify(rows)); }catch(e){} };
 function renderLog(){
   const rows=[...logRows].sort((a,b)=>String(b.created).localeCompare(String(a.created)));
-  const err=(p,a)=>p&&a?(p-a)/a:null, acc={engine:[],chatgpt:[],juan:[]};
+  const err=(p,a)=>p&&a?(p-a)/a:null, acc={engine:[],ai:[],juan:[]};
   rows.forEach(r=>{ if(r.actual) for(const k of Object.keys(acc)){ const e=err(r[k+"_arv"],r.actual); if(e!=null) acc[k].push(Math.abs(e)); } });
   const sold=rows.filter(r=>r.actual).length;
   $("logSub").textContent=`${rows.length} saved · ${sold} with a sale price · saved in this browser`;
-  $("accuracy").innerHTML=Object.entries(acc).map(([k,v])=>`<div class="kpi"><div class="k">${k==="engine"?"Engine":k==="chatgpt"?"ChatGPT":"Juan"} average miss</div><div class="v" style="font-size:20px">${v.length?pct(mean(v)):"—"}</div><div class="r">${v.length} sold · target ±3–5%${v.length?(mean(v)<=0.05?" · on target":" · not there yet"):""}</div></div>`).join("");
-  $("logTable").innerHTML=rows.length?`<thead><tr><th>Saved</th><th>Address</th><th class="n">Engine ARV</th><th class="n">ChatGPT ARV</th><th class="n">Juan ARV</th><th class="n">Sold for</th><th class="n">Engine</th><th class="n">ChatGPT</th><th class="n">Juan</th><th></th></tr></thead><tbody>`+
+  $("accuracy").innerHTML=Object.entries(acc).map(([k,v])=>`<div class="kpi"><div class="k">${k==="engine"?"Engine":k==="ai"?"Claude":"Juan"} average miss</div><div class="v" style="font-size:20px">${v.length?pct(mean(v)):"—"}</div><div class="r">${v.length} sold · target ±3–5%${v.length?(mean(v)<=0.05?" · on target":" · not there yet"):""}</div></div>`).join("");
+  $("logTable").innerHTML=rows.length?`<thead><tr><th>Saved</th><th>Address</th><th class="n">Engine ARV</th><th class="n">Claude ARV</th><th class="n">Juan ARV</th><th class="n">Sold for</th><th class="n">Engine</th><th class="n">Claude</th><th class="n">Juan</th><th></th></tr></thead><tbody>`+
     rows.map(r=>{ const f=k=>{ const e=err(r[k],r.actual); return e==null?"—":`<span style="color:${Math.abs(e)>0.05?'var(--bad)':'var(--good)'}">${e>=0?"+":""}${pct(e)}</span>`; };
-      return `<tr data-id="${esc(r._id)}"><td>${esc(String(r.created).slice(0,10))}</td><td>${esc(street(r.address))}</td><td class="n">${kmoney(r.engine_arv)}</td><td class="n">${kmoney(r.chatgpt_arv)}</td><td class="n">${kmoney(r.juan_arv)}</td>
-      <td class="n"><input type="number" data-act="actual" value="${r.actual??""}" placeholder="sold $" style="width:120px" aria-label="Actual sale price"></td><td class="n">${f("engine_arv")}</td><td class="n">${f("chatgpt_arv")}</td><td class="n">${f("juan_arv")}</td>
+      return `<tr data-id="${esc(r._id)}"><td>${esc(String(r.created).slice(0,10))}</td><td>${esc(street(r.address))}</td><td class="n">${kmoney(r.engine_arv)}</td><td class="n">${kmoney(r.ai_arv)}</td><td class="n">${kmoney(r.juan_arv)}</td>
+      <td class="n"><input type="number" data-act="actual" value="${r.actual??""}" placeholder="sold $" style="width:120px" aria-label="Actual sale price"></td><td class="n">${f("engine_arv")}</td><td class="n">${f("ai_arv")}</td><td class="n">${f("juan_arv")}</td>
       <td><button class="btn small" data-act="del" type="button">Delete</button></td></tr>`; }).join("")+"</tbody>":`<tbody><tr><td class="muted">Nothing saved yet. Use “Save to deal log” above.</td></tr></tbody>`;
   $("logTable").querySelectorAll("tr[data-id]").forEach(tr=>{ const id=tr.dataset.id;
     tr.querySelector('[data-act=actual]').onchange=e=>updateLog(id,{actual:num(e.target.value)});
@@ -856,7 +860,7 @@ function updateLog(id,patch){ logRows=logRows.map(r=>r._id===id?{...r,...patch}:
 function deleteLog(id){ logRows=logRows.filter(r=>r._id!==id); lsSave(logRows); renderLog(); }
 $("saveVal").onclick=async()=>{
   if(!R.arv.value){ toast("Nothing to save yet"); return; }
-  const rec={address:S.subject.address||"(no address)",created:new Date().toISOString(),engine_asis:Math.round(R.asis.value||0),engine_arv:Math.round(R.arv.value||0),chatgpt_arv:S.agentReports.chatgpt&&S.agentReports.chatgpt.value_arv?Math.round(S.agentReports.chatgpt.value_arv):null,juan_arv:S.deal.juan||null,confidence:Math.round(R.arv.conf),comps_used:R.arv.used.map(u=>u.address),agents:Object.keys(S.agentReports),actual:null,example:!!S.example};
+  const rec={address:S.subject.address||"(no address)",created:new Date().toISOString(),engine_asis:Math.round(R.asis.value||0),engine_arv:Math.round(R.arv.value||0),ai_arv:S.agentReports.ai&&S.agentReports.ai.value_arv?Math.round(S.agentReports.ai.value_arv):null,juan_arv:S.deal.juan||null,confidence:Math.round(R.arv.conf),comps_used:R.arv.used.map(u=>u.address),agents:Object.keys(S.agentReports),actual:null,example:!!S.example};
   logRows.push({...rec,_id:"l"+Date.now().toString(36)}); lsSave(logRows); renderLog(); toast("Saved to the deal log");
 };
 logRows=lsLog(); renderLog();
