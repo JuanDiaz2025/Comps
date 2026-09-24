@@ -97,6 +97,8 @@ Source: Twin's Google Sheet profit calculator (fileId 1Kp52OUCR2tIQI4Lj9J1Mmbq60
   3. Download the photos (`ssl.cdn-redfin.com/photo/.../bigphoto/...jpg`) and Redfin's `longCaption` for each.
   4. Build a contact sheet with Playwright and look at every photo.
 
+  **First question from the photos: is it already a nice house?** Well kept, move-in ready, attractive original features in good shape, recent systems. If yes, it has no flip upside even if the kitchen or baths are older but clean and working. Set `cond` to 4 (the page's automatic NO, DO NOT BUY) and say so. Don't price a remodel to manufacture a deal. Only budget a renovation when the photos show real work Twin can add value with (worn, broken, original-and-tired, fixer).
+
   Budget only what the photos show needs work. Keep good original features (wood trim, built-ins, hardwood), and cite photo numbers in the budget lines.
 - **Claude sets the renovation budget.** Build an itemized budget for the scope needed to reach the ARV comps' finish level:
   - Items: kitchen, baths, electrical, plumbing, floors, paint, exterior, windows, roof, foundation/seismic, permits, landscaping.
