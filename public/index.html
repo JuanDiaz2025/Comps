@@ -855,8 +855,7 @@ function renderAnswer(){
   let cls,word,line;
   if(!price){ cls="review"; word="OFFER UP TO"; line=`<b>${money(dm.max)}</b>. Start at <b>${money(dm.target)}</b>. Type the asking price above to get YES / NO / NEEDS JUAN.`; }
   else if(profitAt(price)<0){ cls="fail"; word="NO, DO NOT BUY"; line=`${likelyTxt}At ${money(price)} Twin would <b>lose ${money(-profitAt(price))}</b> after reno, commission, transfer taxes, loan costs and holding. Negative profit is an automatic no: don't offer above <b>${money(dm.max)}</b>.`; }
-  else if(price>dm.max*1.04){ cls="pass"; word="NO, DO NOT BUY"; line=`${likelyTxt}That is ${money(price-dm.max)} over Twin's max offer of <b>${money(dm.max)}</b>: ${profitAt(price)<0?`a loss of ${money(-profitAt(price))}`:`leaving only ${money(profitAt(price))} profit`}. Buy only at or under ${money(dm.max)}.`; }
-  else if(price>dm.max){ cls="review"; word="NEEDS JUAN'S ATTENTION"; line=`${likelyTxt}${money(price)} is just over the max offer of <b>${money(dm.max)}</b>. Profit would be ${money(profitAt(price))}.${next}`; }
+  else if(price>dm.max){ cls="review"; word="NEEDS JUAN'S ATTENTION"; line=`${likelyTxt}At ${money(price)} Twin still makes <b>${money(profitAt(price))}</b>, but that is under the ${money(S.deal.profit)} target. The price is ${money(price-dm.max)} over the max offer of <b>${money(dm.max)}</b>. Juan decides if the smaller profit is worth it, or offers ${money(dm.max)} or less.${next}`; }
   else if(conf>=90){ cls="buy"; word="YES, BUY IT"; line=`At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b>. Max offer is <b>${money(dm.max)}</b>.`; }
   else { cls="review"; word="NEEDS JUAN'S ATTENTION"; line=`${likelyTxt}At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b> (max offer ${money(dm.max)}). Confidence is ${Math.round(conf)}%.${next}`; }
   const shown = renderCalc(cur.v, price);
