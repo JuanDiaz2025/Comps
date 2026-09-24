@@ -717,7 +717,7 @@ function renderAnswer(){
   const likelyTxt = likely&&ask&&likely>ask*1.03 ? `Listed at ${money(ask)}, but it will likely sell around <b>${money(likely)}</b>. ` : "";
   let cls,word,line;
   if(!price){ cls="review"; word="OFFER UP TO"; line=`<b>${money(dm.max)}</b>. Start at <b>${money(dm.target)}</b>. Type the asking price above to get BUY / REVIEW / PASS.`; }
-  else if(price>dm.max*1.04){ cls="pass"; word="PASS"; line=`${likelyTxt}That is ${money(price-dm.max)} over Twin's max offer of <b>${money(dm.max)}</b>, leaving only ${money(profitAt(price))} profit. Buy only at or under ${money(dm.max)}.`; }
+  else if(price>dm.max*1.04){ cls="pass"; word="PASS"; line=`${likelyTxt}That is ${money(price-dm.max)} over Twin's max offer of <b>${money(dm.max)}</b>: ${profitAt(price)<0?`a loss of ${money(-profitAt(price))}`:`leaving only ${money(profitAt(price))} profit`}. Buy only at or under ${money(dm.max)}.`; }
   else if(price>dm.max){ cls="review"; word="NEGOTIATE"; line=`${likelyTxt}${money(price)} is just over the max offer of <b>${money(dm.max)}</b>. Profit would be ${money(profitAt(price))}.${next}`; }
   else if(conf>=90){ cls="buy"; word="BUY"; line=`At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b>. Max offer is <b>${money(dm.max)}</b>.`; }
   else { cls="review"; word="REVIEW"; line=`${likelyTxt}At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b> (max offer ${money(dm.max)}). Confidence is ${Math.round(conf)}%.${next}`; }
