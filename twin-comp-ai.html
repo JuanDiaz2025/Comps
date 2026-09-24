@@ -1,5 +1,5 @@
 <title>Twin Comp AI</title>
-<meta name="description" content="Multi-AI comparable sales engine: five research agents find the comps, a weighted adjustment engine values them, Claude reconciles as Chief Appraiser.">
+<meta name="description" content="Type an address, get one ARV, five comps, one confidence score and one buy price. Five AIs find the comps, Claude checks the work.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
@@ -14,7 +14,7 @@
   --display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
   --body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
-  --r:8px;
+  --r:10px;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -38,104 +38,139 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.45;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;margin:0}
 .num,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
 h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:.01em}
 a{color:var(--accent)}
 button,input,select,textarea{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
-/* top bar */
 .topbar{background:var(--bar);color:var(--bar-ink);padding:14px 20px}
-.topbar-in{max-width:1480px;margin:0 auto;display:flex;flex-wrap:wrap;gap:12px 28px;align-items:center;justify-content:space-between}
-.brand h1{font-size:28px;font-weight:700;line-height:1}
-.brand p{margin:4px 0 0;opacity:.8;font-size:14px}
-.pipeline{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px}
-.pipeline span{border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:3px 10px;white-space:nowrap}
-.pipeline i{opacity:.5;font-style:normal}
+.topbar-in{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;gap:6px 24px;align-items:baseline;justify-content:space-between}
+.topbar h1{font-size:30px;font-weight:700;line-height:1}
+.topbar p{margin:0;opacity:.8;font-size:14px}
 
-.wrap{max-width:1480px;margin:0 auto;padding-inline:16px;padding-block:16px 40px;display:flex;flex-direction:column;gap:16px}
-.example-note{background:var(--warn-soft);color:var(--ink);border:1px solid var(--line);border-radius:var(--r);padding:8px 12px;font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.wrap{max-width:1200px;margin:0 auto;padding-inline:16px;padding-block:16px 48px;display:flex;flex-direction:column;gap:16px}
+.example-note{background:var(--warn-soft);border:1px solid var(--line);border-radius:var(--r);padding:8px 12px;font-size:13.5px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}
 .example-note b{color:var(--warn)}
 
-.grid3{display:grid;grid-template-columns:minmax(290px,340px) minmax(0,1fr) minmax(340px,440px);gap:16px;align-items:start}
-@media (max-width:1180px){.grid3{grid-template-columns:minmax(280px,340px) minmax(0,1fr)}.col-right{grid-column:1 / -1}}
-@media (max-width:760px){.grid3{grid-template-columns:minmax(0,1fr)}}
-.col{display:flex;flex-direction:column;gap:16px;min-width:0}
-
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0}
-.ph{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line-2)}
-.ph h2{font-size:19px;font-weight:600;display:flex;gap:8px;align-items:baseline}
-.ph h2 .step{font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:500}
-.ph .sub{color:var(--muted);font-size:13px;font-family:var(--body);font-weight:400}
-.pb{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.ph{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 0;flex-wrap:wrap}
+.ph h2{font-size:22px;font-weight:700;display:flex;gap:10px;align-items:center}
+.ph h2 .step{width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--mono);font-size:13px;flex:none}
+.ph .sub{color:var(--muted);font-size:14px}
+.pb{padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px}
 
-label.f{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.02em;min-width:0}
-input[type=text],input[type=number],input[type=date],select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;min-width:0;color:var(--ink);font-weight:400;font-size:14px}
-textarea{font-family:var(--mono);font-size:12px;resize:vertical}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);font-weight:600;letter-spacing:.02em;min-width:0}
+input[type=text],input[type=number],input[type=date],select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%;min-width:0;color:var(--ink);font-weight:400;font-size:15px}
+textarea{font-family:var(--mono);font-size:12.5px;resize:vertical}
 input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.range{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
-.range span{color:var(--muted);font-size:12px}
-.chk{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--ink-2)}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chipbtn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:3px 10px;cursor:pointer;font-size:13px;font-family:var(--mono)}
-.chipbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+input.big{font-size:19px;padding:12px 14px;font-weight:600}
 
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:13px;color:var(--ink)}
+.prop-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:end}
+@media (max-width:760px){.prop-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.prop-grid .span-all{grid-column:1/-1}}
+.cond-row{display:flex;flex-wrap:wrap;gap:6px}
+.condbtn{flex:1 1 90px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 6px;cursor:pointer;text-align:center;line-height:1.15}
+.condbtn b{display:block;font-size:14px}
+.condbtn span{font-size:11.5px;color:var(--muted)}
+.condbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.condbtn[aria-pressed="true"] span{color:var(--accent-ink);opacity:.85}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:8px 14px;cursor:pointer;font-weight:600;font-size:14px;color:var(--ink)}
 .btn:hover{border-color:var(--accent)}
 .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .btn.primary:hover{filter:brightness(1.07)}
-.btn.small{padding:3px 8px;font-size:12px}
+.btn.small{padding:4px 9px;font-size:12.5px}
 .btn.ghost{border-color:transparent;background:transparent;color:var(--accent)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btnrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chipbtn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px;font-family:var(--mono)}
+.chipbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 
-.pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 8px;font-size:11.5px;font-weight:700;white-space:nowrap;letter-spacing:.02em}
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 8px;font-size:11.5px;font-weight:700;white-space:nowrap}
 .pill.good{background:var(--good-soft);color:var(--good)}
 .pill.warn{background:var(--warn-soft);color:var(--warn)}
 .pill.bad{background:var(--bad-soft);color:var(--bad)}
 .pill.info{background:var(--accent-soft);color:var(--accent)}
 .pill.mute{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
 
-/* subject card */
-.subj-sum{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}
-.subj-sum dt{color:var(--muted)}
-.subj-sum dd{margin:0;font-weight:600}
+/* step 2: AI cards */
+.ai-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media (max-width:900px){.ai-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ai{border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;background:var(--surface-2)}
+.ai.done{border-color:var(--good);background:var(--good-soft)}
+.ai .nm{font-weight:700;font-size:15px;display:flex;justify-content:space-between;gap:6px;align-items:center}
+.ai .jb{font-size:12.5px;color:var(--muted);min-height:2.6em}
+.ai .ck{color:var(--good);font-weight:700;font-size:12px}
+.progress{font-size:14px;color:var(--ink-2)}
+.progress b{font-family:var(--mono)}
+.status{font-size:13px;color:var(--muted)}
+.status.ok{color:var(--good)}
+.status.err{color:var(--bad)}
 
-/* map */
-.mapbox{position:relative;background:var(--map-bg);border-radius:0 0 var(--r) var(--r);overflow:hidden}
-.mapbox svg{display:block;width:100%;height:auto}
-.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--ink-2)}
-.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
-.map-tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.15);max-width:240px}
-
-/* result cards */
-.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.kpi{border:1px solid var(--line);border-radius:6px;padding:8px 10px;background:var(--surface-2);min-width:0}
-.kpi .k{font-size:11.5px;color:var(--muted);font-weight:600;letter-spacing:.03em;text-transform:uppercase}
-.kpi .v{font-family:var(--mono);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.kpi .r{font-size:11.5px;color:var(--muted);font-family:var(--mono)}
+/* step 3: answer */
+.verdict{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 16px;border-radius:8px}
+.verdict.buy{background:var(--good-soft);color:var(--good)}
+.verdict.review{background:var(--warn-soft);color:var(--warn)}
+.verdict.pass{background:var(--bad-soft);color:var(--bad)}
+.verdict .big{font-family:var(--display);font-size:40px;font-weight:700;letter-spacing:.04em;line-height:1}
+.verdict .line{color:var(--ink);font-size:15px;max-width:70ch}
+.verdict .line b{font-family:var(--mono)}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface-2);min-width:0}
+.kpi .k{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.kpi .v{font-family:var(--mono);font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .r{font-size:12px;color:var(--muted);font-family:var(--mono)}
 .kpi.hero{background:var(--accent-soft);border-color:transparent}
 .kpi.hero .v{color:var(--accent)}
-@media (max-width:420px){.kpis{grid-template-columns:1fr 1fr}}
-
-.comp-list{display:flex;flex-direction:column}
-.comp{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line-2);cursor:pointer;align-items:start}
+.answer-split{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.answer-split{grid-template-columns:minmax(0,1fr)}}
+.comp-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.comp{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line-2);cursor:pointer;align-items:start}
+.comp:last-child{border-bottom:none}
 .comp:hover,.comp.hl{background:var(--surface-2)}
-.comp .rank{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:600;color:#fff}
-.comp .addr{font-weight:700;font-size:14px}
+.comp .rank{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:600;color:#fff}
+.comp .addr{font-weight:700}
+.comp .why{font-size:13px;color:var(--ink-2)}
 .comp .meta{font-size:12.5px;color:var(--muted)}
-.comp .right{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
-.comp .price{font-family:var(--mono);font-weight:600;font-size:14px}
-.comp .adj{font-family:var(--mono);font-size:12px;color:var(--ink-2)}
-.comp .tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.comp .right{text-align:right}
+.comp .price{font-family:var(--mono);font-weight:600}
+.comp .adj{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.mapbox{position:relative;background:var(--map-bg);border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.mapbox svg{display:block;width:100%;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--ink-2);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.map-tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.15);max-width:240px}
+.alerts{display:flex;flex-direction:column;gap:6px}
+.alert{border-radius:7px;padding:8px 12px;font-size:13.5px;border:1px solid var(--line)}
+.alert.warn{background:var(--warn-soft)}
+.alert.bad{background:var(--bad-soft)}
+.alert.good{background:var(--good-soft)}
+.alert b{color:var(--ink)}
 
-.scorebar{height:6px;border-radius:3px;background:var(--line-2);overflow:hidden;width:70px}
-.scorebar b{display:block;height:100%;background:var(--accent)}
+.report{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line-2);padding-top:12px}
+.report p{margin:0;max-width:78ch}
+.report h3{font-size:17px}
+.report ul{margin:0;padding-left:18px}
+.stream{white-space:pre-wrap;font-family:var(--mono);font-size:12px;color:var(--muted);max-height:140px;overflow:auto}
 
-/* tables */
+/* advanced */
+details.adv{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+details.adv>summary{cursor:pointer;padding:14px 16px;font-family:var(--display);font-size:19px;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:10px;align-items:center}
+details.adv>summary::-webkit-details-marker{display:none}
+details.adv>summary::after{content:"Show";font-family:var(--body);font-size:13px;color:var(--accent);font-weight:600}
+details.adv[open]>summary::after{content:"Hide"}
+details.adv>summary .sub{font-family:var(--body);font-size:13px;color:var(--muted);font-weight:400;flex:1}
+.adv-body{padding:0 16px 16px;display:flex;flex-direction:column;gap:18px}
+.adv-body h3{font-size:17px;margin-bottom:6px}
+.cols3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:900px){.cols3{grid-template-columns:minmax(0,1fr)}}
+.range{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
+.range span{color:var(--muted);font-size:12px}
+.chk{display:flex;gap:6px;align-items:center;font-size:13.5px;color:var(--ink-2)}
 .tblwrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:13px}
 th,td{padding:6px 8px;border-bottom:1px solid var(--line-2);text-align:left;white-space:nowrap}
@@ -144,298 +179,204 @@ td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-
 tr.out td{color:var(--muted)}
 tr.out td.addr{text-decoration:line-through}
 td select{padding:2px 4px;font-size:12px;width:auto}
-
-/* agents */
-.tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--line-2);padding:8px 14px 0}
-.tab{border:1px solid transparent;border-bottom:none;background:transparent;padding:7px 12px;border-radius:6px 6px 0 0;cursor:pointer;font-weight:600;font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center}
-.tab[aria-selected="true"]{background:var(--surface-2);border-color:var(--line-2);color:var(--ink)}
-.tab .dot{width:8px;height:8px;border-radius:50%;background:var(--line)}
-.tab .dot.on{background:var(--good)}
-.agent-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
-@media (max-width:900px){.agent-grid{grid-template-columns:minmax(0,1fr)}}
-.role{font-size:13.5px;color:var(--ink-2);max-width:70ch}
-.role b{color:var(--ink)}
-pre.prompt{background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:10px;font-family:var(--mono);font-size:11.5px;white-space:pre-wrap;word-break:break-word;max-height:300px;overflow:auto;margin:0}
-.status{font-size:12.5px;color:var(--muted)}
-.status.ok{color:var(--good)}
-.status.err{color:var(--bad)}
-
-.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
-@media (max-width:900px){.split{grid-template-columns:minmax(0,1fr)}}
-
-.verdict{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px;border-radius:6px;font-weight:700}
-.verdict.buy{background:var(--good-soft);color:var(--good)}
-.verdict.review{background:var(--warn-soft);color:var(--warn)}
-.verdict.pass{background:var(--bad-soft);color:var(--bad)}
-.verdict .big{font-family:var(--display);font-size:24px;letter-spacing:.04em}
-.waterfall{display:flex;flex-direction:column;gap:2px;font-size:13px}
-.waterfall div{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px dashed var(--line-2)}
-.waterfall div.tot{border-bottom:none;border-top:2px solid var(--ink);font-weight:700;padding-top:6px}
-.waterfall span:last-child{font-family:var(--mono);font-variant-numeric:tabular-nums}
-
-.warnbox{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--warn-soft);font-size:13px}
-.warnbox.bad{background:var(--bad-soft)}
-.warnbox h3{font-size:15px;margin-bottom:4px}
-.okbox{border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:var(--good-soft);font-size:13px}
-
-.report{display:flex;flex-direction:column;gap:12px}
-.report p{margin:0;max-width:75ch}
-.report h3{font-size:16px}
-.report ul{margin:0;padding-left:18px}
-.stream{white-space:pre-wrap;font-family:var(--mono);font-size:12px;color:var(--muted);max-height:180px;overflow:auto}
-
-.methods{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+pre.prompt{background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:10px;font-family:var(--mono);font-size:11.5px;white-space:pre-wrap;word-break:break-word;max-height:260px;overflow:auto;margin:0}
 .muted{color:var(--muted)}
-.small{font-size:12.5px}
-details summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--ink-2)}
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:6px;font-size:13px;z-index:10}
-.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
-.howto{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
-.howto div{display:flex;gap:10px;align-items:flex-start}
-.howto b.n{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:12px}
-.howto p{margin:0;font-size:13px;color:var(--ink-2)}
-.howto strong{display:block;color:var(--ink)}
+.small{font-size:13px}
+details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(--ink-2)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:7px;font-size:14px;z-index:10}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
 <header class="topbar">
   <div class="topbar-in">
-    <div class="brand">
-      <h1>Twin Comp AI</h1>
-      <p>Five AIs find the comps. The engine weights and adjusts them. Claude signs off as Chief Appraiser.</p>
-    </div>
-    <div class="pipeline" aria-label="Valuation pipeline">
-      <span>Subject file</span><i>→</i><span>ChatGPT · Perplexity · Grok · Gemini/Kimi</span><i>→</i><span>Comp pool + consensus</span><i>→</i><span>DeepSeek quant</span><i>→</i><span>Claude reconciles</span><i>→</i><span>Buy price</span>
-    </div>
+    <h1>Twin Comp AI</h1>
+    <p>One number. Five comps. One confidence score. One buy price.</p>
   </div>
 </header>
 
 <main class="wrap">
   <div class="example-note" id="exampleNote">
-    <span><b>Example data loaded.</b> The Berkeley subject and comps below are placeholders so you can see the engine work. They are not verified sales.</span>
+    <span><b>Example loaded.</b> This Berkeley house and its comps are made up, so you can see how it works.</span>
     <button class="btn small" id="clearExample" type="button">Start a new property</button>
   </div>
 
-  <div class="grid3">
-    <!-- LEFT -->
-    <div class="col">
-      <section class="panel" aria-labelledby="h-subj">
-        <div class="ph"><h2 id="h-subj"><span class="step">01</span> Subject property</h2></div>
-        <div class="pb">
-          <label class="f">Address<input type="text" id="s_address"></label>
-          <div class="row2">
-            <label class="f">Latitude<input type="number" step="any" id="s_lat"></label>
-            <label class="f">Longitude<input type="number" step="any" id="s_lng"></label>
-          </div>
-          <div class="row3">
-            <label class="f">Beds<input type="number" step="1" id="s_beds"></label>
-            <label class="f">Baths<input type="number" step="0.5" id="s_baths"></label>
-            <label class="f">Year built<input type="number" id="s_year"></label>
-          </div>
-          <div class="row2">
-            <label class="f">Living area (sf)<input type="number" id="s_sqft"></label>
-            <label class="f">Lot (sf)<input type="number" id="s_lot"></label>
-          </div>
-          <div class="row2">
-            <label class="f">Property type
-              <select id="s_type"><option>SFR</option><option>Condo</option><option>Townhome</option><option>2-4 Unit</option></select>
-            </label>
-            <label class="f">Condition now
-              <select id="s_cond"></select>
-            </label>
-          </div>
-          <label class="f">Asking / contract price (optional)<input type="number" id="s_ask"></label>
-          <label class="f">Location notes the AIs must respect<textarea id="s_notes" rows="2" placeholder="e.g. hillside, partial bay view, quiet street, Berkeley Hills side of Spruce"></textarea></label>
-          <div class="small muted">Tip: right-click the house in Google Maps to copy its latitude/longitude. Coordinates let the engine measure real distance to each comp.</div>
+  <!-- STEP 1 -->
+  <section class="panel" aria-labelledby="h1s">
+    <div class="ph"><h2 id="h1s"><span class="step">1</span>The property</h2><span class="sub">Only the address is required. The AIs fill in the rest.</span></div>
+    <div class="pb">
+      <div class="prop-grid">
+        <label class="f span-all">Address<input type="text" class="big" id="s_address" placeholder="123 Main St, San Mateo, CA 94401"></label>
+        <label class="f">Asking / contract price<input type="number" id="s_ask" placeholder="optional"></label>
+        <label class="f">Renovation budget<input type="number" id="d_reno"></label>
+      </div>
+      <div class="f" style="display:flex;flex-direction:column;gap:4px"><span class="small muted" style="font-weight:600">Condition today</span>
+        <div class="cond-row" id="condRow"></div>
+      </div>
+      <details class="inner"><summary>Property details (<span id="factsSummary"></span>)</summary>
+        <div class="formgrid" style="margin-top:10px">
+          <label class="f">Beds<input type="number" id="s_beds"></label>
+          <label class="f">Baths<input type="number" step="0.5" id="s_baths"></label>
+          <label class="f">Living sf<input type="number" id="s_sqft"></label>
+          <label class="f">Lot sf<input type="number" id="s_lot"></label>
+          <label class="f">Year built<input type="number" id="s_year"></label>
+          <label class="f">Type<select id="s_type"><option>SFR</option><option>Condo</option><option>Townhome</option><option>2-4 Unit</option></select></label>
+          <label class="f">Latitude<input type="number" step="any" id="s_lat"></label>
+          <label class="f">Longitude<input type="number" step="any" id="s_lng"></label>
+          <label class="f" style="grid-column:1/-1">Anything the AIs must know<input type="text" id="s_notes" placeholder="cul-de-sac, bay view, backs to freeway, unpermitted ADU…"></label>
         </div>
-      </section>
-
-      <section class="panel" aria-labelledby="h-filt">
-        <div class="ph"><h2 id="h-filt"><span class="step">02</span> Comp rules</h2><button class="btn ghost small" id="resetFilters" type="button">Reset</button></div>
-        <div class="pb">
-          <div class="f" style="display:flex;flex-direction:column;gap:4px"><span class="small muted" style="font-weight:600">Radius (miles)</span>
-            <div class="chips" id="radiusChips"></div>
-          </div>
-          <div class="f"><span class="small muted" style="font-weight:600">Allowed property types</span>
-            <div class="chips" id="typeChips"></div>
-          </div>
-          <div class="range"><input type="number" id="f_bedsMin" aria-label="Min beds"><span>to</span><input type="number" id="f_bedsMax" aria-label="Max beds"></div>
-          <div class="small muted" style="margin-top:-6px">Bedrooms</div>
-          <div class="range"><input type="number" step="0.5" id="f_bathsMin" aria-label="Min baths"><span>to</span><input type="number" step="0.5" id="f_bathsMax" aria-label="Max baths"></div>
-          <div class="small muted" style="margin-top:-6px">Bathrooms</div>
-          <div class="range"><input type="number" id="f_sqftMin" aria-label="Min sqft"><span>to</span><input type="number" id="f_sqftMax" aria-label="Max sqft"></div>
-          <div class="small muted" style="margin-top:-6px">Living area (sf)</div>
-          <div class="range"><input type="number" id="f_yearMin" aria-label="Min year"><span>to</span><input type="number" id="f_yearMax" aria-label="Max year"></div>
-          <div class="small muted" style="margin-top:-6px">Year built</div>
-          <label class="f">Sale date window
-            <select id="f_months"><option value="3">Last 90 days</option><option value="6">Last 6 months</option><option value="12">Last 12 months</option><option value="18">Last 18 months</option><option value="24">Last 24 months</option></select>
-          </label>
-          <label class="chk"><input type="checkbox" id="f_includeListings"> Count pending/active in value (always shown as competition)</label>
-          <label class="f">Comps used in the value<input type="number" id="f_topN" min="3" max="12"></label>
-        </div>
-      </section>
-
-      <section class="panel" aria-labelledby="h-adj">
-        <div class="ph"><h2 id="h-adj"><span class="step">03</span> Adjustment rates</h2><span class="sub">editable</span></div>
-        <div class="pb">
-          <div class="row2">
-            <label class="f">$ per sf of GLA diff<input type="number" id="a_gla"></label>
-            <label class="f">Auto = 50% of median $/sf<select id="a_glaAuto"><option value="1">Auto</option><option value="0">Manual</option></select></label>
-          </div>
-          <div class="row2">
-            <label class="f">Per bedroom ($)<input type="number" id="a_bed"></label>
-            <label class="f">Per bath ($)<input type="number" id="a_bath"></label>
-          </div>
-          <div class="row2">
-            <label class="f">Lot $ per sf<input type="number" step="any" id="a_lot"></label>
-            <label class="f">Condition step (%)<input type="number" step="0.5" id="a_cond"></label>
-          </div>
-          <div class="row2">
-            <label class="f">Market trend (%/mo)<input type="number" step="0.1" id="a_time"></label>
-            <label class="f">ARV target condition<select id="a_arvCond"></select></label>
-          </div>
-        </div>
-      </section>
+      </details>
     </div>
+  </section>
 
-    <!-- CENTER -->
-    <div class="col">
-      <section class="panel" aria-labelledby="h-map">
-        <div class="ph">
-          <h2 id="h-map">Comps map <span class="sub" id="mapSub"></span></h2>
+  <!-- STEP 2 -->
+  <section class="panel" aria-labelledby="h2s">
+    <div class="ph"><h2 id="h2s"><span class="step">2</span>Get the comps</h2><span class="progress" id="progress"></span></div>
+    <div class="pb">
+      <p class="small muted" style="margin:0">Click an AI to copy its prompt, paste it into that AI, then paste the answer in the box below. Each AI has a different job. DeepSeek goes last because it checks the math on the comps the others found.</p>
+      <div class="ai-grid" id="aiGrid"></div>
+      <label class="f">Paste an AI's answer here
+        <textarea id="pasteIn" rows="4" placeholder='Paste the whole reply. The page finds the JSON in it.'></textarea>
+      </label>
+      <div class="btnrow">
+        <button class="btn primary" id="pasteBtn" type="button">Add to comps</button>
+        <label class="f" style="flex-direction:row;align-items:center;gap:6px">From
+          <select id="pasteFrom" style="width:auto"></select></label>
+        <span class="status" id="pasteStatus"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" aria-labelledby="h3s">
+    <div class="ph"><h2 id="h3s"><span class="step">3</span>The answer</h2><span id="basisChips" class="chips"></span></div>
+    <div class="pb">
+      <div id="verdict"></div>
+      <div class="kpis" id="kpis"></div>
+      <div class="alerts" id="alerts"></div>
+      <div class="answer-split">
+        <div>
+          <h3 style="font-size:17px;margin-bottom:8px">Best 5 comps and why</h3>
+          <div class="comp-list" id="compList"></div>
+        </div>
+        <div>
+          <div class="mapbox" id="mapbox"><svg id="map" viewBox="0 0 600 440" role="img" aria-label="Map of the comps around the subject"></svg><div class="map-tip" id="mapTip" hidden></div></div>
           <div class="legend">
             <span><i style="background:var(--pin-subject)"></i>Subject</span>
-            <span><i style="background:var(--pin-match)"></i>Score 80+</span>
-            <span><i style="background:var(--pin-similar)"></i>65–79</span>
-            <span><i style="background:var(--pin-wide)"></i>Under 65</span>
-            <span><i style="background:transparent;border:2px solid var(--pin-out)"></i>Rejected</span>
+            <span><i style="background:var(--pin-match)"></i>Strong comp</span>
+            <span><i style="background:var(--pin-similar)"></i>Good</span>
+            <span><i style="background:var(--pin-wide)"></i>Weak</span>
+            <span><i style="background:transparent;border:2px solid var(--pin-out)"></i>Thrown out</span>
           </div>
         </div>
-        <div class="mapbox" id="mapbox"><svg id="map" viewBox="0 0 600 440" role="img" aria-label="Map of comparable sales around the subject"></svg><div class="map-tip" id="mapTip" hidden></div></div>
-      </section>
-
-      <section class="panel" aria-labelledby="h-pool">
-        <div class="ph"><h2 id="h-pool"><span class="step">04</span> Comp pool <span class="sub" id="poolSub"></span></h2>
-          <div class="btnrow"><button class="btn small" id="addCompBtn" type="button">Add comp</button></div>
-        </div>
-        <div class="tblwrap"><table id="poolTable"></table></div>
-        <div class="pb" id="compForm" hidden>
-          <h3 style="font-size:16px" id="compFormTitle">Add comp</h3>
-          <div class="formgrid">
-            <label class="f" style="grid-column:span 2">Address<input type="text" id="c_address"></label>
-            <label class="f">Status<select id="c_status"><option>Sold</option><option>Pending</option><option>Active</option><option>Withdrawn</option></select></label>
-            <label class="f">Price<input type="number" id="c_price"></label>
-            <label class="f">Sale / list date<input type="date" id="c_date"></label>
-            <label class="f">Beds<input type="number" id="c_beds"></label>
-            <label class="f">Baths<input type="number" step="0.5" id="c_baths"></label>
-            <label class="f">Sqft<input type="number" id="c_sqft"></label>
-            <label class="f">Lot sf<input type="number" id="c_lot"></label>
-            <label class="f">Year<input type="number" id="c_year"></label>
-            <label class="f">Type<select id="c_type"><option>SFR</option><option>Condo</option><option>Townhome</option><option>2-4 Unit</option></select></label>
-            <label class="f">Condition<select id="c_cond"></select></label>
-            <label class="f">Lat<input type="number" step="any" id="c_lat"></label>
-            <label class="f">Lng<input type="number" step="any" id="c_lng"></label>
-            <label class="f">Distance mi (if no lat/lng)<input type="number" step="0.01" id="c_dist"></label>
-            <label class="f" style="grid-column:1/-1">Source URL(s), comma separated<input type="text" id="c_src"></label>
-            <label class="f" style="grid-column:1/-1">Notes (view, busy street, remodel, etc.)<input type="text" id="c_notes"></label>
-          </div>
-          <div class="btnrow"><button class="btn primary" id="saveComp" type="button">Save comp</button><button class="btn" id="cancelComp" type="button">Cancel</button></div>
-        </div>
-      </section>
-    </div>
-
-    <!-- RIGHT -->
-    <div class="col col-right">
-      <section class="panel" aria-labelledby="h-val">
-        <div class="ph"><h2 id="h-val"><span class="step">05</span> Engine value</h2><span id="confPill"></span></div>
-        <div class="pb">
-          <div class="kpis" id="kpis"></div>
-          <div id="disagree"></div>
-        </div>
-        <div class="ph" style="border-top:1px solid var(--line-2)">
-          <h2 style="font-size:16px">Top comps</h2>
-          <div class="chips" id="setChips"></div>
-        </div>
-        <div class="comp-list" id="compList"></div>
-        <div class="pb">
-          <details><summary>Method check (the value should not depend on one method)</summary><div class="methods" id="methods" style="margin-top:8px"></div></details>
-          <div id="competition"></div>
-        </div>
-      </section>
-    </div>
-  </div>
-
-  <!-- AGENTS -->
-  <section class="panel" aria-labelledby="h-agents">
-    <div class="ph"><h2 id="h-agents"><span class="step">06</span> AI research agents <span class="sub">each gets a different job; none sees the others' answers</span></h2></div>
-    <div class="tabs" role="tablist" id="agentTabs"></div>
-    <div class="pb" id="agentPane"></div>
-  </section>
-
-  <div class="split">
-    <!-- CLAUDE -->
-    <section class="panel" aria-labelledby="h-claude">
-      <div class="ph"><h2 id="h-claude"><span class="step">07</span> Claude · Chief Appraiser</h2><span class="sub">reconciles evidence, never averages opinions</span></div>
-      <div class="pb">
-        <p class="role" style="margin:0">Claude gets the subject file, every surviving and rejected comp, the engine's adjusted values and each agent's own estimate. It must rank the comps, reject weak ones with a reason, and derive value from the evidence.</p>
-        <div class="btnrow">
-          <button class="btn primary" id="runClaude" type="button" hidden>Run Chief Appraiser</button>
-          <button class="btn" id="stopClaude" type="button" hidden>Stop</button>
-          <button class="btn" id="copyClaude" type="button">Copy prompt for claude.ai</button>
-          <span class="status" id="claudeStatus"></span>
-        </div>
-        <details><summary>Paste Claude's JSON reply (if you ran it in claude.ai)</summary>
-          <textarea id="claudePaste" rows="4" style="margin-top:6px" placeholder='{"as_is_value": ..., "arv": ...}'></textarea>
-          <button class="btn small" id="claudePasteBtn" type="button" style="margin-top:6px">Load reply</button>
-        </details>
-        <div class="stream" id="claudeStream" hidden></div>
-        <div class="report" id="claudeReport"></div>
       </div>
-    </section>
-
-    <!-- DEAL -->
-    <section class="panel" aria-labelledby="h-deal">
-      <div class="ph"><h2 id="h-deal"><span class="step">08</span> Twin buy price</h2><span class="sub" id="dealBasis"></span></div>
-      <div class="pb">
-        <div class="formgrid">
-          <label class="f">Renovation ($)<input type="number" id="d_reno"></label>
-          <label class="f">Selling costs (% of ARV)<input type="number" step="0.1" id="d_sell"></label>
-          <label class="f">Holding + financing ($)<input type="number" id="d_hold"></label>
-          <label class="f">Contingency ($)<input type="number" id="d_cont"></label>
-          <label class="f">Target profit ($)<input type="number" id="d_profit"></label>
-          <label class="f">ARV source<select id="d_arvSrc"><option value="engine">Engine</option><option value="claude">Claude</option><option value="juan">Juan override</option></select></label>
-          <label class="f">Juan's ARV override<input type="number" id="d_juan"></label>
-        </div>
-        <div class="waterfall" id="waterfall"></div>
-        <div id="verdict"></div>
-      </div>
-    </section>
-  </div>
-
-  <!-- BACKTEST -->
-  <section class="panel" aria-labelledby="h-log">
-    <div class="ph"><h2 id="h-log"><span class="step">09</span> Deal log &amp; backtest</h2><span class="sub" id="logSub"></span></div>
-    <div class="pb">
-      <p class="role" style="margin:0">Save every valuation. When the house sells, enter the real price. The error column is how you find out whether the engine, Claude or Juan is most accurate, by market. Hide the sale price from the AIs when you backtest past deals.</p>
       <div class="btnrow">
-        <button class="btn primary" id="saveVal" type="button">Save this valuation</button>
-        <span class="status" id="logStatus"></span>
+        <button class="btn primary" id="runClaude" type="button" hidden>Have Claude check it</button>
+        <button class="btn" id="stopClaude" type="button" hidden>Stop</button>
+        <button class="btn" id="copyClaude" type="button">Copy Claude check prompt</button>
+        <button class="btn" id="copyBB" type="button">Copy for REI BlackBook</button>
+        <button class="btn" id="saveVal" type="button">Save to deal log</button>
+        <span class="status" id="claudeStatus"></span>
       </div>
-      <div id="accuracy"></div>
-      <div class="tblwrap"><table id="logTable"></table></div>
+      <div class="stream" id="claudeStream" hidden></div>
+      <div id="claudeReport"></div>
     </div>
   </section>
 
-  <section class="panel" aria-labelledby="h-how">
-    <div class="ph"><h2 id="h-how">How to run a property</h2></div>
-    <div class="pb howto">
-      <div><b class="n">1</b><p><strong>Fill the subject</strong>Address, lat/lng, beds, baths, sf, lot, year, condition. Set comp rules.</p></div>
-      <div><b class="n">2</b><p><strong>Send the four research prompts</strong>Copy each into ChatGPT, Perplexity, Grok and Gemini/Kimi. Paste each JSON reply back.</p></div>
-      <div><b class="n">3</b><p><strong>Clean the pool</strong>Fix condition grades, reject bad comps, resolve fact conflicts. Add MLS CSV rows if you have them.</p></div>
-      <div><b class="n">4</b><p><strong>Quant + Claude</strong>Send the DeepSeek prompt (it now includes the cleaned pool), then run Claude as Chief Appraiser.</p></div>
-      <div><b class="n">5</b><p><strong>Price it and log it</strong>Set reno and profit, read the verdict, save it. Enter the sale price later.</p></div>
+  <!-- ADVANCED -->
+  <details class="adv" id="advDeal">
+    <summary>Deal numbers <span class="sub">selling costs, holding, profit target, Juan's ARV override</span></summary>
+    <div class="adv-body">
+      <div class="formgrid">
+        <label class="f">Selling costs (% of ARV)<input type="number" step="0.1" id="d_sell"></label>
+        <label class="f">Holding + financing ($)<input type="number" id="d_hold"></label>
+        <label class="f">Contingency ($)<input type="number" id="d_cont"></label>
+        <label class="f">Target profit ($)<input type="number" id="d_profit"></label>
+        <label class="f">Juan's ARV override ($)<input type="number" id="d_juan" placeholder="leave blank"></label>
+      </div>
     </div>
-  </section>
+  </details>
+
+  <details class="adv" id="advComps">
+    <summary>All comps &amp; rules <span class="sub" id="poolSub"></span></summary>
+    <div class="adv-body">
+      <div class="cols3">
+        <div>
+          <h3>Comp rules</h3>
+          <label class="chk" style="margin-bottom:8px"><input type="checkbox" id="f_auto"> Set automatically from the property</label>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div><span class="small muted" style="font-weight:600">Radius (miles)</span><div class="chips" id="radiusChips"></div></div>
+            <div><span class="small muted" style="font-weight:600">Property types</span><div class="chips" id="typeChips"></div></div>
+            <label class="f">Bedrooms<span class="range"><input type="number" id="f_bedsMin"><span>to</span><input type="number" id="f_bedsMax"></span></label>
+            <label class="f">Bathrooms<span class="range"><input type="number" step="0.5" id="f_bathsMin"><span>to</span><input type="number" step="0.5" id="f_bathsMax"></span></label>
+            <label class="f">Living sf<span class="range"><input type="number" id="f_sqftMin"><span>to</span><input type="number" id="f_sqftMax"></span></label>
+            <label class="f">Year built<span class="range"><input type="number" id="f_yearMin"><span>to</span><input type="number" id="f_yearMax"></span></label>
+            <label class="f">Sold within
+              <select id="f_months"><option value="3">90 days</option><option value="6">6 months</option><option value="12">12 months</option><option value="18">18 months</option><option value="24">24 months</option></select></label>
+            <label class="f">Comps used in the value<input type="number" id="f_topN" min="3" max="12"></label>
+            <label class="chk"><input type="checkbox" id="f_includeListings"> Count pending/active listings in the value</label>
+          </div>
+        </div>
+        <div>
+          <h3>Adjustment rates</h3>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <label class="f">Size adjustment<select id="a_glaAuto"><option value="1">Auto (half of median $/sf)</option><option value="0">Manual</option></select></label>
+            <label class="f">$ per sf of size difference<input type="number" id="a_gla"></label>
+            <label class="f">Per bedroom ($)<input type="number" id="a_bed"></label>
+            <label class="f">Per bath ($)<input type="number" id="a_bath"></label>
+            <label class="f">Lot $ per sf<input type="number" step="any" id="a_lot"></label>
+            <label class="f">Per condition step (% of price)<input type="number" step="0.5" id="a_cond"></label>
+            <label class="f">Market trend (% per month)<input type="number" step="0.1" id="a_time"></label>
+            <label class="f">ARV = renovated to<select id="a_arvCond"></select></label>
+          </div>
+        </div>
+        <div>
+          <h3>Your MLS export</h3>
+          <p class="small muted" style="margin:0 0 6px">Paste a CSV from MLS, PropStream or Redfin. It beats anything the AIs find online.</p>
+          <textarea id="csvIn" rows="6" placeholder="Address,Status,Sold Price,Sold Date,Beds,Baths,SqFt,Lot SqFt,Year Built,Latitude,Longitude"></textarea>
+          <div class="btnrow" style="margin-top:6px"><button class="btn" id="csvBtn" type="button">Import rows</button><span class="status" id="csvStatus"></span></div>
+          <h3 style="margin-top:14px">Method check</h3>
+          <div id="methods" class="small"></div>
+        </div>
+      </div>
+      <div>
+        <div class="btnrow" style="justify-content:space-between;margin-bottom:6px"><h3 style="margin:0">Every comp found</h3><button class="btn small" id="addCompBtn" type="button">Add a comp</button></div>
+        <div class="tblwrap"><table id="poolTable"></table></div>
+      </div>
+      <div id="compForm" hidden>
+        <h3 id="compFormTitle">Add a comp</h3>
+        <div class="formgrid">
+          <label class="f" style="grid-column:span 2">Address<input type="text" id="c_address"></label>
+          <label class="f">Status<select id="c_status"><option>Sold</option><option>Pending</option><option>Active</option><option>Withdrawn</option></select></label>
+          <label class="f">Price<input type="number" id="c_price"></label>
+          <label class="f">Date<input type="date" id="c_date"></label>
+          <label class="f">Beds<input type="number" id="c_beds"></label>
+          <label class="f">Baths<input type="number" step="0.5" id="c_baths"></label>
+          <label class="f">Sqft<input type="number" id="c_sqft"></label>
+          <label class="f">Lot sf<input type="number" id="c_lot"></label>
+          <label class="f">Year<input type="number" id="c_year"></label>
+          <label class="f">Type<select id="c_type"><option>SFR</option><option>Condo</option><option>Townhome</option><option>2-4 Unit</option></select></label>
+          <label class="f">Condition<select id="c_cond"></select></label>
+          <label class="f">Lat<input type="number" step="any" id="c_lat"></label>
+          <label class="f">Lng<input type="number" step="any" id="c_lng"></label>
+          <label class="f">Miles away (if no lat/lng)<input type="number" step="0.01" id="c_dist"></label>
+          <label class="f" style="grid-column:1/-1">Source link(s)<input type="text" id="c_src"></label>
+          <label class="f" style="grid-column:1/-1">Notes<input type="text" id="c_notes"></label>
+        </div>
+        <div class="btnrow" style="margin-top:8px"><button class="btn primary" id="saveComp" type="button">Save comp</button><button class="btn" id="cancelComp" type="button">Cancel</button></div>
+      </div>
+      <details class="inner"><summary>See the prompts</summary><pre class="prompt" id="promptPre" style="margin-top:6px"></pre></details>
+    </div>
+  </details>
+
+  <details class="adv" id="advLog">
+    <summary>Deal log &amp; backtest <span class="sub" id="logSub"></span></summary>
+    <div class="adv-body">
+      <p class="small" style="margin:0;max-width:75ch">To test the system, run houses Twin already sold without telling the AIs the sale price. Save each one, then type the real sale price here. The error columns show who is most accurate: the engine, Claude or Juan.</p>
+      <div class="kpis" id="accuracy" style="grid-template-columns:repeat(3,minmax(0,1fr))"></div>
+      <div class="tblwrap"><table id="logTable"></table></div>
+      <span class="status" id="logStatus"></span>
+    </div>
+  </details>
 </main>
 <div class="toast" id="toast" hidden></div>
 
@@ -443,47 +384,41 @@ details summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--ink-2)
 (function(){
 "use strict";
 const $ = id => document.getElementById(id);
-const CONDS = [
-  [1,"1 · Heavy fixer"],[2,"2 · Dated / original"],[3,"3 · Clean cosmetic"],[4,"4 · Updated"],[5,"5 · High-end remodel"]
-];
+const CONDS = [[1,"Fixer","heavy work"],[2,"Dated","original"],[3,"Clean","cosmetic"],[4,"Updated","kitchen/baths"],[5,"Remodeled","high-end"]];
+const condLabel = c => { const f=CONDS.find(x=>x[0]===Number(c)); return f?f[1]:"—"; };
 const TYPES = ["SFR","Condo","Townhome","2-4 Unit"];
-const RADII = [0.25,0.5,0.75,1,2,3];
+const RADII = [0.25,0.5,1,2,3];
 const AGENTS = [
-  {key:"chatgpt", name:"ChatGPT", job:"Appraiser",
-   role:"Runs a full traditional comp search. Expands radius and date window in steps and returns the 10–15 best sold comps with sources.",
+  {key:"chatgpt", name:"ChatGPT", job:"Finds the best sold comps",
    task:`YOUR ROLE: Appraiser. Run a traditional comparable sales analysis.
 Search outward in steps: 0.25 mi, then 0.5, 0.75, 1 mi. Sold in last 90 days first, then 180, then 365 only if needed.
 Match property type, living area (±20% preferred), beds/baths, lot, age/style, parking, condition and micro-location.
-Return 10–15 legitimate SOLD comps, plus any PENDING and ACTIVE listings that would compete with the subject after renovation.`},
-  {key:"perplexity", name:"Perplexity", job:"Investigator",
-   role:"Verifies facts. Checks the subject and every comp across public sources and flags conflicting square footage, prices, dates and remodels.",
+Return 10–15 legitimate SOLD comps, plus PENDING and ACTIVE listings that would compete with the subject after renovation.`},
+  {key:"perplexity", name:"Perplexity", job:"Checks every fact and source",
    task:`YOUR ROLE: Investigator / fact verification. Value is secondary.
-Verify the subject and find sold comps, checking each one across multiple public sources (county records, Redfin, Zillow, Realtor.com, brokerage sites).
-For every comp confirm sale price, sale date, living area, beds/baths, lot, and whether it was renovated before sale. When sources disagree, report the conflict in "notes" and give the value you trust most.
-Every comp MUST have at least one source URL. If you cannot find a source, do not include the comp.`},
-  {key:"grok", name:"Grok", job:"Devil's advocate",
-   role:"Tries to prove the value wrong. Looks for evidence of a much lower and a much higher value, and for location or property defects.",
+First verify the SUBJECT's facts (beds, baths, living sf, lot, year, coordinates) from public records and report them in "subject_facts".
+Then find sold comps, checking each across multiple public sources (county records, Redfin, Zillow, Realtor.com, brokerage sites).
+Confirm sale price, sale date, living area, beds/baths, lot, and whether it was renovated before sale. When sources disagree, report the conflict in "notes".
+Every comp MUST have at least one source URL. If you cannot find a source, leave the comp out.`},
+  {key:"grok", name:"Grok", job:"Tries to prove the value wrong",
    task:`YOUR ROLE: Devil's advocate. Try to prove the obvious value WRONG in both directions.
 Find sold comps that argue for a LOWER value and comps that argue for a HIGHER value.
-Hunt for: busy streets, freeway/rail noise, commercial adjacency, corner lots, cul-de-sacs, views, slope and lot usability, school boundary differences, unpermitted additions, outlier sales, investor flips.
-List every risk you find in "risks".`},
-  {key:"gemini", name:"Gemini / Kimi", job:"Micro-market",
-   role:"Explains what is special about this exact location: neighborhood lines, streets, schools, views, noise, and which nearby sales are on the wrong side of a boundary.",
+Hunt for: busy streets, freeway/rail noise, commercial next door, corner lots, cul-de-sacs, views, slope and lot usability, school boundaries, unpermitted additions, outlier sales, investor flips.
+List every risk in "risks".`},
+  {key:"gemini", name:"Gemini / Kimi", job:"Knows the block and boundaries",
    task:`YOUR ROLE: Micro-market analyst. Explain what is special about THIS location, block by block, not ZIP code.
-Identify neighborhood and school boundaries, major streets, commercial areas, freeway/noise, hills and views, walkability, and lot orientation.
-Return sold comps that are in the SAME micro-market as the subject, and name nearby sales that should be REJECTED because they sit across a meaningful boundary (put those in "reject" with the reason).`},
-  {key:"deepseek", name:"DeepSeek", job:"Quant",
-   role:"Gets the cleaned comp pool and does the math: $/sf statistics, paired adjustments, a regression and a nearest-neighbor check.",
-   quant:true,
+Identify neighborhood and school boundaries, major streets, commercial areas, freeway noise, hills and views, walkability, lot orientation.
+Return sold comps in the SAME micro-market as the subject, and list nearby sales that should be REJECTED because they sit across a meaningful boundary ("reject" with the reason).`},
+  {key:"deepseek", name:"DeepSeek", job:"Checks the math (send last)", quant:true,
    task:`YOUR ROLE: Quant. Do NOT search for new comps. Use ONLY the verified comp dataset below.
-Compute: median, mean, trimmed mean and weighted median of sold $/sf.
-Estimate adjustment rates from the data where possible (GLA $/sf, per bath, lot, condition step, monthly market trend).
+Compute median, mean, trimmed mean and weighted median of sold $/sf.
+Estimate adjustment rates from the data where possible (size $/sf, per bath, lot, condition step, monthly trend).
 Value the subject four ways: weighted comparable model, median $/sf model, simple regression (price ~ sqft + condition + lot), and nearest-neighbor (k=3).
 Give an as-is value and an ARV (renovated to condition 4).`}
 ];
 
 const EXAMPLE = {
-  subject:{address:"1466 Scenic Ave, Berkeley, CA 94708",lat:37.8792,lng:-122.2594,beds:3,baths:2,sqft:1036,lot:7290,year:1924,type:"SFR",cond:2,ask:null,notes:"Berkeley Hills edge, quiet street, some bay view potential"},
+  subject:{address:"1466 Scenic Ave, Berkeley, CA 94708",lat:37.8792,lng:-122.2594,beds:3,baths:2,sqft:1036,lot:7290,year:1924,type:"SFR",cond:2,ask:1050000,notes:"Berkeley Hills edge, quiet street, some bay view potential"},
   comps:[
     {address:"1444 Scenic Ave, Berkeley, CA 94708",status:"Sold",price:1300000,date:"2026-01-07",beds:4,baths:2,sqft:1583,lot:7200,year:1925,type:"SFR",cond:3,lat:37.8781,lng:-122.2590,agents:["chatgpt","perplexity","grok","gemini"],src:["https://www.redfin.com/"],notes:""},
     {address:"1079 Keith Ave, Berkeley, CA 94708",status:"Sold",price:1145000,date:"2025-11-15",beds:2,baths:1,sqft:1012,lot:5000,year:1924,type:"SFR",cond:3,lat:37.8832,lng:-122.2695,agents:["chatgpt","perplexity","gemini"],src:["https://www.zillow.com/"],notes:""},
@@ -502,369 +437,216 @@ const EXAMPLE = {
   agentReports:{
     chatgpt:{value_as_is:1160000,value_arv:1385000},
     perplexity:{value_as_is:1140000,value_arv:1350000},
-    grok:{value_as_is:1095000,value_arv:1450000},
+    grok:{value_as_is:1095000,value_arv:1450000,risks:["Two of the strongest renovated sales sit on quieter, higher streets with better views than the subject."]},
     gemini:{value_as_is:1170000,value_arv:1365000}
   }
 };
 
-const DEFAULT_FILTERS = {radius:1,types:["SFR"],bedsMin:2,bedsMax:4,bathsMin:1,bathsMax:3,sqftMin:800,sqftMax:1600,yearMin:1900,yearMax:1950,months:12,includeListings:false,topN:6};
-const DEFAULT_ADJ = {glaAuto:1,gla:450,bed:25000,bath:35000,lot:15,cond:6,time:0.3,arvCond:4};
-const DEFAULT_DEAL = {reno:120000,sell:5,hold:45000,cont:20000,profit:175000,arvSrc:"engine",juan:null};
 
-let S = null;
+
+const DEFAULT_FILTERS = {auto:true,radius:1,types:["SFR"],bedsMin:2,bedsMax:4,bathsMin:1,bathsMax:3,sqftMin:800,sqftMax:1600,yearMin:1900,yearMax:1950,months:12,includeListings:false,topN:6};
+const DEFAULT_ADJ = {glaAuto:1,gla:450,bed:25000,bath:35000,lot:15,cond:6,time:0.3,arvCond:4};
+const DEFAULT_DEAL = {reno:120000,sell:5,hold:45000,cont:20000,profit:175000,juan:null,useClaude:true};
+
 function freshState(example){
   const base = {subject:{address:"",lat:null,lng:null,beds:null,baths:null,sqft:null,lot:null,year:null,type:"SFR",cond:2,ask:null,notes:""},
-    comps:[],filters:{...DEFAULT_FILTERS},adj:{...DEFAULT_ADJ},deal:{...DEFAULT_DEAL},agentReports:{},claude:null,example:false,valSet:"arv"};
+    comps:[],filters:{...DEFAULT_FILTERS},adj:{...DEFAULT_ADJ},deal:{...DEFAULT_DEAL},agentReports:{},claude:null,example:false,copied:{}};
   if(example){
-    base.subject = {...EXAMPLE.subject};
+    base.subject = {...EXAMPLE.subject, ask:875000};
     base.comps = EXAMPLE.comps.map((c,i)=>({...c,id:"ex"+i,include:true,conflicts:[]}));
     base.agentReports = JSON.parse(JSON.stringify(EXAMPLE.agentReports));
     base.example = true;
   }
   return base;
 }
-const LS_KEY = "twin-comp-ai-draft-v1";
-try{ const raw = localStorage.getItem(LS_KEY); if(raw) S = JSON.parse(raw); }catch(e){}
+const LS_KEY = "twin-comp-ai-draft-v2";
+let S=null;
+try{ const raw=localStorage.getItem(LS_KEY); if(raw) S=JSON.parse(raw); }catch(e){}
 if(!S || !S.subject) S = freshState(true);
-S.filters = {...DEFAULT_FILTERS,...S.filters}; S.adj = {...DEFAULT_ADJ,...S.adj}; S.deal = {...DEFAULT_DEAL,...S.deal};
+S.filters={...DEFAULT_FILTERS,...S.filters}; S.adj={...DEFAULT_ADJ,...S.adj}; S.deal={...DEFAULT_DEAL,...S.deal}; S.copied=S.copied||{};
 function persist(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(S)); }catch(e){} }
 
 /* ---------- utils ---------- */
 const money = v => v==null||!isFinite(v) ? "—" : (v<0?"−$":"$") + Math.abs(Math.round(v)).toLocaleString("en-US");
-const kmoney = v => { if(v==null||!isFinite(v)) return "—"; const a=Math.abs(v); return (v<0?"-":"")+(a>=1e6?"$"+(a/1e6).toFixed(a>=1e7?1:3).replace(/0+$/,"").replace(/\.$/,"")+"M":"$"+Math.round(a/1000)+"K"); };
+const kmoney = v => { if(v==null||!isFinite(v)) return "—"; const a=Math.abs(v); const s=a>=1e6? "$"+(a/1e6).toFixed(3).replace(/0+$/,"").replace(/\.$/,"")+"M" : "$"+Math.round(a/1000)+"K"; return (v<0?"−":"")+s; };
 const pct = (v,d=1) => v==null||!isFinite(v) ? "—" : (v*100).toFixed(d)+"%";
-const num = v => { if(v===""||v==null) return null; const n = Number(String(v).replace(/[$,\s]/g,"")); return isFinite(n)?n:null; };
+const num = v => { if(v===""||v==null) return null; const n=Number(String(v).replace(/[$,\s]/g,"")); return isFinite(n)?n:null; };
 const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true,2200); }
-async function copyText(text, fallbackEl){
-  try{ await navigator.clipboard.writeText(text); toast("Copied to clipboard"); }
-  catch(e){ if(fallbackEl){ const r=document.createRange(); r.selectNodeContents(fallbackEl); const s=getSelection(); s.removeAllRanges(); s.addRange(r);} toast("Copy blocked here. Text is selected; press Ctrl/Cmd+C."); }
+const street = a => String(a||"").split(",")[0];
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true,2400); }
+async function copyText(text, msg){
+  try{ await navigator.clipboard.writeText(text); toast(msg||"Copied"); return true; }
+  catch(e){ const pre=$("promptPre"); pre.textContent=text; $("advComps").open=true; pre.parentElement.open=true; const r=document.createRange(); r.selectNodeContents(pre); const s=getSelection(); s.removeAllRanges(); s.addRange(r); pre.scrollIntoView({block:"center"}); toast("Copy was blocked. The text is selected below; press Ctrl/Cmd+C."); return false; }
 }
-function haversine(a,b,c,d){ const R=3958.8, t=x=>x*Math.PI/180; const dl=t(c-a), dn=t(d-b); const h=Math.sin(dl/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(dn/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
-function monthsAgo(dateStr){ if(!dateStr) return null; const d=new Date(dateStr+"T12:00:00"); if(isNaN(d)) return null; return Math.max(0,(Date.now()-d.getTime())/(30.44*864e5)); }
-function normAddr(a){ return String(a||"").toLowerCase().replace(/[.,#]/g," ").replace(/\b(street)\b/g,"st").replace(/\b(avenue)\b/g,"ave").replace(/\b(road)\b/g,"rd").replace(/\b(drive)\b/g,"dr").replace(/\b(boulevard)\b/g,"blvd").replace(/\b(terrace)\b/g,"ter").replace(/\b(court)\b/g,"ct").replace(/\b(place)\b/g,"pl").replace(/\b(lane)\b/g,"ln").replace(/\b(ca|california)\b/g,"").replace(/\b\d{5}(-\d{4})?\b/g,"").replace(/\s+/g," ").trim().split(" ").slice(0,4).join(" "); }
-function median(a){ if(!a.length) return null; const s=[...a].sort((x,y)=>x-y), m=s.length>>1; return s.length%2?s[m]:(s[m-1]+s[m])/2; }
-function mean(a){ return a.length? a.reduce((x,y)=>x+y,0)/a.length : null; }
-function wstats(vals, ws){ const W=ws.reduce((a,b)=>a+b,0); if(!W) return {m:null,sd:null}; const m=vals.reduce((a,v,i)=>a+v*ws[i],0)/W; const v=vals.reduce((a,x,i)=>a+ws[i]*(x-m)**2,0)/W; return {m,sd:Math.sqrt(v)}; }
-function condLabel(c){ const f=CONDS.find(x=>x[0]===Number(c)); return f?f[1]:"—"; }
+function haversine(a,b,c,d){ const R=3958.8,t=x=>x*Math.PI/180; const dl=t(c-a),dn=t(d-b); const h=Math.sin(dl/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(dn/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
+function monthsAgo(ds){ if(!ds) return null; const d=new Date(ds+"T12:00:00"); if(isNaN(d)) return null; return Math.max(0,(Date.now()-d.getTime())/(30.44*864e5)); }
+function normAddr(a){ return String(a||"").toLowerCase().replace(/[.,#]/g," ").replace(/\bstreet\b/g,"st").replace(/\bavenue\b/g,"ave").replace(/\broad\b/g,"rd").replace(/\bdrive\b/g,"dr").replace(/\bboulevard\b/g,"blvd").replace(/\bterrace\b/g,"ter").replace(/\bcourt\b/g,"ct").replace(/\bplace\b/g,"pl").replace(/\blane\b/g,"ln").replace(/\b(ca|california)\b/g,"").replace(/\b\d{5}(-\d{4})?\b/g,"").replace(/\s+/g," ").trim().split(" ").slice(0,4).join(" "); }
+const median = a => { if(!a.length) return null; const s=[...a].sort((x,y)=>x-y),m=s.length>>1; return s.length%2?s[m]:(s[m-1]+s[m])/2; };
+const mean = a => a.length? a.reduce((x,y)=>x+y,0)/a.length : null;
+function wstats(vals,ws){ const W=ws.reduce((a,b)=>a+b,0); if(!W) return {m:null,sd:null}; const m=vals.reduce((a,v,i)=>a+v*ws[i],0)/W; const v=vals.reduce((a,x,i)=>a+ws[i]*(x-m)**2,0)/W; return {m,sd:Math.sqrt(v)}; }
 
 /* ---------- engine ---------- */
+function effFilters(){
+  const f=S.filters, s=S.subject;
+  if(!f.auto) return f;
+  return {...f, types:[s.type||"SFR"],
+    bedsMin: s.beds!=null? Math.max(0,s.beds-1):0, bedsMax: s.beds!=null? s.beds+1:99,
+    bathsMin: s.baths!=null? Math.max(1,s.baths-1):0, bathsMax: s.baths!=null? s.baths+1:99,
+    sqftMin: s.sqft? Math.round(s.sqft*0.7/50)*50:0, sqftMax: s.sqft? Math.round(s.sqft*1.4/50)*50:99999,
+    yearMin: s.year? s.year-30:0, yearMax: s.year? s.year+30:9999};
+}
 function compute(){
-  const s=S.subject, f=S.filters, a=S.adj;
+  const s=S.subject, f=effFilters(), a=S.adj;
   const hasCoords = s.lat!=null && s.lng!=null;
   const rows = S.comps.map(c=>{
     const r={...c};
-    r.dist = (hasCoords && c.lat!=null && c.lng!=null) ? haversine(s.lat,s.lng,c.lat,c.lng) : (c.dist!=null?Number(c.dist):null);
+    r.dist = (hasCoords&&c.lat!=null&&c.lng!=null) ? haversine(s.lat,s.lng,c.lat,c.lng) : (c.dist!=null?Number(c.dist):null);
     r.months = monthsAgo(c.date);
-    r.ppsf = c.price && c.sqft ? c.price/c.sqft : null;
+    r.ppsf = c.price&&c.sqft ? c.price/c.sqft : null;
     r.isListing = c.status!=="Sold";
     const why=[];
     if(!c.price) why.push("no price");
-    if(r.dist!=null && r.dist>f.radius) why.push(`outside ${f.radius} mi`);
     if(r.dist==null) why.push("no location");
-    if(!f.types.includes(c.type)) why.push(`${c.type} not allowed`);
-    if(c.beds!=null && (c.beds<f.bedsMin||c.beds>f.bedsMax)) why.push(`${c.beds} bd`);
-    if(c.baths!=null && (c.baths<f.bathsMin||c.baths>f.bathsMax)) why.push(`${c.baths} ba`);
-    if(c.sqft!=null && (c.sqft<f.sqftMin||c.sqft>f.sqftMax)) why.push(`${c.sqft.toLocaleString()} sf`);
-    if(c.year!=null && (c.year<f.yearMin||c.year>f.yearMax)) why.push(`built ${c.year}`);
-    if(c.status==="Sold" && r.months!=null && r.months>f.months) why.push(`sold ${Math.round(r.months)} mo ago`);
+    else if(r.dist>f.radius) why.push(`over ${f.radius} mi away`);
+    if(!f.types.includes(c.type)) why.push(`${c.type}, not ${f.types.join("/")}`);
+    if(c.beds!=null&&(c.beds<f.bedsMin||c.beds>f.bedsMax)) why.push(`${c.beds} beds`);
+    if(c.baths!=null&&(c.baths<f.bathsMin||c.baths>f.bathsMax)) why.push(`${c.baths} baths`);
+    if(c.sqft!=null&&(c.sqft<f.sqftMin||c.sqft>f.sqftMax)) why.push(`${c.sqft.toLocaleString()} sf, too different`);
+    if(c.year!=null&&(c.year<f.yearMin||c.year>f.yearMax)) why.push(`built ${c.year}`);
+    if(c.status==="Sold"&&r.months!=null&&r.months>f.months) why.push(`sold ${Math.round(r.months)} months ago`);
     if(c.status==="Withdrawn") why.push("withdrawn");
-    if(c.include===false) why.push("rejected by you");
-    r.auto = why.filter(w=>w!=="rejected by you");
-    r.why = why;
-    r.eligible = why.length===0 || (c.include==="force");
+    if(c.include===false) why.push("thrown out by you");
+    r.why=why; r.eligible=why.length===0;
     return r;
   });
-  const soldPool = rows.filter(r=>r.status==="Sold" && r.ppsf);
-  const medPpsf = median((soldPool.filter(r=>r.eligible).length?soldPool.filter(r=>r.eligible):soldPool).map(r=>r.ppsf));
-  const glaRate = a.glaAuto==1 && medPpsf ? Math.round(medPpsf*0.5/5)*5 : a.gla;
-  const nAgents = Math.max(1, new Set(S.comps.flatMap(c=>c.agents||[])).size);
-
-  function scoreAndAdjust(r, targetCond){
-    const sc = {};
-    sc.loc = r.dist==null ? 0 : 30*Math.max(0,1-r.dist/Math.max(f.radius,0.1));
-    sc.gla = (s.sqft&&r.sqft) ? 20*Math.max(0,1-Math.abs(r.sqft-s.sqft)/(0.35*s.sqft)) : 8;
-    sc.type = r.type===s.type ? 15 : 0;
-    sc.cond = 15*Math.max(0,1-Math.abs((r.cond||3)-targetCond)/4);
-    sc.bb = 7*Math.max(0,1-((Math.abs((r.beds??s.beds)-(s.beds??0))*0.5)+(Math.abs((r.baths??s.baths)-(s.baths??0))*0.5))/2);
-    sc.lot = (s.lot&&r.lot) ? 5*Math.max(0,1-Math.abs(r.lot-s.lot)/s.lot) : (s.lot?0:2.5);
-    sc.rec = r.months==null ? 0 : 5*Math.max(0,1-r.months/Math.max(f.months,1));
-    sc.cons = 3*Math.min(1,((r.agents||[]).length)/nAgents);
-    const score = Object.values(sc).reduce((x,y)=>x+y,0);
-    const adj = {};
-    adj.time = r.status==="Sold" && r.months ? r.price*(a.time/100)*r.months : 0;
-    adj.gla = (s.sqft&&r.sqft) ? (s.sqft-r.sqft)*glaRate : 0;
-    adj.bed = (s.beds!=null&&r.beds!=null) ? (s.beds-r.beds)*a.bed : 0;
-    adj.bath = (s.baths!=null&&r.baths!=null) ? (s.baths-r.baths)*a.bath : 0;
-    adj.lot = (s.lot&&r.lot) ? (s.lot-r.lot)*a.lot : 0;
-    adj.cond = (targetCond-(r.cond||3))*(a.cond/100)*r.price;
-    const net = Object.values(adj).reduce((x,y)=>x+y,0);
-    const gross = Object.values(adj).reduce((x,y)=>x+Math.abs(y),0);
-    return {score, sc, adj, adjusted:r.price+net, net, gross, grossPct: gross/r.price};
+  const sold = rows.filter(r=>r.status==="Sold"&&r.ppsf);
+  const medPpsf = median((sold.filter(r=>r.eligible).length?sold.filter(r=>r.eligible):sold).map(r=>r.ppsf));
+  const glaRate = a.glaAuto==1&&medPpsf ? Math.round(medPpsf*0.5/5)*5 : a.gla;
+  const nAgents = Math.max(1,new Set(S.comps.flatMap(c=>c.agents||[])).size);
+  function scoreAdj(r,tc){
+    const sc={};
+    sc.loc = r.dist==null?0:30*Math.max(0,1-r.dist/Math.max(f.radius,0.1));
+    sc.gla = (s.sqft&&r.sqft)?20*Math.max(0,1-Math.abs(r.sqft-s.sqft)/(0.35*s.sqft)):8;
+    sc.type = r.type===s.type?15:0;
+    sc.cond = 15*Math.max(0,1-Math.abs((r.cond||3)-tc)/4);
+    sc.bb = (s.beds!=null&&s.baths!=null)? 7*Math.max(0,1-((Math.abs((r.beds??s.beds)-s.beds)*0.5)+(Math.abs((r.baths??s.baths)-s.baths)*0.5))/2) : 3.5;
+    sc.lot = (s.lot&&r.lot)?5*Math.max(0,1-Math.abs(r.lot-s.lot)/s.lot):(s.lot?0:2.5);
+    sc.rec = r.months==null?0:5*Math.max(0,1-r.months/Math.max(f.months,1));
+    sc.cons = 3*Math.min(1,(r.agents||[]).length/nAgents);
+    const score=Object.values(sc).reduce((x,y)=>x+y,0);
+    const adj={};
+    adj.time = r.status==="Sold"&&r.months? r.price*(a.time/100)*r.months:0;
+    adj.gla = (s.sqft&&r.sqft)?(s.sqft-r.sqft)*glaRate:0;
+    adj.bed = (s.beds!=null&&r.beds!=null)?(s.beds-r.beds)*a.bed:0;
+    adj.bath = (s.baths!=null&&r.baths!=null)?(s.baths-r.baths)*a.bath:0;
+    adj.lot = (s.lot&&r.lot)?(s.lot-r.lot)*a.lot:0;
+    adj.cond = (tc-(r.cond||3))*(a.cond/100)*r.price;
+    const net=Object.values(adj).reduce((x,y)=>x+y,0), gross=Object.values(adj).reduce((x,y)=>x+Math.abs(y),0);
+    return {score,sc,adj,adjusted:r.price+net,grossPct:gross/r.price};
   }
-
-  function valueFor(targetCond){
-    const cands = rows.filter(r=>r.eligible && r.price && (f.includeListings || !r.isListing))
-      .map(r=>({...r, ...scoreAndAdjust(r,targetCond)}))
-      .sort((x,y)=>y.score-x.score);
-    const used = cands.slice(0, f.topN);
+  function valueFor(tc){
+    const cands = rows.filter(r=>r.eligible&&r.price&&(f.includeListings||!r.isListing)).map(r=>({...r,...scoreAdj(r,tc)})).sort((x,y)=>y.score-x.score);
+    const used = cands.slice(0,f.topN||6);
     const ws = used.map(u=>u.score**2);
-    const {m,sd} = wstats(used.map(u=>u.adjusted), ws);
-    const W = ws.reduce((x,y)=>x+y,0);
-    used.forEach((u,i)=>u.weight = W? ws[i]/W : 0);
-    const cv = m? sd/m : 1;
-    const avgScore = mean(used.map(u=>u.score))||0;
-    const avgGross = mean(used.map(u=>u.grossPct))||0;
+    const {m,sd}=wstats(used.map(u=>u.adjusted),ws);
+    const W=ws.reduce((x,y)=>x+y,0); used.forEach((u,i)=>u.weight=W?ws[i]/W:0);
+    const cv=m?sd/m:1, avgScore=mean(used.map(u=>u.score))||0, avgGross=mean(used.map(u=>u.grossPct))||0;
     let conf = 100 - cv*400 - Math.max(0,5-used.length)*7 - Math.max(0,85-avgScore)*0.6 - Math.max(0,avgGross-0.2)*60;
-    conf = Math.max(30, Math.min(97, conf));
-    const half = m ? Math.max(sd, m*0.02) : null;
-    // methods
-    const soldUsed = used.filter(u=>u.status==="Sold");
-    const ppsfs = soldUsed.map(u=>u.ppsf);
-    const condFactor = u => 1 + (targetCond-(u.cond||3))*(a.cond/100);
-    const ppsfAdj = soldUsed.map(u=>u.ppsf*condFactor(u)*(1+(a.time/100)*(u.months||0)));
-    const sortedAdj = used.map(u=>u.adjusted).sort((x,y)=>x-y);
-    const trimmed = sortedAdj.length>=5 ? mean(sortedAdj.slice(1,-1)) : mean(sortedAdj);
-    const methods = {
-      "Weighted adjusted comps": m,
-      "Median adjusted comp": median(used.map(u=>u.adjusted)),
-      "Trimmed mean": trimmed,
-      "Median $/sf × subject sf": s.sqft && ppsfAdj.length ? median(ppsfAdj)*s.sqft : null,
-      "Top-3 nearest neighbors": used.length ? mean(used.slice(0,3).map(u=>u.adjusted)) : null
-    };
-    return {cands, used, value:m, sd, low: m?m-half:null, high: m?m+half:null, conf, cv, avgScore, avgGross, methods, rawPpsf: median(ppsfs)};
+    conf = used.length? Math.max(30,Math.min(97,conf)) : 0;
+    const half = m? Math.max(sd,m*0.02):null;
+    const soldUsed=used.filter(u=>u.status==="Sold");
+    const ppsfAdj=soldUsed.map(u=>u.ppsf*(1+(tc-(u.cond||3))*(a.cond/100))*(1+(a.time/100)*(u.months||0)));
+    const sortedAdj=used.map(u=>u.adjusted).sort((x,y)=>x-y);
+    const methods={"Weighted comps":m,"Median comp":median(sortedAdj),"Trimmed mean":sortedAdj.length>=5?mean(sortedAdj.slice(1,-1)):mean(sortedAdj),"Median $/sf × size":s.sqft&&ppsfAdj.length?median(ppsfAdj)*s.sqft:null,"Top 3 closest matches":used.length?mean(used.slice(0,3).map(u=>u.adjusted)):null};
+    return {cands,used,value:m,sd,low:m?m-half:null,high:m?m+half:null,conf,methods};
   }
-  const asis = valueFor(s.cond||2);
-  const arv = valueFor(Number(a.arvCond)||4);
-  const competition = rows.filter(r=>(r.status==="Active"||r.status==="Pending") && r.dist!=null && r.dist<=f.radius && f.types.includes(r.type));
-  return {rows, asis, arv, glaRate, medPpsf, competition, nAgents};
+  const asis=valueFor(s.cond||2), arv=valueFor(Number(a.arvCond)||4);
+  const competition = rows.filter(r=>(r.status==="Active"||r.status==="Pending")&&r.dist!=null&&r.dist<=f.radius&&f.types.includes(r.type));
+  return {rows,asis,arv,glaRate,medPpsf,competition,nAgents,f};
 }
 
-/* ---------- inputs binding ---------- */
-function fillSelect(el, opts){ el.innerHTML = opts.map(([v,l])=>`<option value="${v}">${esc(l)}</option>`).join(""); }
-fillSelect($("s_cond"), CONDS); fillSelect($("c_cond"), CONDS); fillSelect($("a_arvCond"), CONDS.filter(c=>c[0]>=3));
-
-const SUBJ_FIELDS = {s_address:"address",s_lat:"lat",s_lng:"lng",s_beds:"beds",s_baths:"baths",s_year:"year",s_sqft:"sqft",s_lot:"lot",s_type:"type",s_cond:"cond",s_ask:"ask",s_notes:"notes"};
-const FILT_FIELDS = {f_bedsMin:"bedsMin",f_bedsMax:"bedsMax",f_bathsMin:"bathsMin",f_bathsMax:"bathsMax",f_sqftMin:"sqftMin",f_sqftMax:"sqftMax",f_yearMin:"yearMin",f_yearMax:"yearMax",f_months:"months",f_topN:"topN"};
-const ADJ_FIELDS = {a_gla:"gla",a_glaAuto:"glaAuto",a_bed:"bed",a_bath:"bath",a_lot:"lot",a_cond:"cond",a_time:"time",a_arvCond:"arvCond"};
-const DEAL_FIELDS = {d_reno:"reno",d_sell:"sell",d_hold:"hold",d_cont:"cont",d_profit:"profit",d_arvSrc:"arvSrc",d_juan:"juan"};
-const TEXTS = new Set(["address","type","notes","arvSrc"]);
-function bind(map, objKey){
+/* ---------- bindings ---------- */
+function fillSelect(el,opts){ el.innerHTML=opts.map(([v,l])=>`<option value="${v}">${esc(l)}</option>`).join(""); }
+fillSelect($("c_cond"),CONDS.map(c=>[c[0],c[0]+" · "+c[1]])); fillSelect($("a_arvCond"),CONDS.filter(c=>c[0]>=3).map(c=>[c[0],c[0]+" · "+c[1]]));
+const SUBJ = {s_address:"address",s_lat:"lat",s_lng:"lng",s_beds:"beds",s_baths:"baths",s_year:"year",s_sqft:"sqft",s_lot:"lot",s_type:"type",s_ask:"ask",s_notes:"notes"};
+const FILT = {f_bedsMin:"bedsMin",f_bedsMax:"bedsMax",f_bathsMin:"bathsMin",f_bathsMax:"bathsMax",f_sqftMin:"sqftMin",f_sqftMax:"sqftMax",f_yearMin:"yearMin",f_yearMax:"yearMax",f_months:"months",f_topN:"topN"};
+const ADJ = {a_gla:"gla",a_glaAuto:"glaAuto",a_bed:"bed",a_bath:"bath",a_lot:"lot",a_cond:"cond",a_time:"time",a_arvCond:"arvCond"};
+const DEAL = {d_reno:"reno",d_sell:"sell",d_hold:"hold",d_cont:"cont",d_profit:"profit",d_juan:"juan"};
+const TEXT = new Set(["address","type","notes"]);
+function bind(map,key){
   for(const [id,k] of Object.entries(map)){
-    const el=$(id); const v=S[objKey][k]; el.value = v==null?"":v;
-    el.addEventListener("input",()=>{ S[objKey][k] = TEXTS.has(k) ? el.value : num(el.value); if(k==="cond"||k==="arvCond"||k==="glaAuto") S[objKey][k]=Number(el.value); render(); });
+    const el=$(id);
+    el.addEventListener("input",()=>{
+      if(key==="filters" && S.filters.auto){ S.filters={...effFilters(),auto:false}; }
+      S[key][k] = TEXT.has(k)? el.value : num(el.value);
+      if(k==="glaAuto"||k==="arvCond") S[key][k]=Number(el.value);
+      if(key==="subject"&&k!=="address"&&k!=="ask"&&k!=="notes") S.claude=null;
+      render();
+    });
   }
 }
-bind(SUBJ_FIELDS,"subject"); bind(FILT_FIELDS,"filters"); bind(ADJ_FIELDS,"adj"); bind(DEAL_FIELDS,"deal");
-$("f_includeListings").checked = !!S.filters.includeListings;
+bind(SUBJ,"subject"); bind(FILT,"filters"); bind(ADJ,"adj"); bind(DEAL,"deal");
 $("f_includeListings").addEventListener("change",e=>{S.filters.includeListings=e.target.checked; render();});
-function refreshInputs(){
-  for(const [id,k] of Object.entries(SUBJ_FIELDS)) $(id).value = S.subject[k]??"";
-  for(const [id,k] of Object.entries(FILT_FIELDS)) $(id).value = S.filters[k]??"";
-  for(const [id,k] of Object.entries(ADJ_FIELDS)) $(id).value = S.adj[k]??"";
-  for(const [id,k] of Object.entries(DEAL_FIELDS)) $(id).value = S.deal[k]??"";
-  $("f_includeListings").checked = !!S.filters.includeListings;
-}
-$("resetFilters").onclick = ()=>{ S.filters={...DEFAULT_FILTERS}; refreshInputs(); render(); };
-$("clearExample").onclick = ()=>{ S = freshState(false); refreshInputs(); render(); toast("Blank property ready"); };
-
-function renderChips(){
-  $("radiusChips").innerHTML = RADII.map(r=>`<button type="button" class="chipbtn" aria-pressed="${S.filters.radius===r}" data-r="${r}">${r}</button>`).join("");
-  $("radiusChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.filters.radius=Number(b.dataset.r); render();});
-  $("typeChips").innerHTML = TYPES.map(t=>`<button type="button" class="chipbtn" aria-pressed="${S.filters.types.includes(t)}" data-t="${t}">${t}</button>`).join("");
-  $("typeChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{const t=b.dataset.t; S.filters.types = S.filters.types.includes(t)?S.filters.types.filter(x=>x!==t):[...S.filters.types,t]; render();});
-  $("setChips").innerHTML = [["arv","ARV set"],["asis","As-is set"]].map(([k,l])=>`<button type="button" class="chipbtn" aria-pressed="${S.valSet===k}" data-k="${k}">${l}</button>`).join("");
-  $("setChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.valSet=b.dataset.k; render();});
-}
+$("f_auto").addEventListener("change",e=>{ if(e.target.checked) S.filters={...DEFAULT_FILTERS,radius:S.filters.radius,months:S.filters.months,topN:S.filters.topN,includeListings:S.filters.includeListings,auto:true}; else S.filters={...effFilters(),auto:false}; render(); });
+function setVals(map,obj){ for(const [id,k] of Object.entries(map)){ const el=$(id); if(document.activeElement!==el) el.value = obj[k]??""; } }
+$("clearExample").onclick=()=>{ S=freshState(false); render(); $("s_address").focus(); toast("Blank property ready"); };
 
 /* ---------- render ---------- */
 let R=null, hlId=null;
-function tierColor(score, eligible){ if(!eligible) return "var(--pin-out)"; return score>=80?"var(--pin-match)":score>=65?"var(--pin-similar)":"var(--pin-wide)"; }
-
+const tier = (sc,ok)=> !ok?"var(--pin-out)": sc>=80?"var(--pin-match)": sc>=65?"var(--pin-similar)":"var(--pin-wide)";
 function render(){
-  R = compute();
-  persist();
-  $("exampleNote").hidden = !S.example;
-  renderChips();
-  renderKpis(); renderCompList(); renderPool(); renderMap(); renderAgents(); renderDeal(); renderClaudeReport();
+  R=compute(); persist();
+  $("exampleNote").hidden=!S.example;
+  setVals(SUBJ,S.subject); setVals(ADJ,S.adj); setVals(DEAL,S.deal); setVals(FILT,R.f);
+  $("f_auto").checked=!!S.filters.auto; $("f_includeListings").checked=!!S.filters.includeListings;
+  const s=S.subject;
+  const facts=[s.beds!=null?s.beds+" bd":null,s.baths!=null?s.baths+" ba":null,s.sqft?s.sqft.toLocaleString()+" sf":null,s.year?"built "+s.year:null].filter(Boolean);
+  $("factsSummary").textContent = facts.length? facts.join(" · ") : "blank, the AIs will fill these in";
+  $("condRow").innerHTML = CONDS.map(([v,l,d])=>`<button type="button" class="condbtn" aria-pressed="${Number(s.cond)===v}" data-v="${v}"><b>${l}</b><span>${d}</span></button>`).join("");
+  $("condRow").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.subject.cond=Number(b.dataset.v); render();});
+  renderAgents(); renderAnswer(); renderPool(); renderMap(); renderClaude(); renderRules();
+}
+function renderRules(){
+  const f=R.f;
+  $("radiusChips").innerHTML=RADII.map(r=>`<button type="button" class="chipbtn" aria-pressed="${f.radius===r}" data-r="${r}">${r}</button>`).join("");
+  $("radiusChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.filters.radius=Number(b.dataset.r); render();});
+  $("typeChips").innerHTML=TYPES.map(t=>`<button type="button" class="chipbtn" aria-pressed="${f.types.includes(t)}" data-t="${t}">${t}</button>`).join("");
+  $("typeChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{ if(S.filters.auto) S.filters={...effFilters(),auto:false}; const t=b.dataset.t; S.filters.types=S.filters.types.includes(t)?S.filters.types.filter(x=>x!==t):[...S.filters.types,t]; render();});
+  const set=R.arv;
+  $("methods").innerHTML = set.value? `<table><tbody>${Object.entries(set.methods).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${kmoney(v)}</td><td class="n muted">${v?((v-set.value)/set.value>=0?"+":"")+pct((v-set.value)/set.value):""}</td></tr>`).join("")}</tbody></table><p class="muted" style="margin:6px 0 0">ARV by five methods. If they spread more than 5%, the comps disagree.</p>` : `<span class="muted">No value yet.</span>`;
 }
 
-function renderKpis(){
-  const {asis,arv} = R;
-  const cls = c => c>=85?"good":c>=70?"warn":"bad";
-  const c = S.valSet==="arv"?arv.conf:asis.conf;
-  $("confPill").innerHTML = arv.value ? `<span class="pill ${cls(c)}">${Math.round(c)}% confidence</span>` : "";
-  $("kpis").innerHTML = `
-    <div class="kpi"><div class="k">As-is value</div><div class="v">${kmoney(asis.value)}</div><div class="r">${kmoney(asis.low)} – ${kmoney(asis.high)}</div></div>
-    <div class="kpi hero"><div class="k">Renovated ARV</div><div class="v">${kmoney(arv.value)}</div><div class="r">${kmoney(arv.low)} – ${kmoney(arv.high)}</div></div>
-    <div class="kpi"><div class="k">Sold $/sf (median)</div><div class="v">${R.medPpsf?money(R.medPpsf):"—"}</div><div class="r">GLA adj ${money(R.glaRate)}/sf</div></div>`;
-  // disagreement
-  const ests = [];
-  for(const ag of AGENTS){ const rep=S.agentReports[ag.key]; if(rep && rep.value_arv) ests.push({name:ag.name, arv:rep.value_arv, asis:rep.value_as_is}); }
-  if(S.claude && S.claude.arv) ests.push({name:"Claude", arv:S.claude.arv, asis:S.claude.as_is_value});
-  let html="";
-  if(ests.length && arv.value){
-    const all = [...ests.map(e=>e.arv), arv.value];
-    const spread = (Math.max(...all)-Math.min(...all))/arv.value;
-    const rowsH = ests.map(e=>{ const d=(e.arv-arv.value)/arv.value; return `<tr><td>${esc(e.name)}</td><td class="n">${kmoney(e.asis)}</td><td class="n">${kmoney(e.arv)}</td><td class="n" style="color:${Math.abs(d)>0.07?'var(--bad)':'var(--muted)'}">${d>=0?"+":""}${pct(d)}</td></tr>`; }).join("");
-    html += `<div class="tblwrap"><table><thead><tr><th>Opinion</th><th class="n">As-is</th><th class="n">ARV</th><th class="n">vs engine</th></tr></thead><tbody>${rowsH}<tr><td><b>Engine</b></td><td class="n"><b>${kmoney(asis.value)}</b></td><td class="n"><b>${kmoney(arv.value)}</b></td><td class="n">—</td></tr></tbody></table></div>`;
-    if(spread>0.07) html += `<div class="warnbox" style="margin-top:8px"><h3>Low agreement: ${pct(spread)} spread</h3>Opinions differ by more than 7%. Look at which comps drive the high and low numbers before trusting either. Juan review recommended.</div>`;
-  }
-  if(arv.used.length && arv.used.length<3) html += `<div class="warnbox bad" style="margin-top:8px"><h3>Too few comps</h3>Only ${arv.used.length} comp(s) pass the rules. Widen the radius or date window, or send the research prompts.</div>`;
-  $("disagree").innerHTML = html;
-  const set = S.valSet==="arv"?arv:asis;
-  $("methods").innerHTML = Object.entries(set.methods).map(([k,v])=>`<div class="kpi"><div class="k" style="text-transform:none">${esc(k)}</div><div class="v" style="font-size:16px">${kmoney(v)}</div><div class="r">${set.value&&v?((v-set.value)/set.value>=0?"+":"")+pct((v-set.value)/set.value):""}</div></div>`).join("");
-  const comp = R.competition;
-  $("competition").innerHTML = `<div class="${comp.length>4?'warnbox':'okbox'}" style="margin-top:8px"><h3 style="font-size:15px;margin-bottom:4px">Active competition: ${comp.length}</h3>${comp.length? comp.map(c=>`${esc(c.address.split(",")[0])} · ${c.status} ${kmoney(c.price)} · ${c.sqft||"?"} sf · cond ${c.cond}`).join("<br>") : "No active or pending listings of an allowed type inside the radius. Scarcity supports the upper half of the range."}</div>`;
-}
-
-function renderCompList(){
-  const set = S.valSet==="arv"?R.arv:R.asis;
-  if(!set.used.length){ $("compList").innerHTML = `<div class="pb muted">No comps pass the rules yet.</div>`; return; }
-  $("compList").innerHTML = set.used.map((u,i)=>{
-    const tags = [];
-    tags.push(`<span class="pill ${u.score>=80?'info':u.score>=65?'good':'warn'}">${Math.round(u.score)} match</span>`);
-    tags.push(`<span class="pill mute">${esc(condLabel(u.cond))}</span>`);
-    if((u.agents||[]).length) tags.push(`<span class="pill mute">${u.agents.length}/${R.nAgents} AIs</span>`);
-    if(!(u.src||[]).length) tags.push(`<span class="pill warn">no source</span>`);
-    if((u.conflicts||[]).length) tags.push(`<span class="pill bad">fact conflict</span>`);
-    if(u.isListing) tags.push(`<span class="pill warn">${u.status}</span>`);
-    return `<div class="comp ${hlId===u.id?'hl':''}" data-id="${u.id}">
-      <div class="rank" style="background:${tierColor(u.score,true)}">${i+1}</div>
-      <div><div class="addr">${esc(u.address.split(",")[0])}</div>
-        <div class="meta">${u.beds??"?"} bd · ${u.baths??"?"} ba · ${u.sqft?u.sqft.toLocaleString():"?"} sf · ${u.lot?u.lot.toLocaleString()+" lot":"no lot"} · ${u.year||"?"}</div>
-        <div class="meta">${u.dist!=null?u.dist.toFixed(2)+" mi":"? mi"} · ${u.status} ${u.date||""}</div>
-        <div class="tags">${tags.join("")}</div></div>
-      <div class="right"><div class="price">${money(u.price)}</div><div class="adj">adj ${money(u.adjusted)}</div><div class="adj">${u.ppsf?money(u.ppsf)+"/sf":""}</div><div class="adj">weight ${pct(u.weight,0)}</div></div>
-    </div>`;
-  }).join("");
-  $("compList").querySelectorAll(".comp").forEach(el=>{ el.onmouseenter=()=>highlight(el.dataset.id); el.onclick=()=>highlight(el.dataset.id,true); });
-}
-
-function renderPool(){
-  const set = S.valSet==="arv"?R.arv:R.asis;
-  const byId = Object.fromEntries(set.cands.map(c=>[c.id,c]));
-  const usedIds = new Set(set.used.map(u=>u.id));
-  const rows = [...R.rows].sort((a,b)=>(byId[b.id]?.score??-1)-(byId[a.id]?.score??-1));
-  $("poolSub").textContent = `${R.rows.length} found · ${set.cands.length} pass · ${set.used.length} used`;
-  $("poolTable").innerHTML = `<thead><tr><th>Use</th><th>Address</th><th>Status</th><th class="n">Price</th><th class="n">$/sf</th><th class="n">Sf</th><th class="n">Bd/Ba</th><th class="n">Mi</th><th>Condition</th><th class="n">Score</th><th class="n">Adjusted</th><th>AIs</th><th>Why rejected / flags</th><th></th></tr></thead><tbody>`+
-  rows.map(r=>{
-    const c = byId[r.id];
-    const out = !r.eligible;
-    const flags = [...r.why, ...((r.conflicts||[]))].map(esc).join("; ");
-    return `<tr class="${out?'out':''}" data-id="${r.id}">
-      <td><input type="checkbox" data-act="inc" ${r.include!==false?"checked":""} aria-label="Use comp"></td>
-      <td class="addr">${usedIds.has(r.id)?"<b>":""}${r.src&&r.src[0]?`<a href="${esc(r.src[0])}" target="_blank" rel="noopener">${esc(r.address.split(",")[0])}</a>`:esc(r.address.split(",")[0])}${usedIds.has(r.id)?"</b>":""}</td>
-      <td>${esc(r.status)}</td><td class="n">${money(r.price)}</td><td class="n">${r.ppsf?Math.round(r.ppsf):"—"}</td><td class="n">${r.sqft??"—"}</td><td class="n">${r.beds??"?"}/${r.baths??"?"}</td><td class="n">${r.dist!=null?r.dist.toFixed(2):"—"}</td>
-      <td><select data-act="cond" aria-label="Condition">${CONDS.map(([v,l])=>`<option value="${v}" ${Number(r.cond)===v?"selected":""}>${l}</option>`).join("")}</select></td>
-      <td class="n">${c?Math.round(c.score):"—"}</td><td class="n">${c?money(c.adjusted):"—"}</td>
-      <td>${(r.agents||[]).map(a=>esc((AGENTS.find(x=>x.key===a)||{name:a}).name.split(" ")[0])).join(", ")||"you"}</td>
-      <td style="white-space:normal;min-width:160px;color:${out?'var(--bad)':'var(--warn)'}">${flags}</td>
-      <td><button class="btn small" data-act="edit" type="button">Edit</button> <button class="btn small" data-act="del" type="button" aria-label="Delete comp">✕</button></td>
-    </tr>`;
-  }).join("")+"</tbody>";
-  $("poolTable").querySelectorAll("tr[data-id]").forEach(tr=>{
-    const id=tr.dataset.id, comp=S.comps.find(c=>c.id===id);
-    tr.querySelector('[data-act=inc]').onchange=e=>{comp.include=e.target.checked?true:false; render();};
-    tr.querySelector('[data-act=cond]').onchange=e=>{comp.cond=Number(e.target.value); render();};
-    tr.querySelector('[data-act=edit]').onclick=()=>openCompForm(comp);
-    tr.querySelector('[data-act=del]').onclick=()=>{ if(tr.dataset.confirm){ S.comps=S.comps.filter(c=>c.id!==id); render(); } else { tr.dataset.confirm="1"; tr.querySelector('[data-act=del]').textContent="Delete?"; } };
-    tr.onmouseenter=()=>highlight(id);
+/* ---------- step 2 ---------- */
+let lastCopied = null;
+function renderAgents(){
+  const nComps=S.comps.length, usable=R.arv.cands.length;
+  const done=AGENTS.filter(a=>S.agentReports[a.key]).length;
+  $("progress").innerHTML = `<b>${done}</b> of 5 AIs in · <b>${nComps}</b> comps found · <b>${usable}</b> usable`;
+  $("aiGrid").innerHTML = AGENTS.map(a=>{ const d=!!S.agentReports[a.key];
+    return `<div class="ai ${d?'done':''}"><div class="nm">${esc(a.name)}${d?'<span class="ck">✓ in</span>':''}</div><div class="jb">${esc(a.job)}</div>
+    <button class="btn ${d?'':'primary'} small" type="button" data-k="${a.key}">${d?"Copy again":"Copy prompt"}</button></div>`; }).join("");
+  $("aiGrid").querySelectorAll("button").forEach(b=>b.onclick=async()=>{
+    const ag=AGENTS.find(x=>x.key===b.dataset.k);
+    if(ag.quant && R.arv.cands.length<3){ toast("Get comps from the other AIs first"); return; }
+    if(!S.subject.address){ toast("Type the address first"); $("s_address").focus(); return; }
+    lastCopied=ag.key; $("pasteFrom").value=ag.key;
+    await copyText(agentPrompt(ag), `${ag.name} prompt copied. Paste it into ${ag.name}.`);
   });
+  const sel=$("pasteFrom"), cur=sel.value||lastCopied||"auto";
+  sel.innerHTML=`<option value="auto">Detect automatically</option>`+AGENTS.map(a=>`<option value="${a.key}">${esc(a.name)}</option>`).join("");
+  sel.value=cur;
 }
-
-function renderMap(){
-  const svg=$("map"), s=S.subject, f=S.filters;
-  const W=600,H=440,cx=W/2,cy=H/2, rpx=180;
-  const scale = rpx/Math.max(f.radius,0.1);
-  const set = S.valSet==="arv"?R.arv:R.asis;
-  const byId = Object.fromEntries(set.cands.map(c=>[c.id,c]));
-  const rank = Object.fromEntries(set.used.map((u,i)=>[u.id,i+1]));
-  let g = `<rect x="0" y="0" width="${W}" height="${H}" fill="var(--map-bg)"/>`;
-  for(let x=0;x<=W;x+=40) g+=`<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="var(--line)" stroke-width="0.5" opacity=".6"/>`;
-  for(let y=0;y<=H;y+=40) g+=`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="var(--line)" stroke-width="0.5" opacity=".6"/>`;
-  [0.25,0.5,0.75].forEach(k=>{ g+=`<circle cx="${cx}" cy="${cy}" r="${rpx*k}" fill="none" stroke="var(--map-ring)" stroke-opacity=".25" stroke-width="1"/>`; g+=`<text x="${cx+4}" y="${cy-rpx*k-3}" font-size="10" fill="var(--muted)" font-family="JetBrains Mono,monospace">${+(f.radius*k).toFixed(2)} mi</text>`; });
-  g+=`<circle cx="${cx}" cy="${cy}" r="${rpx}" fill="var(--map-ring)" fill-opacity=".05" stroke="var(--map-ring)" stroke-width="2" stroke-dasharray="6 5"/>`;
-  g+=`<rect x="${cx-44}" y="${cy-rpx-24}" width="88" height="20" rx="10" fill="var(--map-ring)"/><text x="${cx}" y="${cy-rpx-10}" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--accent-ink)" font-family="Source Sans 3,sans-serif">${f.radius} mile radius</text>`;
-  g+=`<text x="${W-14}" y="22" text-anchor="end" font-size="11" fill="var(--muted)" font-family="Source Sans 3,sans-serif">N ↑</text>`;
-  let plotted=0, missing=0;
-  const hasC = s.lat!=null&&s.lng!=null;
-  const pins=[];
-  R.rows.forEach(r=>{
-    if(!hasC || r.lat==null || r.lng==null){ missing++; return; }
-    const dx=(r.lng-s.lng)*Math.cos(s.lat*Math.PI/180)*69.17, dy=(r.lat-s.lat)*69.0;
-    let x=cx+dx*scale, y=cy-dy*scale;
-    const off = x<8||x>W-8||y<8||y>H-8;
-    x=Math.max(10,Math.min(W-10,x)); y=Math.max(10,Math.min(H-10,y));
-    const c=byId[r.id]; const elig=!!c;
-    pins.push({r,x,y,c,elig,off,rk:rank[r.id]});
-    plotted++;
-  });
-  pins.sort((a,b)=>(a.elig?1:0)-(b.elig?1:0));
-  pins.forEach(p=>{
-    const col = tierColor(p.c?p.c.score:0, p.elig);
-    const isL = p.r.status!=="Sold";
-    const label = p.rk ? p.rk : "";
-    const hl = hlId===p.r.id;
-    if(!p.elig) g+=`<g class="pin" data-id="${p.r.id}" style="cursor:pointer"><circle cx="${p.x}" cy="${p.y}" r="${hl?9:6}" fill="var(--surface)" stroke="${col}" stroke-width="2.5"/></g>`;
-    else g+=`<g class="pin" data-id="${p.r.id}" style="cursor:pointer"><circle cx="${p.x}" cy="${p.y}" r="${hl?15:11}" fill="${col}" stroke="var(--surface)" stroke-width="2" ${isL?'stroke-dasharray="3 2"':''}/>${label?`<text x="${p.x}" y="${p.y+4}" text-anchor="middle" font-size="11" font-weight="700" fill="#fff" font-family="JetBrains Mono,monospace">${label}</text>`:`<text x="${p.x}" y="${p.y+4}" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">${isL?"L":"·"}</text>`}</g>`;
-  });
-  if(hasC){ g+=`<g><path d="M${cx} ${cy-22} l12 12 v12 h-24 v-12 z" fill="var(--pin-subject)" stroke="var(--surface)" stroke-width="2"/><text x="${cx}" y="${cy+18}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)" font-family="Source Sans 3,sans-serif">SUBJECT</text></g>`; }
-  else g+=`<text x="${cx}" y="${cy}" text-anchor="middle" font-size="14" fill="var(--muted)" font-family="Source Sans 3,sans-serif">Enter the subject's latitude and longitude to plot comps</text>`;
-  svg.innerHTML = g;
-  $("mapSub").textContent = `${plotted} plotted${missing?` · ${missing} without coordinates`:""}`;
-  const tip=$("mapTip");
-  svg.querySelectorAll(".pin").forEach(el=>{
-    const p = pins.find(p=>p.r.id===el.dataset.id);
-    el.onmouseenter=()=>{ const box=$("mapbox").getBoundingClientRect(); const sx=box.width/W; tip.hidden=false; tip.style.left=Math.min(box.width-220,p.x*sx+12)+"px"; tip.style.top=(p.y*sx+12)+"px";
-      tip.innerHTML=`<b>${esc(p.r.address.split(",")[0])}</b><br>${p.r.status} ${money(p.r.price)} · ${p.r.sqft||"?"} sf<br>${p.r.dist!=null?p.r.dist.toFixed(2)+" mi · ":""}${p.c?Math.round(p.c.score)+" match":"<span style='color:var(--bad)'>"+esc(p.r.why.join(", "))+"</span>"}`; };
-    el.onmouseleave=()=>tip.hidden=true;
-    el.onclick=()=>highlight(p.r.id,true);
-  });
-}
-function highlight(id, scroll){
-  if(hlId===id && !scroll) return;
-  hlId=id; renderMap();
-  document.querySelectorAll(".comp").forEach(el=>el.classList.toggle("hl",el.dataset.id===id));
-  if(scroll){ const el=document.querySelector(`.comp[data-id="${CSS.escape(id)}"]`); if(el) el.scrollIntoView({block:"nearest",behavior:"smooth"}); }
-}
-
-/* ---------- comp form ---------- */
-let editing=null;
-const CF = {c_address:"address",c_status:"status",c_price:"price",c_date:"date",c_beds:"beds",c_baths:"baths",c_sqft:"sqft",c_lot:"lot",c_year:"year",c_type:"type",c_cond:"cond",c_lat:"lat",c_lng:"lng",c_dist:"dist",c_notes:"notes"};
-function openCompForm(comp){
-  editing = comp||null;
-  $("compFormTitle").textContent = comp?"Edit comp":"Add comp";
-  for(const [id,k] of Object.entries(CF)) $(id).value = comp? (comp[k]??"") : (k==="status"?"Sold":k==="type"?"SFR":k==="cond"?3:"");
-  $("c_src").value = comp? (comp.src||[]).join(", ") : "";
-  $("compForm").hidden=false; $("c_address").focus();
-}
-$("addCompBtn").onclick=()=>openCompForm(null);
-$("cancelComp").onclick=()=>{$("compForm").hidden=true;};
-$("saveComp").onclick=()=>{
-  const o={};
-  for(const [id,k] of Object.entries(CF)){ const v=$(id).value; o[k] = ["address","status","date","type","notes"].includes(k)? v : num(v); }
-  o.cond = Number(o.cond)||3;
-  o.src = $("c_src").value.split(",").map(x=>x.trim()).filter(Boolean);
-  if(!o.address || !o.price){ toast("Address and price are required"); return; }
-  if(editing) Object.assign(editing,o);
-  else S.comps.push({...o,id:"c"+Date.now().toString(36),include:true,agents:[],conflicts:[]});
-  S.example=false;
-  $("compForm").hidden=true; render(); toast("Comp saved");
-};
-
-/* ---------- agents ---------- */
-let activeAgent = "chatgpt";
 const JSON_SPEC = `Return ONLY one JSON object, no other text, in exactly this shape:
 {
   "agent": "<your name>",
+  "subject_facts": {"beds":0,"baths":0,"sqft":0,"lot_sqft":0,"year_built":0,"property_type":"SFR","lat":0.0,"lng":0.0},
   "comps": [
     {"address": "full street address, city, state zip",
      "status": "Sold" | "Pending" | "Active" | "Withdrawn",
      "price": 0, "date": "YYYY-MM-DD",
      "beds": 0, "baths": 0, "sqft": 0, "lot_sqft": 0, "year_built": 0,
      "property_type": "SFR" | "Condo" | "Townhome" | "2-4 Unit",
-     "condition": 1-5,  // 1 heavy fixer, 2 dated/original, 3 clean cosmetic, 4 updated, 5 high-end remodel
+     "condition": 1-5,
      "lat": 0.0, "lng": 0.0, "distance_mi": 0.0,
      "source_urls": ["https://..."],
      "notes": "view, busy street, remodel details, conflicting facts"}
@@ -874,303 +656,369 @@ const JSON_SPEC = `Return ONLY one JSON object, no other text, in exactly this s
   "value_arv": 0,
   "risks": ["..."]
 }
-RULES: Only real, verifiable transactions. Never invent an address, price or date. If you are not sure a sale happened, leave it out. A short honest list beats a long guessed one. Use numbers without $ or commas.`;
-
+Condition scale: 1 heavy fixer, 2 dated/original, 3 clean cosmetic, 4 updated kitchen and baths, 5 high-end remodel. Judge it from listing photos and remarks.
+RULES: Only real, verifiable transactions. Never invent an address, price or date. If you are not sure a sale happened, leave it out. A short honest list beats a long guessed one. Numbers without $ or commas. Give lat/lng for every comp if you can.`;
 function subjectFile(){
-  const s=S.subject, f=S.filters;
-  return `SUBJECT PROPERTY FILE
+  const s=S.subject, f=R.f, v=x=>x==null||x===""?"unknown, look it up":x;
+  return `SUBJECT PROPERTY
 Address: ${s.address||"(not set)"}
-Coordinates: ${s.lat??"?"}, ${s.lng??"?"}
-Type: ${s.type} · ${s.beds??"?"} bed / ${s.baths??"?"} bath · ${s.sqft??"?"} sf living · ${s.lot??"?"} sf lot · built ${s.year??"?"}
-Current condition: ${condLabel(s.cond)}
-Location notes: ${s.notes||"none"}
+Type: ${v(s.type)} · Beds: ${v(s.beds)} · Baths: ${v(s.baths)} · Living sf: ${v(s.sqft)} · Lot sf: ${v(s.lot)} · Year built: ${v(s.year)}
+Coordinates: ${s.lat!=null?s.lat+", "+s.lng:"unknown, look it up"}
+Condition today: ${s.cond} (${condLabel(s.cond)})
+Notes: ${s.notes||"none"}
 Today's date: ${new Date().toISOString().slice(0,10)}
 
 COMP RULES
-Radius: up to ${f.radius} mi · Types: ${f.types.join(", ")} · Beds ${f.bedsMin}-${f.bedsMax} · Baths ${f.bathsMin}-${f.bathsMax}
-Living area ${f.sqftMin}-${f.sqftMax} sf · Built ${f.yearMin}-${f.yearMax} · Sold within last ${f.months} months
-We need TWO comp sets: an AS-IS set (dated/original, condition 1-3) and an ARV set (renovated and staged, condition 4-5).`;
+Up to ${f.radius} mi · ${f.types.join("/")} only · sold within ${f.months} months${s.beds!=null?` · ${f.bedsMin}-${f.bedsMax} beds`:""}${s.sqft?` · ${f.sqftMin}-${f.sqftMax} sf`:""}
+We need TWO comp sets: AS-IS comps (dated/original, condition 1-3) and ARV comps (renovated and staged, condition 4-5).`;
 }
-function poolDataset(){
-  const set = R.arv;
-  return R.rows.filter(r=>r.eligible).map(r=>{ const c=set.cands.find(x=>x.id===r.id); return {address:r.address,status:r.status,price:r.price,date:r.date,beds:r.beds,baths:r.baths,sqft:r.sqft,lot:r.lot,year:r.year,condition:r.cond,distance_mi:r.dist!=null?+r.dist.toFixed(2):null,price_per_sf:r.ppsf?Math.round(r.ppsf):null,similarity:c?Math.round(c.score):null,notes:r.notes||""}; });
-}
+function poolDataset(){ return R.rows.filter(r=>r.eligible).map(r=>{ const c=R.arv.cands.find(x=>x.id===r.id); return {address:r.address,status:r.status,price:r.price,date:r.date,beds:r.beds,baths:r.baths,sqft:r.sqft,lot:r.lot,year:r.year,condition:r.cond,distance_mi:r.dist!=null?+r.dist.toFixed(2):null,price_per_sf:r.ppsf?Math.round(r.ppsf):null,similarity:c?Math.round(c.score):null,notes:r.notes||""}; }); }
 function agentPrompt(ag){
-  let p = `You are one of five independent research agents valuing a residential property for a Bay Area fix-and-flip buyer (Twin Home Buyer). The other agents will not see your answer.\n\n${ag.task}\n\n${subjectFile()}\n`;
-  if(ag.quant) p += `\nVERIFIED COMP DATASET (JSON):\n${JSON.stringify(poolDataset(),null,1)}\n\nCurrent engine adjustment rates: GLA $${R.glaRate}/sf, bed $${S.adj.bed}, bath $${S.adj.bath}, lot $${S.adj.lot}/sf, condition step ${S.adj.cond}% of price, trend ${S.adj.time}%/mo.\n\nReturn ONLY one JSON object: {"agent":"DeepSeek","value_as_is":0,"value_arv":0,"methods":{"weighted_comps":0,"median_ppsf":0,"regression":0,"nearest_neighbor":0},"suggested_rates":{"gla_per_sf":0,"per_bath":0,"lot_per_sf":0,"condition_step_pct":0,"trend_pct_per_month":0},"stats":{"median_ppsf":0,"mean_ppsf":0,"trimmed_mean_ppsf":0},"risks":["..."]}`;
-  else p += `\n${JSON_SPEC}`;
+  let p=`You are one of five independent research agents valuing a house for Twin Home Buyer, a Bay Area fix-and-flip buyer. The other agents will not see your answer.\n\n${ag.task}\n\n${subjectFile()}\n`;
+  if(ag.quant) p+=`\nVERIFIED COMP DATASET (JSON):\n${JSON.stringify(poolDataset(),null,1)}\n\nCurrent adjustment rates: size $${R.glaRate}/sf, bed $${S.adj.bed}, bath $${S.adj.bath}, lot $${S.adj.lot}/sf, condition step ${S.adj.cond}% of price, trend ${S.adj.time}%/mo.\n\nReturn ONLY one JSON object: {"agent":"DeepSeek","value_as_is":0,"value_arv":0,"methods":{"weighted_comps":0,"median_ppsf":0,"regression":0,"nearest_neighbor":0},"suggested_rates":{"gla_per_sf":0,"per_bath":0,"lot_per_sf":0,"condition_step_pct":0,"trend_pct_per_month":0},"risks":["..."]}`;
+  else p+=`\n${JSON_SPEC}`;
   return p;
 }
 function extractJSON(text){
-  const t=String(text||"").trim(); if(!t) throw new Error("Paste the reply first.");
+  const t=String(text||"").trim(); if(!t) throw new Error("Paste the AI's reply first.");
   try{ return JSON.parse(t); }catch(e){}
   const fence=t.match(/```(?:json)?\s*([\s\S]*?)```/i); if(fence){ try{ return JSON.parse(fence[1]); }catch(e){} }
-  const a=t.indexOf("{"), b=t.lastIndexOf("}"); if(a>=0&&b>a){ const body=t.slice(a,b+1).replace(/\/\/[^\n"]*$/gm,"").replace(/,\s*([}\]])/g,"$1"); try{ return JSON.parse(body); }catch(e){} }
-  throw new Error("Could not find valid JSON in that reply. Ask the AI to return only the JSON object.");
+  const a=t.indexOf("{"), b=t.lastIndexOf("}"); if(a>=0&&b>a){ const body=t.slice(a,b+1).replace(/,\s*([}\]])/g,"$1"); try{ return JSON.parse(body); }catch(e){} }
+  throw new Error("No JSON found in that reply. Ask the AI: “Return only the JSON object.”");
 }
-function mapType(t){ t=String(t||"").toLowerCase(); if(t.includes("condo")) return "Condo"; if(t.includes("town")) return "Townhome"; if(/duplex|triplex|2-4|multi|fourplex/.test(t)) return "2-4 Unit"; return "SFR"; }
-function mapStatus(t){ t=String(t||"sold").toLowerCase(); if(t.startsWith("pend")||t.includes("contract")) return "Pending"; if(t.startsWith("act")||t.includes("list")) return "Active"; if(t.startsWith("with")||t.startsWith("exp")) return "Withdrawn"; return "Sold"; }
-function mergeComps(list, agentKey){
-  let added=0, merged=0, conflicts=0;
+function detectAgent(j){
+  const sel=$("pasteFrom").value; if(sel!=="auto") return sel;
+  const n=String(j.agent||"").toLowerCase();
+  const hit=AGENTS.find(a=>n.includes(a.key)||n.includes(a.name.toLowerCase().split(" ")[0])||(a.key==="gemini"&&n.includes("kimi"))||(a.key==="chatgpt"&&(n.includes("gpt")||n.includes("openai"))));
+  if(hit) return hit.key;
+  if(j.methods||j.suggested_rates) return "deepseek";
+  return lastCopied;
+}
+const mapType = t=>{ t=String(t||"").toLowerCase(); if(t.includes("condo")) return "Condo"; if(t.includes("town")) return "Townhome"; if(/duplex|triplex|2-4|multi|fourplex/.test(t)) return "2-4 Unit"; return "SFR"; };
+const mapStatus = t=>{ t=String(t||"sold").toLowerCase(); if(t.startsWith("pend")||t.includes("contract")) return "Pending"; if(t.startsWith("act")||t.includes("list")) return "Active"; if(t.startsWith("with")||t.startsWith("exp")) return "Withdrawn"; return "Sold"; };
+const agentName = k => (AGENTS.find(a=>a.key===k)||{name:k?k:"import"}).name;
+function mergeComps(list, key){
+  let added=0,merged=0,conflicts=0;
   for(const raw of list||[]){
-    const addr = raw.address || raw.street || ""; if(!addr) continue;
-    const c = {address:addr,status:mapStatus(raw.status),price:num(raw.price??raw.sold_price??raw.sale_price),date:(raw.date||raw.sold_date||raw.sale_date||"").slice(0,10),
+    const addr=raw.address||raw.street||""; if(!addr) continue;
+    const c={address:addr,status:mapStatus(raw.status),price:num(raw.price??raw.sold_price??raw.sale_price),date:String(raw.date||raw.sold_date||raw.sale_date||"").slice(0,10),
       beds:num(raw.beds),baths:num(raw.baths),sqft:num(raw.sqft??raw.living_sqft),lot:num(raw.lot_sqft??raw.lot),year:num(raw.year_built??raw.year),
-      type:mapType(raw.property_type||raw.type),cond:Math.min(5,Math.max(1,Math.round(num(raw.condition??raw.condition_1to5)||3))),
+      type:mapType(raw.property_type||raw.type),cond:Math.min(5,Math.max(1,Math.round(num(raw.condition)||3))),
       lat:num(raw.lat),lng:num(raw.lng??raw.lon),dist:num(raw.distance_mi),src:[].concat(raw.source_urls||raw.sources||[]).filter(Boolean),notes:raw.notes||""};
-    const key = normAddr(addr);
-    const ex = S.comps.find(x=>normAddr(x.address)===key);
+    const ex=S.comps.find(x=>normAddr(x.address)===normAddr(addr));
     if(ex){
       merged++;
-      if(agentKey && !(ex.agents||[]).includes(agentKey)) ex.agents=[...(ex.agents||[]),agentKey];
-      ex.src=[...new Set([...(ex.src||[]),...c.src])];
-      ex.conflicts = ex.conflicts||[];
-      const who=(AGENTS.find(a=>a.key===agentKey)||{name:"import"}).name;
-      if(c.price&&ex.price&&Math.abs(c.price-ex.price)/ex.price>0.01){ ex.conflicts.push(`${who} says ${kmoney(c.price)}`); conflicts++; }
-      if(c.sqft&&ex.sqft&&Math.abs(c.sqft-ex.sqft)/ex.sqft>0.05){ ex.conflicts.push(`${who} says ${c.sqft} sf`); conflicts++; }
+      if(key&&!(ex.agents||[]).includes(key)) ex.agents=[...(ex.agents||[]),key];
+      ex.src=[...new Set([...(ex.src||[]),...c.src])]; ex.conflicts=ex.conflicts||[];
+      if(c.price&&ex.price&&Math.abs(c.price-ex.price)/ex.price>0.01){ ex.conflicts.push(`${agentName(key)} says ${kmoney(c.price)}`); conflicts++; }
+      if(c.sqft&&ex.sqft&&Math.abs(c.sqft-ex.sqft)/ex.sqft>0.05){ ex.conflicts.push(`${agentName(key)} says ${c.sqft} sf`); conflicts++; }
       for(const k of ["lat","lng","lot","year","date","beds","baths","sqft","dist"]) if(ex[k]==null||ex[k]==="") ex[k]=c[k];
-      if(c.notes && !String(ex.notes).includes(c.notes)) ex.notes = [ex.notes,c.notes].filter(Boolean).join(" | ");
-    } else {
-      S.comps.push({...c,id:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),include:true,agents:agentKey?[agentKey]:[],conflicts:[]});
-      added++;
-    }
+      if(c.notes&&!String(ex.notes).includes(c.notes)) ex.notes=[ex.notes,c.notes].filter(Boolean).join(" | ");
+    } else { S.comps.push({...c,id:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),include:true,agents:key?[key]:[],conflicts:[]}); added++; }
   }
   return {added,merged,conflicts};
 }
-function applyRejects(list, agentKey){
-  let n=0; for(const r of list||[]){ const ex=S.comps.find(x=>normAddr(x.address)===normAddr(r.address)); if(ex){ ex.conflicts=[...(ex.conflicts||[]),`${(AGENTS.find(a=>a.key===agentKey)||{}).name||"AI"} rejects: ${r.reason}`]; n++; } } return n;
+function fillSubject(sf){
+  if(!sf) return 0; let n=0; const s=S.subject;
+  const m={beds:"beds",baths:"baths",sqft:"sqft",lot_sqft:"lot",year_built:"year",lat:"lat",lng:"lng"};
+  for(const [k,t] of Object.entries(m)){ const v=num(sf[k]); if(v && (s[t]==null||s[t]==="")){ s[t]=v; n++; } }
+  if(sf.property_type && !s._typeSet){ s.type=mapType(sf.property_type); }
+  return n;
 }
-function renderAgents(){
-  $("agentTabs").innerHTML = AGENTS.map(a=>`<button role="tab" class="tab" type="button" aria-selected="${a.key===activeAgent}" data-k="${a.key}"><span class="dot ${S.agentReports[a.key]?'on':''}"></span>${esc(a.name)} <span class="muted small">${esc(a.job)}</span></button>`).join("") +
-    `<button role="tab" class="tab" type="button" aria-selected="${activeAgent==='csv'}" data-k="csv"><span class="dot ${S.csvLoaded?'on':''}"></span>MLS / CSV <span class="muted small">your data</span></button>`;
-  $("agentTabs").querySelectorAll(".tab").forEach(b=>b.onclick=()=>{activeAgent=b.dataset.k; renderAgents();});
-  const pane=$("agentPane");
-  if(activeAgent==="csv"){
-    pane.innerHTML = `<div class="agent-grid"><div class="report"><p class="role"><b>Your ground truth.</b> Export sold, pending and active listings from your MLS (or PropStream, Redfin, county data) as CSV and paste it here. MLS data beats anything the AIs find on the public web. Headers are matched loosely: address, status, price / sold price, sold date, beds, baths, sqft, lot, year, type, lat, lng.</p></div>
-      <div class="report"><textarea id="csvIn" rows="8" placeholder="Address,Status,Sold Price,Sold Date,Beds,Baths,SqFt,Lot SqFt,Year Built,Latitude,Longitude"></textarea>
-      <div class="btnrow"><button class="btn primary" id="csvBtn" type="button">Import rows</button><span class="status" id="csvStatus"></span></div></div></div>`;
-    $("csvBtn").onclick=()=>{ try{ const rows=parseCSV($("csvIn").value); const r=mergeComps(rows,null); S.csvLoaded=true; S.example=false; render(); $("csvStatus").className="status ok"; $("csvStatus").textContent=`${r.added} added, ${r.merged} matched existing`; }catch(e){ $("csvStatus").className="status err"; $("csvStatus").textContent=e.message; } };
-    return;
+$("pasteBtn").onclick=()=>{
+  const st=$("pasteStatus");
+  try{
+    const j=extractJSON($("pasteIn").value);
+    const key=detectAgent(j);
+    if(!key) throw new Error("Pick which AI this answer came from.");
+    const parts=[];
+    const nf=fillSubject(j.subject_facts); if(nf) parts.push(`filled ${nf} property details`);
+    if(Array.isArray(j.comps)){ const r=mergeComps(j.comps,key); parts.push(`${r.added} new comps, ${r.merged} already found${r.conflicts?`, ${r.conflicts} facts disagree`:""}`); }
+    if(Array.isArray(j.reject)) for(const r of j.reject){ const ex=S.comps.find(x=>normAddr(x.address)===normAddr(r.address)); if(ex) ex.conflicts=[...(ex.conflicts||[]),`${agentName(key)} would reject: ${r.reason}`]; }
+    S.agentReports[key]={value_as_is:num(j.value_as_is),value_arv:num(j.value_arv),risks:j.risks||[],count:(j.comps||[]).length,suggested_rates:j.suggested_rates||null};
+    if(key==="deepseek" && j.suggested_rates){ const sr=j.suggested_rates; parts.push("suggested rates saved under All comps & rules"); S.dsRates=sr; }
+    S.example=false; S.claude=null;
+    $("pasteIn").value=""; $("pasteFrom").value="auto";
+    render();
+    $("pasteStatus").className="status ok"; $("pasteStatus").textContent=`${agentName(key)}: ${parts.join(", ")||"estimate saved"}.`;
+  }catch(e){ st.className="status err"; st.textContent=e.message; }
+};
+
+/* ---------- step 3 ---------- */
+function currentARV(){
+  const d=S.deal;
+  if(d.juan) return {v:d.juan,src:"Juan"};
+  if(d.useClaude && S.claude && S.claude.arv) return {v:S.claude.arv,src:"Claude"};
+  return {v:R.arv.value,src:"Engine"};
+}
+function dealMath(arv){
+  const d=S.deal; const sell=arv*(d.sell||0)/100; const costs=(d.reno||0)+sell+(d.hold||0)+(d.cont||0);
+  const max=arv-costs-(d.profit||0);
+  return {sell,costs,max,target:max-Math.round(arv*0.02/5000)*5000};
+}
+function whyLine(u){
+  const s=S.subject, bits=[];
+  if(u.dist!=null) bits.push(u.dist<0.1?"same block":u.dist.toFixed(2)+" mi away");
+  if(s.sqft&&u.sqft){ const d=(u.sqft-s.sqft)/s.sqft; bits.push(Math.abs(d)<0.1?"same size":`${Math.round(Math.abs(d)*100)}% ${d>0?"bigger":"smaller"}`); }
+  bits.push(condLabel(u.cond).toLowerCase());
+  if(u.months!=null) bits.push(u.months<1?"sold this month":`sold ${Math.round(u.months)} mo ago`);
+  if((u.agents||[]).length>1) bits.push(`${u.agents.length} AIs found it`);
+  return bits.join(" · ");
+}
+function renderAnswer(){
+  const {asis,arv}=R, cur=currentARV(), s=S.subject;
+  // basis chips
+  $("basisChips").innerHTML = S.claude&&S.claude.arv && !S.deal.juan ? [["1","Claude's ARV"],["0","Engine ARV"]].map(([v,l])=>`<button type="button" class="chipbtn" aria-pressed="${String(!!S.deal.useClaude?1:0)===v}" data-v="${v}">${l}</button>`).join("") : (S.deal.juan?`<span class="pill info">Using Juan's ARV</span>`:"");
+  $("basisChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.deal.useClaude=b.dataset.v==="1"; render();});
+  if(!cur.v){
+    $("verdict").innerHTML=`<div class="verdict review"><span class="big">WAITING</span><span class="line">Copy the prompts in step 2 and paste at least a few AI answers. The value appears here as soon as 1 comp passes the rules.</span></div>`;
+    $("kpis").innerHTML=""; $("alerts").innerHTML=""; $("compList").innerHTML=""; return;
   }
-  const ag = AGENTS.find(a=>a.key===activeAgent);
-  const rep = S.agentReports[ag.key];
-  const prompt = agentPrompt(ag);
-  pane.innerHTML = `<div class="agent-grid">
-    <div class="report">
-      <p class="role"><b>${esc(ag.name)} · ${esc(ag.job)}.</b> ${esc(ag.role)}</p>
-      ${ag.quant?`<p class="small muted">Send this one last. It includes the ${poolDataset().length} comps that currently pass your rules.</p>`:""}
-      <div class="btnrow"><button class="btn primary" id="copyPrompt" type="button">Copy prompt</button><span class="small muted">${prompt.length.toLocaleString()} characters</span></div>
-      <details><summary>Show prompt</summary><pre class="prompt" id="promptPre" style="margin-top:6px">${esc(prompt)}</pre></details>
-    </div>
-    <div class="report">
-      <label class="f">Paste ${esc(ag.name)}'s JSON reply<textarea id="agentIn" rows="7" placeholder='{"agent":"${esc(ag.name)}","comps":[...]}'></textarea></label>
-      <div class="btnrow"><button class="btn primary" id="agentLoad" type="button">Load into comp pool</button>${rep?`<button class="btn small" id="agentClear" type="button">Clear this agent</button>`:""}<span class="status" id="agentStatus"></span></div>
-      ${rep?`<div class="small">Loaded: as-is <b class="mono">${kmoney(rep.value_as_is)}</b> · ARV <b class="mono">${kmoney(rep.value_arv)}</b>${rep.count!=null?` · ${rep.count} comps`:""}${rep.risks&&rep.risks.length?`<br><span class="muted">Risks: ${rep.risks.slice(0,4).map(esc).join(" · ")}</span>`:""}${rep.suggested_rates?`<br><button class="btn small" id="applyRates" type="button" style="margin-top:6px">Apply DeepSeek's suggested rates</button>`:""}</div>`:""}
-    </div></div>`;
-  $("copyPrompt").onclick=()=>copyText(agentPrompt(ag), $("promptPre"));
-  $("agentLoad").onclick=()=>{
-    const st=$("agentStatus");
-    try{
-      const j=extractJSON($("agentIn").value);
-      let msg="";
-      if(Array.isArray(j.comps)){ const r=mergeComps(j.comps, ag.key); msg=`${r.added} new comps, ${r.merged} already in pool${r.conflicts?`, ${r.conflicts} fact conflicts flagged`:""}`; }
-      if(Array.isArray(j.reject)) { const n=applyRejects(j.reject, ag.key); if(n) msg+=`, ${n} rejection notes`; }
-      S.agentReports[ag.key] = {value_as_is:num(j.value_as_is), value_arv:num(j.value_arv), risks:j.risks||[], count:(j.comps||[]).length, methods:j.methods||null, suggested_rates:j.suggested_rates||null};
-      S.example=false;
-      render();
-      const st2=$("agentStatus"); st2.className="status ok"; st2.textContent = msg || "Loaded estimate";
-    }catch(e){ st.className="status err"; st.textContent=e.message; }
-  };
-  if($("agentClear")) $("agentClear").onclick=()=>{ delete S.agentReports[ag.key]; S.comps.forEach(c=>c.agents=(c.agents||[]).filter(a=>a!==ag.key)); render(); };
-  if($("applyRates")) $("applyRates").onclick=()=>{ const sr=rep.suggested_rates; if(num(sr.gla_per_sf)){S.adj.glaAuto=0;S.adj.gla=num(sr.gla_per_sf);} if(num(sr.per_bath)) S.adj.bath=num(sr.per_bath); if(num(sr.lot_per_sf)!=null) S.adj.lot=num(sr.lot_per_sf); if(num(sr.condition_step_pct)) S.adj.cond=num(sr.condition_step_pct); if(num(sr.trend_pct_per_month)!=null) S.adj.time=num(sr.trend_pct_per_month); refreshInputs(); render(); toast("Rates applied"); };
+  const dm=dealMath(cur.v);
+  const conf = cur.src==="Claude"&&S.claude.confidence? S.claude.confidence : arv.conf;
+  const ask=s.ask;
+  let cls,word,line;
+  const profitAtAsk = ask? cur.v-dm.costs-ask : null;
+  if(!ask){ cls="review"; word="OFFER UP TO"; line=`<b>${money(dm.max)}</b>. Start at <b>${money(dm.target)}</b>. Type the asking price in step 1 to get BUY / REVIEW / PASS.`; }
+  else if(ask<=dm.max && conf>=80){ cls="buy"; word="BUY"; line=`At <b>${money(ask)}</b> Twin makes about <b>${money(profitAtAsk)}</b>. Max offer is <b>${money(dm.max)}</b>.`; }
+  else if(ask<=dm.max*1.04){ cls="review"; word="REVIEW"; line= ask<=dm.max ? `The numbers work (<b>${money(profitAtAsk)}</b> profit at ${money(ask)}), but confidence is only ${Math.round(conf)}%. Juan should look at the comps.` : `Asking <b>${money(ask)}</b> is just over the max offer of <b>${money(dm.max)}</b>. Profit would be ${money(profitAtAsk)}. Negotiate.`; }
+  else { cls="pass"; word="PASS"; line=`Asking <b>${money(ask)}</b> is ${money(ask-dm.max)} over the max offer of <b>${money(dm.max)}</b>. Profit would be only ${money(profitAtAsk)}.`; }
+  $("verdict").innerHTML=`<div class="verdict ${cls}"><span class="big">${word}</span><span class="line">${line}</span></div>`;
+  const cc = conf>=90?"good":conf>=75?"warn":"bad";
+  const estsAll=AGENTS.filter(a=>S.agentReports[a.key]&&S.agentReports[a.key].value_arv).map(a=>S.agentReports[a.key].value_arv);
+  const spreadAll=estsAll.length?(Math.max(...estsAll,arv.value)-Math.min(...estsAll,arv.value))/arv.value:0;
+  const escal = (conf<75||spreadAll>0.10) ? {short:"order a BPO / desktop appraisal",cls:"bad",msg:`<b>Next step: order a BPO or desktop appraisal.</b> Confidence is under 75% or the AIs are more than 10% apart, so don't rely on this number alone.`}
+    : conf<90 ? {short:"Juan reviews the comps",cls:"warn",msg:`<b>Next step: Juan reviews the 5 comps.</b> Confidence is 75–90%.`}
+    : {short:"accepted for offer",cls:"good",msg:`<b>Confidence is over 90%.</b> This value can go straight to an offer.`};
+  const arvRange = cur.src==="Claude"&&S.claude.arv_range? S.claude.arv_range : [arv.low,arv.high];
+  $("kpis").innerHTML=`
+    <div class="kpi hero"><div class="k">ARV · ${cur.src}</div><div class="v">${kmoney(cur.v)}</div><div class="r">${kmoney(arvRange[0])} – ${kmoney(arvRange[1])}</div></div>
+    <div class="kpi"><div class="k">As-is value</div><div class="v">${kmoney(cur.src==="Claude"&&S.claude.as_is_value?S.claude.as_is_value:asis.value)}</div><div class="r">today's condition</div></div>
+    <div class="kpi"><div class="k">Twin buy (max)</div><div class="v">${kmoney(dm.max)}</div><div class="r">start at ${kmoney(dm.target)}</div></div>
+    <div class="kpi"><div class="k">Expected profit</div><div class="v">${kmoney(ask?profitAtAsk:S.deal.profit)}</div><div class="r">${ask?"at asking price":"at max offer"} · reno ${kmoney(S.deal.reno)}</div></div>
+    <div class="kpi"><div class="k">Confidence</div><div class="v" style="color:var(--${cc})">${Math.round(conf)}%</div><div class="r">${escal.short}</div></div>`;
+  // alerts
+  const al=[];
+  const risk = S.claude&&S.claude.what_could_make_us_wrong ? S.claude.what_could_make_us_wrong : (AGENTS.map(a=>S.agentReports[a.key]&&S.agentReports[a.key].risks&&S.agentReports[a.key].risks[0]).find(Boolean));
+  al.push(`<div class="alert ${escal.cls}">${escal.msg}</div>`);
+  if(risk) al.push(`<div class="alert warn"><b>Main risk:</b> ${esc(risk)}</div>`);
+  const ests=AGENTS.filter(a=>S.agentReports[a.key]&&S.agentReports[a.key].value_arv).map(a=>({n:a.name,v:S.agentReports[a.key].value_arv}));
+  if(S.claude&&S.claude.arv) ests.push({n:"Claude",v:S.claude.arv});
+  if(ests.length){ const all=[...ests.map(e=>e.v),arv.value]; const spread=(Math.max(...all)-Math.min(...all))/arv.value;
+    const list=ests.map(e=>`${esc(e.n)} ${kmoney(e.v)}`).join(" · ")+` · Engine ${kmoney(arv.value)}`;
+    al.push(spread>0.07?`<div class="alert warn"><b>The AIs disagree by ${pct(spread,0)}.</b> ${list}. Have Claude check it, and look at which comps drive the high and low numbers.</div>`:`<div class="alert good"><b>The AIs agree within ${pct(spread,0)}.</b> ${list}</div>`); }
+  if(arv.used.length<3) al.push(`<div class="alert bad"><b>Only ${arv.used.length} comp${arv.used.length===1?"":"s"} pass the rules.</b> Get answers from more AIs, or widen the radius under All comps &amp; rules.</div>`);
+  const comp=R.competition;
+  al.push(comp.length? `<div class="alert ${comp.length>4?'warn':'good'}"><b>${comp.length} competing listing${comp.length===1?"":"s"} nearby:</b> ${comp.map(c=>`${esc(street(c.address))} ${c.status.toLowerCase()} at ${kmoney(c.price)}`).join(" · ")}</div>`
+    : `<div class="alert good"><b>No competing listings nearby.</b> Low supply supports the top half of the range.</div>`);
+  $("alerts").innerHTML=al.join("");
+  // comps (Claude's picks if Claude is the basis)
+  const used=arv.used.slice(0,5);
+  const cw = cur.src==="Claude" && S.claude.top_comps ? Object.fromEntries(S.claude.top_comps.map(t=>[normAddr(t.address),t])) : {};
+  $("compList").innerHTML = used.map((u,i)=>{ const c=cw[normAddr(u.address)];
+    const flags=[!(u.src||[]).length?`<span class="pill warn">no source</span>`:"",(u.conflicts||[]).length?`<span class="pill bad">facts disagree</span>`:"",u.isListing?`<span class="pill warn">${u.status}</span>`:""].join(" ");
+    return `<div class="comp ${hlId===u.id?'hl':''}" data-id="${u.id}"><div class="rank" style="background:${tier(u.score,true)}">${i+1}</div>
+      <div><div class="addr">${u.src&&u.src[0]&&/^https?:/.test(u.src[0])?`<a href="${esc(u.src[0])}" target="_blank" rel="noopener">${esc(street(u.address))}</a>`:esc(street(u.address))}</div>
+      <div class="why">${esc(c&&c.why?c.why:whyLine(u))}</div>
+      <div class="meta">${u.beds??"?"} bd · ${u.baths??"?"} ba · ${u.sqft?u.sqft.toLocaleString():"?"} sf · ${Math.round(u.score)}% match ${flags}</div></div>
+      <div class="right"><div class="price">${kmoney(u.price)}</div><div class="adj">adj ${kmoney(u.adjusted)}</div><div class="adj">${pct(u.weight,0)} weight</div></div></div>`; }).join("") || `<div class="comp"><div></div><div class="muted">No comps pass the rules yet.</div><div></div></div>`;
+  $("compList").querySelectorAll(".comp[data-id]").forEach(el=>{ el.onmouseenter=()=>highlight(el.dataset.id); el.onclick=()=>highlight(el.dataset.id); });
 }
+
+function renderMap(){
+  const svg=$("map"), s=S.subject, f=R.f, W=600,H=440,cx=W/2,cy=H/2,rpx=180, scale=rpx/Math.max(f.radius,0.1);
+  const byId=Object.fromEntries(R.arv.cands.map(c=>[c.id,c])), rank=Object.fromEntries(R.arv.used.slice(0,5).map((u,i)=>[u.id,i+1]));
+  let g=`<rect width="${W}" height="${H}" fill="var(--map-bg)"/>`;
+  for(let x=0;x<=W;x+=40) g+=`<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="var(--line)" stroke-width="0.5" opacity=".6"/>`;
+  for(let y=0;y<=H;y+=40) g+=`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="var(--line)" stroke-width="0.5" opacity=".6"/>`;
+  [0.5].forEach(k=>{ g+=`<circle cx="${cx}" cy="${cy}" r="${rpx*k}" fill="none" stroke="var(--map-ring)" stroke-opacity=".3"/><text x="${cx+4}" y="${cy-rpx*k-3}" font-size="11" fill="var(--muted)" font-family="JetBrains Mono,monospace">${+(f.radius*k).toFixed(2)} mi</text>`; });
+  g+=`<circle cx="${cx}" cy="${cy}" r="${rpx}" fill="var(--map-ring)" fill-opacity=".05" stroke="var(--map-ring)" stroke-width="2" stroke-dasharray="6 5"/>`;
+  g+=`<rect x="${cx-46}" y="${cy-rpx-24}" width="92" height="20" rx="10" fill="var(--map-ring)"/><text x="${cx}" y="${cy-rpx-10}" text-anchor="middle" font-size="12" font-weight="600" fill="var(--accent-ink)" font-family="Source Sans 3,sans-serif">${f.radius} mile radius</text>`;
+  g+=`<text x="${W-14}" y="22" text-anchor="end" font-size="12" fill="var(--muted)" font-family="Source Sans 3,sans-serif">N ↑</text>`;
+  const pins=[]; let missing=0;
+  if(s.lat!=null&&s.lng!=null) R.rows.forEach(r=>{
+    if(r.lat==null||r.lng==null){ missing++; return; }
+    const dx=(r.lng-s.lng)*Math.cos(s.lat*Math.PI/180)*69.17, dy=(r.lat-s.lat)*69;
+    pins.push({r,x:Math.max(10,Math.min(W-10,cx+dx*scale)),y:Math.max(10,Math.min(H-10,cy-dy*scale)),c:byId[r.id],rk:rank[r.id]});
+  });
+  pins.sort((a,b)=>(a.rk?1:0)-(b.rk?1:0) || (a.c?1:0)-(b.c?1:0));
+  pins.forEach(p=>{ const col=tier(p.c?p.c.score:0,!!p.c), hl=hlId===p.r.id;
+    if(!p.c) g+=`<g class="pin" data-id="${p.r.id}" style="cursor:pointer"><circle cx="${p.x}" cy="${p.y}" r="${hl?9:6}" fill="var(--surface)" stroke="${col}" stroke-width="2.5"/></g>`;
+    else if(p.rk) g+=`<g class="pin" data-id="${p.r.id}" style="cursor:pointer"><circle cx="${p.x}" cy="${p.y}" r="${hl?16:12}" fill="${col}" stroke="var(--surface)" stroke-width="2"/><text x="${p.x}" y="${p.y+4}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff" font-family="JetBrains Mono,monospace">${p.rk}</text></g>`;
+    else g+=`<g class="pin" data-id="${p.r.id}" style="cursor:pointer"><circle cx="${p.x}" cy="${p.y}" r="${hl?9:6}" fill="${col}" stroke="var(--surface)" stroke-width="1.5"/></g>`;
+  });
+  if(s.lat!=null&&s.lng!=null) g+=`<path d="M${cx} ${cy-22} l12 12 v12 h-24 v-12 z" fill="var(--pin-subject)" stroke="var(--surface)" stroke-width="2"/><text x="${cx}" y="${cy+20}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)" font-family="Source Sans 3,sans-serif">SUBJECT</text>`;
+  else g+=`<text x="${cx}" y="${cy}" text-anchor="middle" font-size="15" fill="var(--muted)" font-family="Source Sans 3,sans-serif">The map appears once an AI returns the property's location</text>`;
+  svg.innerHTML=g;
+  const tip=$("mapTip");
+  svg.querySelectorAll(".pin").forEach(el=>{ const p=pins.find(q=>q.r.id===el.dataset.id);
+    el.onmouseenter=()=>{ const box=$("mapbox").getBoundingClientRect(), k=box.width/W; tip.hidden=false; tip.style.left=Math.min(box.width-230,p.x*k+12)+"px"; tip.style.top=(p.y*k+12)+"px";
+      tip.innerHTML=`<b>${esc(street(p.r.address))}</b><br>${p.r.status} ${kmoney(p.r.price)} · ${p.r.sqft||"?"} sf<br>${p.c?Math.round(p.c.score)+"% match":"<span style='color:var(--bad)'>Out: "+esc(p.r.why.join(", "))+"</span>"}`; };
+    el.onmouseleave=()=>tip.hidden=true; el.onclick=()=>highlight(p.r.id); });
+}
+function highlight(id){ if(hlId===id) return; hlId=id; renderMap(); document.querySelectorAll(".comp").forEach(el=>el.classList.toggle("hl",el.dataset.id===id)); }
+
+/* ---------- pool (advanced) ---------- */
+function renderPool(){
+  const byId=Object.fromEntries(R.arv.cands.map(c=>[c.id,c])), usedIds=new Set(R.arv.used.map(u=>u.id));
+  const rows=[...R.rows].sort((a,b)=>(byId[b.id]?.score??-1)-(byId[a.id]?.score??-1));
+  $("poolSub").textContent=`${R.rows.length} found · ${R.arv.cands.length} pass the rules · ${R.arv.used.length} used`;
+  $("poolTable").innerHTML=`<thead><tr><th>Use</th><th>Address</th><th>Status</th><th class="n">Price</th><th class="n">$/sf</th><th class="n">Sf</th><th class="n">Bd/Ba</th><th class="n">Mi</th><th>Condition</th><th class="n">Match</th><th class="n">Adjusted ARV</th><th>Found by</th><th>Why out / flags</th><th></th></tr></thead><tbody>`+
+    rows.map(r=>{ const c=byId[r.id], out=!r.eligible, flags=[...r.why,...(r.conflicts||[])].map(esc).join("; ");
+      return `<tr class="${out?'out':''}" data-id="${r.id}"><td><input type="checkbox" data-act="inc" ${r.include!==false?"checked":""} aria-label="Use this comp"></td>
+      <td class="addr">${usedIds.has(r.id)?"<b>":""}${esc(street(r.address))}${usedIds.has(r.id)?"</b>":""}</td><td>${esc(r.status)}</td><td class="n">${money(r.price)}</td><td class="n">${r.ppsf?Math.round(r.ppsf):"—"}</td><td class="n">${r.sqft??"—"}</td><td class="n">${r.beds??"?"}/${r.baths??"?"}</td><td class="n">${r.dist!=null?r.dist.toFixed(2):"—"}</td>
+      <td><select data-act="cond" aria-label="Condition">${CONDS.map(([v,l])=>`<option value="${v}" ${Number(r.cond)===v?"selected":""}>${v} · ${l}</option>`).join("")}</select></td>
+      <td class="n">${c?Math.round(c.score):"—"}</td><td class="n">${c?money(c.adjusted):"—"}</td><td>${(r.agents||[]).map(a=>esc(agentName(a).split(" ")[0])).join(", ")||"you"}</td>
+      <td style="white-space:normal;min-width:180px;color:${out?'var(--bad)':'var(--warn)'}">${flags}</td>
+      <td><button class="btn small" data-act="edit" type="button">Edit</button> <button class="btn small" data-act="del" type="button">Delete</button></td></tr>`; }).join("")+"</tbody>";
+  $("poolTable").querySelectorAll("tr[data-id]").forEach(tr=>{ const id=tr.dataset.id, comp=S.comps.find(c=>c.id===id);
+    tr.querySelector('[data-act=inc]').onchange=e=>{comp.include=e.target.checked; S.claude=null; render();};
+    tr.querySelector('[data-act=cond]').onchange=e=>{comp.cond=Number(e.target.value); S.claude=null; render();};
+    tr.querySelector('[data-act=edit]').onclick=()=>openCompForm(comp);
+    const del=tr.querySelector('[data-act=del]'); del.onclick=()=>{ if(del.dataset.c){ S.comps=S.comps.filter(c=>c.id!==id); render(); } else { del.dataset.c="1"; del.textContent="Confirm"; } };
+  });
+}
+let editing=null;
+const CF={c_address:"address",c_status:"status",c_price:"price",c_date:"date",c_beds:"beds",c_baths:"baths",c_sqft:"sqft",c_lot:"lot",c_year:"year",c_type:"type",c_cond:"cond",c_lat:"lat",c_lng:"lng",c_dist:"dist",c_notes:"notes"};
+function openCompForm(comp){ editing=comp||null; $("compFormTitle").textContent=comp?"Edit comp":"Add a comp";
+  for(const [id,k] of Object.entries(CF)) $(id).value = comp?(comp[k]??""):(k==="status"?"Sold":k==="type"?"SFR":k==="cond"?3:"");
+  $("c_src").value=comp?(comp.src||[]).join(", "):""; $("compForm").hidden=false; $("c_address").focus(); }
+$("addCompBtn").onclick=()=>openCompForm(null);
+$("cancelComp").onclick=()=>{$("compForm").hidden=true;};
+$("saveComp").onclick=()=>{ const o={}; for(const [id,k] of Object.entries(CF)){ const v=$(id).value; o[k]=["address","status","date","type","notes"].includes(k)?v:num(v); }
+  o.cond=Number(o.cond)||3; o.src=$("c_src").value.split(",").map(x=>x.trim()).filter(Boolean);
+  if(!o.address||!o.price){ toast("Address and price are required"); return; }
+  if(editing) Object.assign(editing,o); else S.comps.push({...o,id:"c"+Date.now().toString(36),include:true,agents:[],conflicts:[]});
+  S.example=false; S.claude=null; $("compForm").hidden=true; render(); toast("Comp saved"); };
 function parseCSV(text){
-  const lines=[]; let cur=[""], q=false, row=[];
   const t=String(text||"").trim(); if(!t) throw new Error("Paste CSV text first.");
-  let field="";
+  const lines=[]; let row=[],field="",q=false;
   for(let i=0;i<t.length;i++){ const ch=t[i];
     if(q){ if(ch==='"'&&t[i+1]==='"'){field+='"';i++;} else if(ch==='"') q=false; else field+=ch; }
-    else if(ch==='"') q=true; else if(ch===','||ch==='\t'){ row.push(field); field=""; } else if(ch==='\n'||ch==='\r'){ if(ch==='\r'&&t[i+1]==='\n') i++; row.push(field); lines.push(row); row=[]; field=""; } else field+=ch; }
+    else if(ch==='"') q=true; else if(ch===','||ch==='\t'){row.push(field);field="";} else if(ch==='\n'||ch==='\r'){ if(ch==='\r'&&t[i+1]==='\n') i++; row.push(field); lines.push(row); row=[]; field=""; } else field+=ch; }
   row.push(field); lines.push(row);
-  const hdr=lines.shift().map(h=>h.toLowerCase().trim());
-  const find=(...keys)=>hdr.findIndex(h=>keys.some(k=>h.includes(k)));
+  const hdr=lines.shift().map(h=>h.toLowerCase().trim()), find=(...k)=>hdr.findIndex(h=>k.some(x=>h.includes(x)));
   const ix={address:find("address","street"),city:find("city"),status:find("status"),price:find("sold price","close price","sale price","price"),date:find("sold date","close date","sale date","date"),beds:find("bed"),baths:find("bath"),sqft:find("sqft","sq ft","living","square"),lot:find("lot"),year:find("year"),type:find("type","style"),lat:find("lat"),lng:find("lng","lon")};
-  if(ix.address<0) throw new Error("No address column found in the header row.");
-  const out=[];
-  for(const r of lines){ if(!r.join("").trim()) continue; const g=k=>ix[k]>=0?r[ix[k]]:"";
+  if(ix.address<0) throw new Error("No address column in the header row.");
+  const out=[]; for(const r of lines){ if(!r.join("").trim()) continue; const g=k=>ix[k]>=0?r[ix[k]]:"";
     let d=g("date"); if(d&&/\d+\/\d+\/\d+/.test(d)){ const [m,dd,y]=d.split("/"); d=`${y.length===2?"20"+y:y}-${m.padStart(2,"0")}-${dd.padStart(2,"0")}`; }
     out.push({address:[g("address"),g("city")].filter(Boolean).join(", "),status:g("status")||"Sold",price:g("price"),date:d,beds:g("beds"),baths:g("baths"),sqft:g("sqft"),lot_sqft:g("lot"),year_built:g("year"),property_type:g("type"),lat:g("lat"),lng:g("lng"),condition:3,source_urls:["MLS export"]}); }
-  if(!out.length) throw new Error("No data rows found.");
-  return out;
+  if(!out.length) throw new Error("No data rows found."); return out;
 }
+$("csvBtn").onclick=()=>{ try{ const r=mergeComps(parseCSV($("csvIn").value),"mls"); S.example=false; S.claude=null; render(); $("csvStatus").className="status ok"; $("csvStatus").textContent=`${r.added} added, ${r.merged} matched`; }catch(e){ $("csvStatus").className="status err"; $("csvStatus").textContent=e.message; } };
 
 /* ---------- Claude ---------- */
 function claudePrompt(){
   const set=R.arv, as=R.asis;
-  const pack = {
-    subject:S.subject,
-    rules:S.filters,
-    adjustment_rates:{gla_per_sf:R.glaRate,per_bed:S.adj.bed,per_bath:S.adj.bath,lot_per_sf:S.adj.lot,condition_step_pct:S.adj.cond,trend_pct_per_month:S.adj.time,arv_target_condition:S.adj.arvCond},
-    comps: R.rows.map(r=>{ const a=set.cands.find(x=>x.id===r.id), b=as.cands.find(x=>x.id===r.id); return {address:r.address,status:r.status,price:r.price,date:r.date,beds:r.beds,baths:r.baths,sqft:r.sqft,lot:r.lot,year:r.year,type:r.type,condition:r.cond,distance_mi:r.dist!=null?+r.dist.toFixed(2):null,ppsf:r.ppsf?Math.round(r.ppsf):null,found_by:r.agents||[],has_source:!!(r.src||[]).length,flags:r.conflicts||[],notes:r.notes,engine_rejected_because:r.why,arv_similarity:a?Math.round(a.score):null,arv_adjusted:a?Math.round(a.adjusted):null,asis_similarity:b?Math.round(b.score):null,asis_adjusted:b?Math.round(b.adjusted):null}; }),
-    engine:{as_is:Math.round(as.value||0),as_is_range:[Math.round(as.low||0),Math.round(as.high||0)],arv:Math.round(set.value||0),arv_range:[Math.round(set.low||0),Math.round(set.high||0)],arv_confidence:Math.round(set.conf)},
+  const pack={subject:S.subject,rules:R.f,
+    adjustment_rates:{size_per_sf:R.glaRate,per_bed:S.adj.bed,per_bath:S.adj.bath,lot_per_sf:S.adj.lot,condition_step_pct:S.adj.cond,trend_pct_per_month:S.adj.time,arv_target_condition:S.adj.arvCond},
+    comps:R.rows.map(r=>{ const a=set.cands.find(x=>x.id===r.id), b=as.cands.find(x=>x.id===r.id); return {address:r.address,status:r.status,price:r.price,date:r.date,beds:r.beds,baths:r.baths,sqft:r.sqft,lot:r.lot,year:r.year,type:r.type,condition:r.cond,distance_mi:r.dist!=null?+r.dist.toFixed(2):null,found_by:r.agents||[],has_source:!!(r.src||[]).length,flags:r.conflicts||[],notes:r.notes,rejected_by_rules:r.why,arv_match:a?Math.round(a.score):null,arv_adjusted:a?Math.round(a.adjusted):null,asis_match:b?Math.round(b.score):null,asis_adjusted:b?Math.round(b.adjusted):null}; }),
+    engine:{as_is:Math.round(as.value||0),arv:Math.round(set.value||0),arv_range:[Math.round(set.low||0),Math.round(set.high||0)],confidence:Math.round(set.conf)},
     agent_opinions:S.agentReports,
-    active_competition:R.competition.map(c=>({address:c.address,status:c.status,price:c.price,sqft:c.sqft,condition:c.cond}))
-  };
-  return `You are the CHIEF APPRAISER for Twin Home Buyer, a Bay Area fix-and-flip company. Five AI research agents and a weighted adjustment engine have produced the evidence below.
+    active_competition:R.competition.map(c=>({address:c.address,status:c.status,price:c.price,sqft:c.sqft,condition:c.cond}))};
+  return `You are the CHIEF APPRAISER for Twin Home Buyer, a Bay Area fix-and-flip company. Five AI research agents and a weighted adjustment engine produced the evidence below.
 
 RULES
-1. Do NOT average the agents' opinions. Ignore their final numbers until the end.
-2. Work from the comps. Reject weak ones (wrong type, across a neighborhood boundary, busy street vs quiet, very different size/lot, stale sale, unsourced, conflicting facts) and say why.
-3. Rank the survivors by how well they explain THIS subject. A comp found by several agents with sources is stronger evidence.
-4. Derive the AS-IS value from comps in condition similar to the subject, and the ARV from renovated comps (condition 4-5), adjusting for differences.
-5. Use active/pending listings to judge competition and where the market is going, not as sold evidence.
-6. Then compare your conclusion to the engine and to each agent, and explain any gap over 5%.
-7. Be brief and specific. Use real addresses from the data only.
+1. Do NOT average the agents' opinions. Ignore their numbers until the end.
+2. Work from the comps. Reject weak ones (wrong type, across a neighborhood boundary, busy street vs quiet, very different size or lot, stale sale, no source, facts that disagree) and say why.
+3. Rank the survivors by how well they explain THIS house. A comp several agents found, with sources, is stronger evidence.
+4. AS-IS value comes from comps in similar condition to the subject. ARV comes from renovated comps (condition 4-5), adjusted for differences.
+5. Active and pending listings show competition and direction, not sold evidence.
+6. Compare your answer with the engine and each agent; explain any gap over 5%.
+7. Be brief. Plain English for a busy investor. Use only addresses from the data.
 
 EVIDENCE (JSON):
 ${JSON.stringify(pack)}
 
 Reply with ONLY one JSON object:
-{"as_is_value":0,"as_is_range":[0,0],"arv":0,"arv_range":[0,0],"confidence":0-100,
- "top_comps":[{"address":"...","weight_pct":0,"why":"one sentence"}],
+{"as_is_value":0,"as_is_range":[0,0],"arv":0,"arv_range":[0,0],"confidence":0,
+ "top_comps":[{"address":"...","weight_pct":0,"why":"one short sentence"}],
  "rejected":[{"address":"...","reason":"..."}],
  "why_this_value":"three sentences max",
  "what_could_make_us_wrong":"three sentences max",
- "vs_engine_and_agents":"one or two sentences",
  "recommended_list_price":0,
  "flags_for_juan":["..."]}`;
 }
-function renderClaudeReport(){
+function renderClaude(){
   const c=S.claude, el=$("claudeReport");
-  if(!c){ el.innerHTML=`<p class="muted small">No Chief Appraiser report yet.</p>`; return; }
-  el.innerHTML = `
-    <div class="kpis">
-      <div class="kpi"><div class="k">As-is</div><div class="v">${kmoney(c.as_is_value)}</div><div class="r">${c.as_is_range?kmoney(c.as_is_range[0])+" – "+kmoney(c.as_is_range[1]):""}</div></div>
-      <div class="kpi hero"><div class="k">ARV</div><div class="v">${kmoney(c.arv)}</div><div class="r">${c.arv_range?kmoney(c.arv_range[0])+" – "+kmoney(c.arv_range[1]):""}</div></div>
-      <div class="kpi"><div class="k">Confidence</div><div class="v">${c.confidence!=null?Math.round(c.confidence)+"%":"—"}</div><div class="r">list at ${kmoney(c.recommended_list_price)}</div></div>
-    </div>
-    ${c.why_this_value?`<div><h3>Why this value</h3><p>${esc(c.why_this_value)}</p></div>`:""}
-    ${c.what_could_make_us_wrong?`<div><h3>What could make us wrong</h3><p>${esc(c.what_could_make_us_wrong)}</p></div>`:""}
-    ${(c.top_comps||[]).length?`<div class="tblwrap"><table><thead><tr><th>Key comp</th><th class="n">Weight</th><th>Why</th></tr></thead><tbody>${c.top_comps.map(t=>`<tr><td>${esc(String(t.address).split(",")[0])}</td><td class="n">${t.weight_pct??""}%</td><td style="white-space:normal">${esc(t.why)}</td></tr>`).join("")}</tbody></table></div>`:""}
-    ${(c.rejected||[]).length?`<details><summary>Rejected by Claude (${c.rejected.length})</summary><ul class="small" style="margin-top:6px">${c.rejected.map(r=>`<li><b>${esc(String(r.address).split(",")[0])}</b>: ${esc(r.reason)}</li>`).join("")}</ul></details>`:""}
-    ${c.vs_engine_and_agents?`<p class="small muted">${esc(c.vs_engine_and_agents)}</p>`:""}
-    ${(c.flags_for_juan||[]).length?`<div class="warnbox"><h3>Flags for Juan</h3><ul>${c.flags_for_juan.map(f=>`<li>${esc(f)}</li>`).join("")}</ul></div>`:""}`;
+  if(!c){ el.innerHTML=""; return; }
+  el.innerHTML=`<div class="report">
+    <h3>Claude's check: ARV ${kmoney(c.arv)} (${c.arv_range?kmoney(c.arv_range[0])+"–"+kmoney(c.arv_range[1]):""}) · as-is ${kmoney(c.as_is_value)} · ${c.confidence!=null?Math.round(c.confidence)+"% confident":""}${c.recommended_list_price?` · list at ${kmoney(c.recommended_list_price)}`:""}</h3>
+    ${c.why_this_value?`<p><b>Why this value.</b> ${esc(c.why_this_value)}</p>`:""}
+    ${c.what_could_make_us_wrong?`<p><b>What could make us wrong.</b> ${esc(c.what_could_make_us_wrong)}</p>`:""}
+    ${(c.flags_for_juan||[]).length?`<div class="alert warn"><b>For Juan:</b> ${c.flags_for_juan.map(esc).join(" · ")}</div>`:""}
+    ${(c.rejected||[]).length?`<details class="inner"><summary>Comps Claude threw out (${c.rejected.length})</summary><ul class="small" style="margin-top:6px">${c.rejected.map(r=>`<li><b>${esc(street(r.address))}</b>: ${esc(r.reason)}</li>`).join("")}</ul></details>`:""}
+  </div>`;
 }
-function normClaude(j){
-  j.arv=num(j.arv); j.as_is_value=num(j.as_is_value); j.confidence=num(j.confidence); j.recommended_list_price=num(j.recommended_list_price);
-  return j;
-}
-$("copyClaude").onclick=()=>copyText(claudePrompt());
-$("claudePasteBtn").onclick=()=>{ try{ S.claude=normClaude(extractJSON($("claudePaste").value)); render(); toast("Claude report loaded"); }catch(e){ $("claudeStatus").className="status err"; $("claudeStatus").textContent=e.message; } };
+function normClaude(j){ for(const k of ["arv","as_is_value","confidence","recommended_list_price"]) j[k]=num(j[k]); return j; }
+$("copyClaude").onclick=()=>copyText(claudePrompt(),"Claude prompt copied. Paste it into claude.ai, then paste the reply in step 2's box.");
 let sampleFn=null, ctl=null;
-(async()=>{
-  try{ if(window.claude && claude.use){ sampleFn = await claude.use("sample"); } }catch(e){ sampleFn=null; }
-  if(sampleFn){ $("runClaude").hidden=false; }
-})();
-const SAMPLE_ERR = {rate_limited:"Claude is busy or your usage limit was reached. Try again in a bit.",session_expired:"Sign in to claude.ai again, then retry.",refused:"Claude declined this request. Check the evidence for odd content.",invalid_json:"Claude's reply wasn't valid JSON. Run it again.",prompt_too_large:"Too much data. Remove rejected comps and retry.",empty_completion:"Claude returned nothing. Run it again."};
+(async()=>{ try{ if(window.claude&&claude.use) sampleFn=await claude.use("sample"); }catch(e){ sampleFn=null; } if(sampleFn){ $("runClaude").hidden=false; $("copyClaude").hidden=true; } })();
+const SAMPLE_ERR={rate_limited:"Claude is busy or your usage limit was hit. Try again in a bit.",session_expired:"Sign in to claude.ai again, then retry.",refused:"Claude declined this one.",invalid_json:"Claude's reply came back garbled. Click again.",prompt_too_large:"Too many comps. Throw out the weak ones and retry.",empty_completion:"Claude returned nothing. Click again."};
 $("runClaude").onclick=async()=>{
-  const st=$("claudeStatus"), stream=$("claudeStream");
-  ctl=new AbortController();
-  $("runClaude").disabled=true; $("stopClaude").hidden=false; st.className="status"; st.textContent="Thinking… (this can take up to a minute)";
-  stream.hidden=false; stream.textContent="";
+  if(!R.arv.cands.length){ toast("Get some comps first"); return; }
+  const st=$("claudeStatus"), stream=$("claudeStream"); ctl=new AbortController();
+  $("runClaude").disabled=true; $("stopClaude").hidden=false; st.className="status"; st.textContent="Claude is checking the comps… up to a minute"; stream.hidden=false; stream.textContent="";
   try{
-    const j = await sampleFn.json(claudePrompt(), {modelTier:"complex", signal:ctl.signal, onText:({text})=>{ stream.textContent=text.slice(-1500); stream.scrollTop=stream.scrollHeight; st.textContent="Writing report…"; }});
-    S.claude = normClaude(j); st.className="status ok"; st.textContent="Report ready"; stream.hidden=true; render();
+    const j=await sampleFn.json(claudePrompt(),{modelTier:"complex",signal:ctl.signal,onText:({text})=>{ stream.textContent=text.slice(-900); stream.scrollTop=stream.scrollHeight; }});
+    S.claude=normClaude(j); S.deal.useClaude=true; st.className="status ok"; st.textContent="Claude's check is in"; render();
   }catch(e){
-    stream.hidden=true;
-    if(["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"].includes(e.code)){ $("runClaude").hidden=true; st.className="status"; st.textContent="In-page Claude isn't available here. Use “Copy prompt for claude.ai”."; }
-    else if(e.code!=="cancelled"){ st.className="status err"; st.textContent=SAMPLE_ERR[e.code]||"Something went wrong reaching Claude. Try again."; }
-    else st.textContent="Stopped";
-  }finally{ $("runClaude").disabled=false; $("stopClaude").hidden=true; }
+    if(["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"].includes(e.code)){ $("runClaude").hidden=true; $("copyClaude").hidden=false; st.className="status"; st.textContent="Claude can't run inside this page here. Use “Copy Claude check prompt”."; }
+    else if(e.code!=="cancelled"){ st.className="status err"; st.textContent=SAMPLE_ERR[e.code]||"Couldn't reach Claude. Try again."; } else st.textContent="Stopped";
+  }finally{ stream.hidden=true; $("runClaude").disabled=false; $("stopClaude").hidden=true; }
 };
 $("stopClaude").onclick=()=>ctl&&ctl.abort();
+// Claude reply pasted into the step-2 box
+const _paste=$("pasteBtn").onclick;
+$("pasteBtn").onclick=()=>{ try{ const j=extractJSON($("pasteIn").value); if(j.arv!==undefined && j.top_comps){ S.claude=normClaude(j); S.deal.useClaude=true; $("pasteIn").value=""; render(); $("pasteStatus").className="status ok"; $("pasteStatus").textContent="Claude's check loaded into step 3."; return; } }catch(e){} _paste(); };
 
-/* ---------- deal ---------- */
-function currentARV(){
-  const d=S.deal;
-  if(d.arvSrc==="juan" && d.juan) return {v:d.juan, src:"Juan override"};
-  if(d.arvSrc==="claude" && S.claude && S.claude.arv) return {v:S.claude.arv, src:"Claude"};
-  return {v:R.arv.value, src:"Engine"};
-}
-function renderDeal(){
-  const d=S.deal, {v:arv,src}=currentARV();
-  $("dealBasis").textContent = arv?`ARV from ${src}`:"";
-  if(!arv){ $("waterfall").innerHTML=`<p class="muted small">Needs an ARV first.</p>`; $("verdict").innerHTML=""; return; }
-  const sell=arv*(d.sell||0)/100;
-  const max = arv - (d.reno||0) - sell - (d.hold||0) - (d.cont||0) - (d.profit||0);
-  const target = max - Math.round(arv*0.02/5000)*5000;
-  $("waterfall").innerHTML = `
-    <div><span>ARV (${src})</span><span>${money(arv)}</span></div>
-    <div><span>− Renovation</span><span>${money(-(d.reno||0))}</span></div>
-    <div><span>− Selling costs (${d.sell||0}%)</span><span>${money(-sell)}</span></div>
-    <div><span>− Holding + financing</span><span>${money(-(d.hold||0))}</span></div>
-    <div><span>− Contingency</span><span>${money(-(d.cont||0))}</span></div>
-    <div><span>− Target profit</span><span>${money(-(d.profit||0))}</span></div>
-    <div class="tot"><span>Absolute max purchase</span><span>${money(max)}</span></div>
-    <div><span>Twin target offer (2% cushion)</span><span>${money(target)}</span></div>`;
-  const ask=S.subject.ask, conf=R.arv.conf;
-  let cls, word, line;
-  if(!ask){ cls="review"; word="SET PRICE"; line="Enter the asking or contract price in the subject panel to get a verdict."; }
-  else{
-    const profitAtAsk = arv - (d.reno||0) - sell - (d.hold||0) - (d.cont||0) - ask;
-    const margin = profitAtAsk/arv;
-    if(ask<=max && conf>=80){ cls="buy"; word="BUY"; }
-    else if(ask<=max*1.04 || (ask<=max && conf<80)){ cls="review"; word="REVIEW"; }
-    else { cls="pass"; word="PASS"; }
-    line = `At ${money(ask)} the projected profit is ${money(profitAtAsk)} (${pct(margin)} of ARV). ${conf<80?"Confidence is under 80%, so a human check is required.":""}`;
-  }
-  $("verdict").innerHTML = `<div class="verdict ${cls}"><span class="big">${word}</span><span style="font-weight:500;color:var(--ink)">${line}</span></div>`;
-}
+/* ---------- REI BlackBook summary ---------- */
+$("copyBB").onclick=()=>{
+  const cur=currentARV(); if(!cur.v){ toast("No value yet"); return; }
+  const dm=dealMath(cur.v), s=S.subject, conf=cur.src==="Claude"&&S.claude.confidence?S.claude.confidence:R.arv.conf;
+  const v=$("verdict").querySelector(".big").textContent;
+  const lines=[`TWIN COMP AI · ${s.address}`,`${v} · Confidence ${Math.round(conf)}%`,
+    `ARV (${cur.src}): ${money(cur.v)}`,`As-is: ${money(cur.src==="Claude"&&S.claude.as_is_value?S.claude.as_is_value:R.asis.value)}`,
+    `Max offer: ${money(dm.max)} · Start at: ${money(dm.target)}`,`Renovation: ${money(S.deal.reno)} · Target profit: ${money(S.deal.profit)}`,
+    s.ask?`Asking: ${money(s.ask)} · Profit at asking: ${money(cur.v-dm.costs-s.ask)}`:"", "", "Best comps:",
+    ...R.arv.used.slice(0,5).map((u,i)=>`${i+1}. ${street(u.address)} · ${u.status} ${money(u.price)} ${u.date||""} · ${u.sqft||"?"} sf · ${whyLine(u)}`),
+    S.claude&&S.claude.why_this_value?`\nWhy: ${S.claude.why_this_value}`:"", S.claude&&S.claude.what_could_make_us_wrong?`Risk: ${S.claude.what_could_make_us_wrong}`:""].filter(x=>x!=="");
+  copyText(lines.join("\n"),"Deal summary copied. Paste it into the REI BlackBook lead notes.");
+};
 
-/* ---------- deal log (shared db, falls back to this browser) ---------- */
-let db=null, logRows=[], unsub=null;
+/* ---------- deal log ---------- */
+let db=null, logRows=[];
 const LOG_LS="twin-comp-ai-log-v1";
-function lsLog(){ try{ return JSON.parse(localStorage.getItem(LOG_LS)||"[]"); }catch(e){ return []; } }
-function lsSave(rows){ try{ localStorage.setItem(LOG_LS, JSON.stringify(rows)); }catch(e){} }
+const lsLog=()=>{ try{ return JSON.parse(localStorage.getItem(LOG_LS)||"[]"); }catch(e){ return []; } };
+const lsSave=rows=>{ try{ localStorage.setItem(LOG_LS,JSON.stringify(rows)); }catch(e){} };
 function renderLog(){
-  $("logSub").textContent = db? "shared with your team" : "saved in this browser only";
   const rows=[...logRows].sort((a,b)=>String(b.created).localeCompare(String(a.created)));
-  const err=(p,a)=>p&&a? (p-a)/a : null;
-  const acc={engine:[],claude:[],juan:[]};
-  rows.forEach(r=>{ if(r.actual){ for(const k of Object.keys(acc)){ const e=err(r[k+"_arv"],r.actual); if(e!=null) acc[k].push(Math.abs(e)); } } });
-  const accH = Object.entries(acc).map(([k,v])=>`<div class="kpi"><div class="k">${k==="engine"?"Engine":k==="claude"?"Claude":"Juan"} avg error</div><div class="v" style="font-size:17px">${v.length?pct(mean(v)):"—"}</div><div class="r">${v.length} sold deal${v.length===1?"":"s"}</div></div>`).join("");
-  $("accuracy").innerHTML = `<div class="kpis">${accH}</div>`;
-  $("logTable").innerHTML = rows.length? `<thead><tr><th>Saved</th><th>Address</th><th class="n">Engine ARV</th><th class="n">Claude ARV</th><th class="n">Juan ARV</th><th class="n">Conf</th><th class="n">Actual sale</th><th class="n">Engine err</th><th class="n">Claude err</th><th class="n">Juan err</th><th></th></tr></thead><tbody>`+
-    rows.map(r=>{ const f=(k)=>{const e=err(r[k],r.actual); return e==null?"—":`<span style="color:${Math.abs(e)>0.05?'var(--bad)':'var(--good)'}">${e>=0?"+":""}${pct(e)}</span>`;};
-      return `<tr data-id="${esc(r._id)}"><td>${esc(String(r.created).slice(0,10))}</td><td>${esc(String(r.address).split(",")[0])}</td><td class="n">${kmoney(r.engine_arv)}</td><td class="n">${kmoney(r.claude_arv)}</td><td class="n">${kmoney(r.juan_arv)}</td><td class="n">${r.confidence?Math.round(r.confidence)+"%":"—"}</td>
-      <td class="n"><input type="number" data-act="actual" value="${r.actual??""}" placeholder="sold $" style="width:110px" aria-label="Actual sale price"></td><td class="n">${f("engine_arv")}</td><td class="n">${f("claude_arv")}</td><td class="n">${f("juan_arv")}</td>
-      <td><button class="btn small" data-act="del" type="button">Delete</button></td></tr>`; }).join("")+"</tbody>" : `<tbody><tr><td class="muted">No saved valuations yet.</td></tr></tbody>`;
-  $("logTable").querySelectorAll("tr[data-id]").forEach(tr=>{
-    const id=tr.dataset.id;
+  const err=(p,a)=>p&&a?(p-a)/a:null, acc={engine:[],claude:[],juan:[]};
+  rows.forEach(r=>{ if(r.actual) for(const k of Object.keys(acc)){ const e=err(r[k+"_arv"],r.actual); if(e!=null) acc[k].push(Math.abs(e)); } });
+  const sold=rows.filter(r=>r.actual).length;
+  $("logSub").textContent=`${rows.length} saved · ${sold} with a sale price${db?" · shared with your team":" · this browser only"}`;
+  $("accuracy").innerHTML=Object.entries(acc).map(([k,v])=>`<div class="kpi"><div class="k">${k==="engine"?"Engine":k==="claude"?"Claude":"Juan"} average miss</div><div class="v" style="font-size:20px">${v.length?pct(mean(v)):"—"}</div><div class="r">${v.length} sold · target ±3–5%${v.length?(mean(v)<=0.05?" · on target":" · not there yet"):""}</div></div>`).join("");
+  $("logTable").innerHTML=rows.length?`<thead><tr><th>Saved</th><th>Address</th><th class="n">Engine ARV</th><th class="n">Claude ARV</th><th class="n">Juan ARV</th><th class="n">Sold for</th><th class="n">Engine</th><th class="n">Claude</th><th class="n">Juan</th><th></th></tr></thead><tbody>`+
+    rows.map(r=>{ const f=k=>{ const e=err(r[k],r.actual); return e==null?"—":`<span style="color:${Math.abs(e)>0.05?'var(--bad)':'var(--good)'}">${e>=0?"+":""}${pct(e)}</span>`; };
+      return `<tr data-id="${esc(r._id)}"><td>${esc(String(r.created).slice(0,10))}</td><td>${esc(street(r.address))}</td><td class="n">${kmoney(r.engine_arv)}</td><td class="n">${kmoney(r.claude_arv)}</td><td class="n">${kmoney(r.juan_arv)}</td>
+      <td class="n"><input type="number" data-act="actual" value="${r.actual??""}" placeholder="sold $" style="width:120px" aria-label="Actual sale price"></td><td class="n">${f("engine_arv")}</td><td class="n">${f("claude_arv")}</td><td class="n">${f("juan_arv")}</td>
+      <td><button class="btn small" data-act="del" type="button">Delete</button></td></tr>`; }).join("")+"</tbody>":`<tbody><tr><td class="muted">Nothing saved yet. Use “Save to deal log” in step 3.</td></tr></tbody>`;
+  $("logTable").querySelectorAll("tr[data-id]").forEach(tr=>{ const id=tr.dataset.id;
     tr.querySelector('[data-act=actual]').onchange=e=>updateLog(id,{actual:num(e.target.value)});
-    const del=tr.querySelector('[data-act=del]');
-    del.onclick=()=>{ if(del.dataset.c){ deleteLog(id); } else { del.dataset.c="1"; del.textContent="Confirm"; } };
-  });
+    const del=tr.querySelector('[data-act=del]'); del.onclick=()=>{ if(del.dataset.c) deleteLog(id); else { del.dataset.c="1"; del.textContent="Confirm"; } }; });
 }
-async function updateLog(id, patch){
-  if(db){ try{ await db.doc("valuations/"+id).update(patch); }catch(e){ $("logStatus").className="status err"; $("logStatus").textContent="Couldn't save. You may have view-only access."; } }
-  else { logRows=logRows.map(r=>r._id===id?{...r,...patch}:r); lsSave(logRows); renderLog(); }
-}
-async function deleteLog(id){
-  if(db){ try{ await db.doc("valuations/"+id).delete(); }catch(e){ $("logStatus").className="status err"; $("logStatus").textContent="Couldn't delete."; } }
-  else { logRows=logRows.filter(r=>r._id!==id); lsSave(logRows); renderLog(); }
-}
+async function updateLog(id,patch){ if(db){ try{ await db.doc("valuations/"+id).update(patch); }catch(e){ $("logStatus").className="status err"; $("logStatus").textContent="Couldn't save. You may have view-only access."; } } else { logRows=logRows.map(r=>r._id===id?{...r,...patch}:r); lsSave(logRows); renderLog(); } }
+async function deleteLog(id){ if(db){ try{ await db.doc("valuations/"+id).delete(); }catch(e){ $("logStatus").className="status err"; $("logStatus").textContent="Couldn't delete."; } } else { logRows=logRows.filter(r=>r._id!==id); lsSave(logRows); renderLog(); } }
 $("saveVal").onclick=async()=>{
   if(!R.arv.value){ toast("Nothing to save yet"); return; }
   const rec={address:S.subject.address||"(no address)",created:new Date().toISOString(),engine_asis:Math.round(R.asis.value||0),engine_arv:Math.round(R.arv.value||0),claude_arv:S.claude&&S.claude.arv?Math.round(S.claude.arv):null,juan_arv:S.deal.juan||null,confidence:Math.round(R.arv.conf),comps_used:R.arv.used.map(u=>u.address),agents:Object.keys(S.agentReports),actual:null,example:!!S.example};
-  const st=$("logStatus");
-  if(db){ try{ await db.collection("valuations").add(rec); st.className="status ok"; st.textContent="Saved to the team log"; }catch(e){ st.className="status err"; st.textContent="Couldn't save to the team log. You may have view-only access."; } }
-  else { logRows.push({...rec,_id:"l"+Date.now().toString(36)}); lsSave(logRows); renderLog(); st.className="status ok"; st.textContent="Saved in this browser"; }
+  if(db){ try{ await db.collection("valuations").add(rec); toast("Saved to the team deal log"); }catch(e){ toast("Couldn't save. You may have view-only access."); } }
+  else { logRows.push({...rec,_id:"l"+Date.now().toString(36)}); lsSave(logRows); renderLog(); toast("Saved in this browser"); }
 };
 logRows=lsLog(); renderLog();
-(async()=>{
-  try{ if(window.claude && claude.use){ db = await claude.use("db"); } }catch(e){ db=null; }
-  if(db){
-    unsub = db.collection("valuations").onSnapshot(snap=>{ logRows=snap.docs.map(d=>({...d.data(),_id:d.id})); renderLog(); }, ()=>{ db=null; logRows=lsLog(); renderLog(); });
-  }
-})();
+(async()=>{ try{ if(window.claude&&claude.use) db=await claude.use("db"); }catch(e){ db=null; }
+  if(db) db.collection("valuations").onSnapshot(snap=>{ logRows=snap.docs.map(d=>({...d.data(),_id:d.id})); renderLog(); },()=>{ db=null; logRows=lsLog(); renderLog(); }); })();
 
-refreshInputs();
 render();
 })();
 </script>

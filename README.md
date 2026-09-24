@@ -1,6 +1,12 @@
 # Twin Comp AI
 
-A multi-AI comparable sales engine for Twin Home Buyer. Open `twin-comp-ai.html` (or the published artifact) and run a property:
+A multi-AI comparable sales engine for Twin Home Buyer. **The goal: one address in, one trusted valuation out.** That means one ARV, five comps, one confidence score and one buy price.
+
+The main screen has three steps: **1. The property** (address, condition, asking price, reno budget), **2. Get the comps** (copy a prompt to each AI, paste the answers back), **3. The answer** (BUY / REVIEW / PASS, ARV, as-is, max offer, expected profit, confidence, main risk, the 5 best comps with a map, Claude check, copy for REI BlackBook). Everything below is under the collapsed sections.
+
+Escalation rule: confidence over 90% goes straight to an offer. At 75–90%, Juan reviews the comps. Under 75%, or when the AIs are more than 10% apart, order a BPO or desktop appraisal. Backtest target: ±3–5% error against the actual sale price.
+
+Details:
 
 1. **Subject file**: address, lat/lng, beds, baths, sf, lot, year, current condition (1–5), comp rules.
 2. **Research agents**: copy the role-specific prompt into each AI and paste its JSON reply back.
