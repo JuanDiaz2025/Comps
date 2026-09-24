@@ -237,9 +237,6 @@ details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(
         <label class="f">Asking / contract price<input type="number" id="s_ask" placeholder="optional"></label>
         <label class="f">Renovation budget<input type="number" id="d_reno"></label>
       </div>
-      <div class="f" style="display:flex;flex-direction:column;gap:4px"><span class="small muted" style="font-weight:600">Condition today</span>
-        <div class="cond-row" id="condRow"></div>
-      </div>
       <details class="inner"><summary>Property details (<span id="factsSummary"></span>)</summary>
         <div class="formgrid" style="margin-top:10px">
           <label class="f">Beds<input type="number" id="s_beds"></label>
@@ -601,7 +598,7 @@ const tier = (sc,ok)=> !ok?"var(--pin-out)": sc>=80?"var(--pin-match)": sc>=65?"
 function resetIfNewAddress(){
   const n=normAddr(S.subject.address);
   if(!n || !S.factsFor || n===S.factsFor) return false;
-  Object.assign(S.subject,{beds:null,baths:null,sqft:null,lot:null,year:null,lat:null,lng:null,notes:"",ask:null});
+  Object.assign(S.subject,{beds:null,baths:null,sqft:null,lot:null,year:null,lat:null,lng:null,notes:"",ask:null,cond:2,condSet:false});
   S.comps=S.comps.filter(c=>(c.agents||[]).includes("mls")); S.agentReports={}; S.claude=null; S.factsFor=null;
   Object.assign(S.deal,{renoAuto:true,reno:DEFAULT_DEAL.reno,months:DEFAULT_DEAL.months,profit:DEFAULT_DEAL.profit,juan:null,calcPrice:null,ttOverride:null});
   const st=$("runStatus"); st.className="status"; st.textContent="";
@@ -616,10 +613,8 @@ function render(){
   setVals(SUBJ,S.subject); setVals(ADJ,S.adj); setVals(DEAL,S.deal); setVals(FILT,R.f);
   $("f_auto").checked=!!S.filters.auto; $("f_includeListings").checked=!!S.filters.includeListings;
   const s=S.subject;
-  const facts=[s.beds!=null?s.beds+" bd":null,s.baths!=null?s.baths+" ba":null,s.sqft?s.sqft.toLocaleString()+" sf":null,s.year?"built "+s.year:null].filter(Boolean);
+  const facts=[s.condSet?condLabel(s.cond).toLowerCase():null,s.beds!=null?s.beds+" bd":null,s.baths!=null?s.baths+" ba":null,s.sqft?s.sqft.toLocaleString()+" sf":null,s.year?"built "+s.year:null].filter(Boolean);
   $("factsSummary").textContent = facts.length? facts.join(" · ") : "blank, the AIs will fill these in";
-  $("condRow").innerHTML = CONDS.map(([v,l,d])=>`<button type="button" class="condbtn" aria-pressed="${Number(s.cond)===v}" data-v="${v}"><b>${l}</b><span>${d}</span></button>`).join("");
-  $("condRow").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.subject.cond=Number(b.dataset.v); render();});
   renderAnswer(); renderPool(); renderMap(); renderRules();
   const rep=S.agentReports.ai; $("summaryLine").textContent = rep&&rep.summary? rep.summary : "";
 }
@@ -663,6 +658,7 @@ function fillSubject(sf){
   const m={beds:"beds",baths:"baths",sqft:"sqft",lot_sqft:"lot",year_built:"year",lat:"lat",lng:"lng"};
   for(const [k,t] of Object.entries(m)){ const v=num(sf[k]); if(v && (s[t]==null||s[t]==="")){ s[t]=v; n++; } }
   if(sf.property_type && !s._typeSet){ s.type=mapType(sf.property_type); }
+  const c=num(sf.condition); if(c>=1&&c<=5){ s.cond=Math.round(c); s.condSet=true; }
   return n;
 }
 const PW_KEY="twin-comp-ai-pw";

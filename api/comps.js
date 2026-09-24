@@ -20,7 +20,7 @@ function buildPrompt(subject, rules) {
 SUBJECT PROPERTY
 Address: ${subject.address}
 Type: ${v(subject.type)} · Beds: ${v(subject.beds)} · Baths: ${v(subject.baths)} · Living sf: ${v(subject.sqft)} · Lot sf: ${v(subject.lot)} · Year built: ${v(subject.year)}
-Condition today: ${subject.cond || 2} (${CONDITION_SCALE})
+Condition today: not set by the buyer. Judge it from the listing photos and remarks (${CONDITION_SCALE}) and report it as subject_facts.condition.
 Notes from the buyer: ${subject.notes || "none"}
 Today's date: ${today}
 
@@ -31,7 +31,7 @@ RULES
 
 Reply with ONLY one JSON object, no other text:
 {
-  "subject_facts": {"beds":0,"baths":0,"sqft":0,"lot_sqft":0,"year_built":0,"property_type":"SFR","lat":0.0,"lng":0.0},
+  "subject_facts": {"beds":0,"baths":0,"sqft":0,"lot_sqft":0,"year_built":0,"property_type":"SFR","condition":2,"lat":0.0,"lng":0.0},
   "comps": [
     {"address":"full street address, city, state zip","status":"Sold|Pending|Active|Withdrawn","price":0,"date":"YYYY-MM-DD",
      "beds":0,"baths":0,"sqft":0,"lot_sqft":0,"year_built":0,"property_type":"SFR|Condo|Townhome|2-4 Unit",

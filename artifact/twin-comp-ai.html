@@ -230,9 +230,6 @@ details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(
         <label class="f">Asking / contract price<input type="number" id="s_ask" placeholder="optional"></label>
         <label class="f">Renovation budget<input type="number" id="d_reno"></label>
       </div>
-      <div class="f" style="display:flex;flex-direction:column;gap:4px"><span class="small muted" style="font-weight:600">Condition today</span>
-        <div class="cond-row" id="condRow"></div>
-      </div>
       <details class="inner"><summary>Property details (<span id="factsSummary"></span>)</summary>
         <div class="formgrid" style="margin-top:10px">
           <label class="f">Beds<input type="number" id="s_beds"></label>
@@ -590,7 +587,7 @@ const tier = (sc,ok)=> !ok?"var(--pin-out)": sc>=80?"var(--pin-match)": sc>=65?"
 function resetIfNewAddress(){
   const n=normAddr(S.subject.address);
   if(!n || !S.factsFor || n===S.factsFor) return false;
-  Object.assign(S.subject,{beds:null,baths:null,sqft:null,lot:null,year:null,lat:null,lng:null,notes:"",ask:null});
+  Object.assign(S.subject,{beds:null,baths:null,sqft:null,lot:null,year:null,lat:null,lng:null,notes:"",ask:null,cond:2,condSet:false});
   S.comps=S.comps.filter(c=>(c.agents||[]).includes("mls")); S.agentReports={}; S.claude=null; S.factsFor=null;
   Object.assign(S.deal,{renoAuto:true,reno:DEFAULT_DEAL.reno,months:DEFAULT_DEAL.months,profit:DEFAULT_DEAL.profit,juan:null,calcPrice:null,ttOverride:null});
   const st=$("runStatus"); st.className="status"; st.textContent="";
@@ -605,10 +602,8 @@ function render(){
   setVals(SUBJ,S.subject); setVals(ADJ,S.adj); setVals(DEAL,S.deal); setVals(FILT,R.f);
   $("f_auto").checked=!!S.filters.auto; $("f_includeListings").checked=!!S.filters.includeListings;
   const s=S.subject;
-  const facts=[s.beds!=null?s.beds+" bd":null,s.baths!=null?s.baths+" ba":null,s.sqft?s.sqft.toLocaleString()+" sf":null,s.year?"built "+s.year:null].filter(Boolean);
+  const facts=[s.condSet?condLabel(s.cond).toLowerCase():null,s.beds!=null?s.beds+" bd":null,s.baths!=null?s.baths+" ba":null,s.sqft?s.sqft.toLocaleString()+" sf":null,s.year?"built "+s.year:null].filter(Boolean);
   $("factsSummary").textContent = facts.length? facts.join(" · ") : "blank, the AIs will fill these in";
-  $("condRow").innerHTML = CONDS.map(([v,l,d])=>`<button type="button" class="condbtn" aria-pressed="${Number(s.cond)===v}" data-v="${v}"><b>${l}</b><span>${d}</span></button>`).join("");
-  $("condRow").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.subject.cond=Number(b.dataset.v); render();});
   renderAnswer(); renderPool(); renderMap(); renderRules();
   const rep=S.agentReports.ai; $("summaryLine").textContent = rep&&rep.summary? rep.summary : "";
 }
@@ -938,7 +933,7 @@ function buildPrompt(subject, rules) {
 SUBJECT PROPERTY
 Address: ${subject.address}
 Type: ${v(subject.type)} · Beds: ${v(subject.beds)} · Baths: ${v(subject.baths)} · Living sf: ${v(subject.sqft)} · Lot sf: ${v(subject.lot)} · Year built: ${v(subject.year)}
-Condition today: ${subject.cond || 2} (${CONDITION_SCALE})
+Condition today: not set by the buyer. Judge it from the listing photos and remarks (${CONDITION_SCALE}) and report it as subject_facts.condition.
 Notes from the buyer: ${subject.notes || "none"}
 Today's date: ${today}
 
@@ -1003,7 +998,7 @@ async function sendRequest(){
       const can = await cm.canSendToClaude().catch(()=> "off");
       if(can==="available"){
         const anchor = await cm.anchorFor($("runBtn"));
-        await cm.sendToClaude({anchor, text:`Run comps: ${s.address}. Condition ${s.cond} (${condLabel(s.cond)}). Asking ${s.ask?money(s.ask):"not set"}. Reno ${S.deal.renoAuto&&!S.subject.sqft?"from sq ft once Claude finds it":S.deal.reno?money(S.deal.reno):"not set"}.${s.notes?" Notes: "+s.notes:""}`});
+        await cm.sendToClaude({anchor, text:`Run comps: ${s.address}. Asking ${s.ask?money(s.ask):"not set"}. Reno ${S.deal.renoAuto&&!S.subject.sqft?"from sq ft once Claude finds it":S.deal.reno?money(S.deal.reno):"not set"}.${s.notes?" Notes: "+s.notes:""}`});
         woke=true;
       } else why = can;
     }
@@ -1031,7 +1026,7 @@ setInterval(()=>{ if(S.pendingFor && S.pendingFor!==S.factsFor && S.pendingFor==
     // each result starts from the defaults for per-house settings; what-ifs from the last house are cleared
     Object.assign(S.deal,{months:DEFAULT_DEAL.months,profit:DEFAULT_DEAL.profit,juan:null,calcPrice:null,ttOverride:null}); S.calcAt=null;
     if(d.deal) Object.assign(S.deal,d.deal);
-    if(d.cond) S.subject.cond=d.cond;
+    if(d.cond){ S.subject.cond=d.cond; S.subject.condSet=true; }
     if(d.replaceFacts && d.result.subject_facts){ const f=d.result.subject_facts; Object.assign(S.subject,{beds:num(f.beds),baths:num(f.baths),sqft:num(f.sqft),lot:num(f.lot_sqft??f.lot),year:num(f.year_built),lat:num(f.lat),lng:num(f.lng),type:"SFR",notes:d.notes||""}); S.comps=[]; }
     S.claude = d.claude || null; if(d.claude) S.deal.useClaude=true;
     S.factsFor=normAddr(d.address); S.pendingFor=null;

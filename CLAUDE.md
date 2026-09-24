@@ -32,13 +32,13 @@ One internal valuation system that gives a defensible property value without rel
 ## Rules for every comp run
 
 - Use only real, sourced sales. Never invent an address, price or date. If a fact can't be confirmed, say so on the page.
-- Search the web for every run. The subject's own listing text decides condition, even when the requested condition differs. Say when you override it.
+- Search the web for every run. The page has no condition picker: Claude sets the subject's condition (`cond` in `results/latest`) from the listing photos and remarks. With no listing, use Dated (2) and say so.
 - Separate as-is comps (condition 1–3) from ARV comps (condition 4–5). Use active and pending listings as competition, not as sold evidence.
 - Treat SF and Bay Area list prices as bait. When overbids are typical, set a likely sale price and decide on that price, not on the ask.
 - Flag thin data (few 2026 sales, no dates, no condition) with lower confidence instead of false precision.
 - When the default deal numbers don't fit the price point (for example a $175K profit target on a $650K house), adjust them and say so.
 - **Negative expected profit at the likely or asking price is an automatic FAIL.** Never present it as REVIEW or NEGOTIATE.
-- The listing and market data decide the likely sale price. A requested condition that contradicts the listing is shown as a what-if in the reply, not used for the verdict. Base the likely price on the local sale-to-list ratio (North Berkeley about 140% of list in 2026).
+- The listing and market data decide the likely sale price. Base the likely price on the local sale-to-list ratio (North Berkeley about 140% of list in 2026).
 
 ## Profit calculator (Twin's sheet, corrected) — use on every run
 
