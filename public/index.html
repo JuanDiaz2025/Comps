@@ -191,6 +191,7 @@ pre.prompt{background:var(--surface-2);border:1px solid var(--line);border-radiu
 .small{font-size:13px}
 details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(--ink-2)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:7px;font-size:14px;z-index:10}
+@media (max-width:600px){input.big{font-size:16px;padding:10px 12px}details.adv>summary .sub{display:none}.verdict .big{font-size:32px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -459,8 +460,8 @@ function effFilters(){
   if(!f.auto) return f;
   return {...f, types:[s.type||"SFR"],
     bedsMin: s.beds!=null? Math.max(0,s.beds-1):0, bedsMax: s.beds!=null? s.beds+1:99,
-    bathsMin: s.baths!=null? Math.max(1,s.baths-1):0, bathsMax: s.baths!=null? s.baths+1:99,
-    sqftMin: s.sqft? Math.round(s.sqft*0.7/50)*50:0, sqftMax: s.sqft? Math.round(s.sqft*1.4/50)*50:99999,
+    bathsMin: s.baths!=null? 1:0, bathsMax: s.baths!=null? s.baths+2:99,
+    sqftMin: s.sqft? Math.round(s.sqft*0.65/50)*50:0, sqftMax: s.sqft? Math.round(s.sqft*1.6/50)*50:99999,
     yearMin: s.year? s.year-30:0, yearMax: s.year? s.year+30:9999};
 }
 function compute(){
@@ -562,6 +563,14 @@ $("clearExample").onclick=()=>{ S=freshState(false); render(); $("s_address").fo
 /* ---------- render ---------- */
 let R=null, hlId=null;
 const tier = (sc,ok)=> !ok?"var(--pin-out)": sc>=80?"var(--pin-match)": sc>=65?"var(--pin-similar)":"var(--pin-wide)";
+function resetIfNewAddress(){
+  const n=normAddr(S.subject.address);
+  if(!S.factsFor || n===S.factsFor) return false;
+  Object.assign(S.subject,{beds:null,baths:null,sqft:null,lot:null,year:null,lat:null,lng:null,notes:"",ask:null});
+  S.comps=S.comps.filter(c=>(c.agents||[]).includes("mls")); S.agentReports={}; S.claude=null; S.factsFor=null;
+  return true;
+}
+$("s_address").addEventListener("change",()=>{ if(resetIfNewAddress()){ render(); toast("New address: cleared the last house's details"); } });
 function render(){
   R=compute(); persist();
   $("exampleNote").hidden=!S.example;
@@ -624,10 +633,7 @@ let runCtl=null, tick=null;
 async function runComps(){
   const s=S.subject, st=$("runStatus");
   if(!s.address||s.address.trim().length<6){ toast("Type the full address first"); $("s_address").focus(); return; }
-  if(S.factsFor!==normAddr(s.address)){ // new address: drop the previous house's details and comps
-    Object.assign(s,{beds:null,baths:null,sqft:null,lot:null,year:null,lat:null,lng:null});
-    S.comps=S.comps.filter(c=>(c.agents||[]).includes("mls")); S.agentReports={};
-  }
+  if(resetIfNewAddress()) render();
   runCtl=new AbortController();
   $("runBtn").disabled=true; $("cancelRun").hidden=false; st.className="status"; st.textContent="Claude is searching sold records online and checking each source… usually 1–4 minutes.";
   const t0=Date.now(); clearInterval(tick); tick=setInterval(()=>{ const sec=Math.round((Date.now()-t0)/1000); $("elapsed").textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`; },1000);
@@ -679,6 +685,16 @@ function whyLine(u){
   if((u.agents||[]).includes("mls")) bits.push("in your MLS data");
   return bits.join(" · ");
 }
+function topList(){
+  const cur=currentARV();
+  if(cur.src==="Claude" && S.claude && (S.claude.top_comps||[]).length){
+    const out=[];
+    for(const t of S.claude.top_comps){ const r=R.rows.find(x=>normAddr(x.address)===normAddr(t.address)); if(!r) continue; const c=R.arv.cands.find(x=>x.id===r.id); out.push({...r,...(c||{}),claudeW:t.weight_pct,claudeWhy:t.why}); }
+    for(const u of R.arv.used){ if(out.length>=5) break; if(!out.some(x=>x.id===u.id)) out.push(u); }
+    if(out.length) return out.slice(0,5);
+  }
+  return R.arv.used.slice(0,5);
+}
 function renderAnswer(){
   const {asis,arv}=R, cur=currentARV(), s=S.subject;
   // basis chips
@@ -690,64 +706,65 @@ function renderAnswer(){
   }
   const dm=dealMath(cur.v);
   const conf = cur.src==="Claude"&&S.claude.confidence? S.claude.confidence : arv.conf;
-  const ask=s.ask;
-  let cls,word,line;
-  const profitAtAsk = ask? cur.v-dm.costs-ask : null;
-  if(!ask){ cls="review"; word="OFFER UP TO"; line=`<b>${money(dm.max)}</b>. Start at <b>${money(dm.target)}</b>. Type the asking price above to get BUY / REVIEW / PASS.`; }
-  else if(ask<=dm.max && conf>=80){ cls="buy"; word="BUY"; line=`At <b>${money(ask)}</b> Twin makes about <b>${money(profitAtAsk)}</b>. Max offer is <b>${money(dm.max)}</b>.`; }
-  else if(ask<=dm.max*1.04){ cls="review"; word="REVIEW"; line= ask<=dm.max ? `The numbers work (<b>${money(profitAtAsk)}</b> profit at ${money(ask)}), but confidence is only ${Math.round(conf)}%. Juan should look at the comps.` : `Asking <b>${money(ask)}</b> is just over the max offer of <b>${money(dm.max)}</b>. Profit would be ${money(profitAtAsk)}. Negotiate.`; }
-  else { cls="pass"; word="PASS"; line=`Asking <b>${money(ask)}</b> is ${money(ask-dm.max)} over the max offer of <b>${money(dm.max)}</b>. Profit would be only ${money(profitAtAsk)}.`; }
-  $("verdict").innerHTML=`<div class="verdict ${cls}"><span class="big">${word}</span><span class="line">${line}</span></div>`;
+  const ask=s.ask, likely = cur.src==="Claude"&&S.claude.likely_sale_price? S.claude.likely_sale_price : null;
+  const price = Math.max(ask||0, likely||0) || null;
+  const priceLabel = likely && (!ask || likely>ask) ? "at the likely sale price" : "at asking price";
+  const profitAt = p => cur.v-dm.costs-p;
   const cc = conf>=90?"good":conf>=75?"warn":"bad";
-  const estsAll=AGENTS.filter(a=>S.agentReports[a.key]&&S.agentReports[a.key].value_arv).map(a=>S.agentReports[a.key].value_arv);
-  const spreadAll=estsAll.length?(Math.max(...estsAll,arv.value)-Math.min(...estsAll,arv.value))/arv.value:0;
-  const escal = (conf<75||spreadAll>0.10) ? {short:"order a BPO / desktop appraisal",cls:"bad",msg:`<b>Next step: order a BPO or desktop appraisal.</b> Confidence is under 75% or the estimates are more than 10% apart, so don't rely on this number alone.`}
-    : conf<90 ? {short:"Juan reviews the comps",cls:"warn",msg:`<b>Next step: Juan reviews the 5 comps.</b> Confidence is 75–90%.`}
-    : {short:"accepted for offer",cls:"good",msg:`<b>Confidence is over 90%.</b> This value can go straight to an offer.`};
+  const next = conf>=90 ? "" : conf>=75 ? " Juan checks the 5 comps before offering." : " Juan checks the comps, and order a BPO or desktop appraisal before a firm offer.";
+  const nextShort = conf>=90?"ready for an offer":conf>=75?"Juan checks the comps":"Juan checks + order a BPO";
+  const likelyTxt = likely&&ask&&likely>ask*1.03 ? `Listed at ${money(ask)}, but it will likely sell around <b>${money(likely)}</b>. ` : "";
+  let cls,word,line;
+  if(!price){ cls="review"; word="OFFER UP TO"; line=`<b>${money(dm.max)}</b>. Start at <b>${money(dm.target)}</b>. Type the asking price above to get BUY / REVIEW / PASS.`; }
+  else if(price>dm.max*1.04){ cls="pass"; word="PASS"; line=`${likelyTxt}That is ${money(price-dm.max)} over Twin's max offer of <b>${money(dm.max)}</b>, leaving only ${money(profitAt(price))} profit. Buy only at or under ${money(dm.max)}.`; }
+  else if(price>dm.max){ cls="review"; word="NEGOTIATE"; line=`${likelyTxt}${money(price)} is just over the max offer of <b>${money(dm.max)}</b>. Profit would be ${money(profitAt(price))}.${next}`; }
+  else if(conf>=90){ cls="buy"; word="BUY"; line=`At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b>. Max offer is <b>${money(dm.max)}</b>.`; }
+  else { cls="review"; word="REVIEW"; line=`${likelyTxt}At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b> (max offer ${money(dm.max)}). Confidence is ${Math.round(conf)}%.${next}`; }
+  $("verdict").innerHTML=`<div class="verdict ${cls}"><span class="big">${word}</span><span class="line">${line}</span></div>`;
   const arvRange = cur.src==="Claude"&&S.claude.arv_range? S.claude.arv_range : [arv.low,arv.high];
   $("kpis").innerHTML=`
     <div class="kpi hero"><div class="k">ARV${cur.src==="Juan"?" · Juan":""}</div><div class="v">${kmoney(cur.v)}</div><div class="r">${kmoney(arvRange[0])} – ${kmoney(arvRange[1])}</div></div>
-    <div class="kpi"><div class="k">As-is value</div><div class="v">${kmoney(cur.src==="Claude"&&S.claude.as_is_value?S.claude.as_is_value:asis.value)}</div><div class="r">today's condition</div></div>
+    <div class="kpi"><div class="k">As-is value</div><div class="v">${kmoney(cur.src==="Claude"&&S.claude.as_is_value?S.claude.as_is_value:asis.value)}</div><div class="r">${likely?"likely sale "+kmoney(likely):"today's condition"}</div></div>
     <div class="kpi"><div class="k">Twin buy (max)</div><div class="v">${kmoney(dm.max)}</div><div class="r">start at ${kmoney(dm.target)}</div></div>
-    <div class="kpi"><div class="k">Expected profit</div><div class="v">${kmoney(ask?profitAtAsk:S.deal.profit)}</div><div class="r">${ask?"at asking price":"at max offer"} · reno ${kmoney(S.deal.reno)}</div></div>
-    <div class="kpi"><div class="k">Confidence</div><div class="v" style="color:var(--${cc})">${Math.round(conf)}%</div><div class="r">${escal.short}</div></div>`;
+    <div class="kpi"><div class="k">Expected profit</div><div class="v" style="color:var(--${price&&profitAt(price)<(S.deal.profit||0)?'bad':'ink'})">${kmoney(price?profitAt(price):S.deal.profit)}</div><div class="r">${price?priceLabel:"at max offer"} · reno ${kmoney(S.deal.reno)}</div></div>
+    <div class="kpi"><div class="k">Confidence</div><div class="v" style="color:var(--${cc})">${Math.round(conf)}%</div><div class="r">${nextShort}</div></div>`;
   // alerts
   const al=[];
   const risk = S.claude&&S.claude.what_could_make_us_wrong ? S.claude.what_could_make_us_wrong : (AGENTS.map(a=>S.agentReports[a.key]&&S.agentReports[a.key].risks&&S.agentReports[a.key].risks[0]).find(Boolean));
-  al.push(`<div class="alert ${escal.cls}">${escal.msg}</div>`);
   if(risk) al.push(`<div class="alert warn"><b>Main risk:</b> ${esc(risk)}</div>`);
-  const ests=AGENTS.filter(a=>S.agentReports[a.key]&&S.agentReports[a.key].value_arv).map(a=>({n:a.name,v:S.agentReports[a.key].value_arv}));
-  if(S.claude&&S.claude.arv) ests.push({n:"Claude",v:S.claude.arv});
-  if(ests.length){ const all=[...ests.map(e=>e.v),arv.value]; const spread=(Math.max(...all)-Math.min(...all))/arv.value;
-    const list=ests.map(e=>`${esc(e.n)} ${kmoney(e.v)}`).join(" · ")+` · Comp math ${kmoney(arv.value)}`;
-    al.push(spread>0.07?`<div class="alert warn"><b>Claude's own ARV and the comp math are ${pct(spread,0)} apart.</b> ${list}. Look at which comps drive the difference.</div>`:`<div class="alert good"><b>Claude's own ARV and the comp math agree within ${pct(spread,0)}.</b> ${list}</div>`); }
-  if(arv.used.length<3) al.push(`<div class="alert bad"><b>Only ${arv.used.length} comp${arv.used.length===1?"":"s"} pass the rules.</b> Run it again, add your MLS export, or widen the radius under All comps &amp; rules.</div>`);
+  const aiArv = (S.claude&&S.claude.arv) || (S.agentReports.ai&&S.agentReports.ai.value_arv);
+  if(aiArv && arv.value){ const d=Math.abs(aiArv-arv.value)/arv.value;
+    al.push(`<div class="alert ${d>0.07?'warn':'good'}"><b>Claude's ARV ${kmoney(aiArv)} vs the comp math ${kmoney(arv.value)}: ${d>0.07?pct(d,0)+" apart.":"within "+pct(d,0)+"."}</b> ${d>0.07?"Look at which comps drive the difference.":""}</div>`); }
+  if(arv.used.length<3) al.push(`<div class="alert ${cur.src==="Claude"?'warn':'bad'}"><b>Only ${arv.used.length} comp${arv.used.length===1?" fits":"s fit"} the automatic rules.</b> ${cur.src==="Claude"?"The list below uses Claude's picks, which include comps outside the rules.":"Run it again, add your MLS export, or widen the radius under All comps &amp; rules."}</div>`);
   const comp=R.competition;
   al.push(comp.length? `<div class="alert ${comp.length>4?'warn':'good'}"><b>${comp.length} competing listing${comp.length===1?"":"s"} nearby:</b> ${comp.map(c=>`${esc(street(c.address))} ${c.status.toLowerCase()} at ${kmoney(c.price)}`).join(" · ")}</div>`
     : `<div class="alert good"><b>No competing listings nearby.</b> Low supply supports the top half of the range.</div>`);
   $("alerts").innerHTML=al.join("");
-  // comps (Claude's picks if Claude is the basis)
-  const used=arv.used.slice(0,5);
-  const cw = cur.src==="Claude" && S.claude.top_comps ? Object.fromEntries(S.claude.top_comps.map(t=>[normAddr(t.address),t])) : {};
-  $("compList").innerHTML = used.map((u,i)=>{ const c=cw[normAddr(u.address)];
-    const flags=[!(u.src||[]).length?`<span class="pill warn">no source</span>`:"",(u.conflicts||[]).length?`<span class="pill bad">facts disagree</span>`:"",u.isListing?`<span class="pill warn">${u.status}</span>`:""].join(" ");
-    return `<div class="comp ${hlId===u.id?'hl':''}" data-id="${u.id}"><div class="rank" style="background:${tier(u.score,true)}">${i+1}</div>
+  // comps: Claude's picks first when Claude is the basis, then the engine's
+  const list=topList();
+  $("compList").innerHTML = list.map((u,i)=>{
+    const flags=[(!(u.src||[]).length||u.verifyOnly)?`<span class="pill warn">check this sale</span>`:"",u.aiconf&&u.aiconf!=="high"?`<span class="pill ${u.aiconf==="low"?"bad":"warn"}">${esc(u.aiconf)} confidence</span>`:"",(u.conflicts||[]).length?`<span class="pill bad">facts disagree</span>`:"",u.isListing?`<span class="pill warn">${u.status}</span>`:""].join(" ");
+    const match = u.score!=null ? `${Math.round(u.score)}% match` : `outside the rules (${esc((u.why||[]).join(", "))})`;
+    return `<div class="comp ${hlId===u.id?'hl':''}" data-id="${u.id}"><div class="rank" style="background:${tier(u.score??70,true)}">${i+1}</div>
       <div><div class="addr">${u.src&&u.src[0]&&/^https?:/.test(u.src[0])?`<a href="${esc(u.src[0])}" target="_blank" rel="noopener">${esc(street(u.address))}</a>`:esc(street(u.address))}</div>
-      <div class="why">${esc(c&&c.why?c.why:whyLine(u))}</div>
-      <div class="meta">${u.beds??"?"} bd · ${u.baths??"?"} ba · ${u.sqft?u.sqft.toLocaleString():"?"} sf · ${Math.round(u.score)}% match ${flags}</div></div>
-      <div class="right"><div class="price">${kmoney(u.price)}</div><div class="adj">adj ${kmoney(u.adjusted)}</div><div class="adj">${pct(u.weight,0)} weight</div></div></div>`; }).join("") || `<div class="comp"><div></div><div class="muted">No comps pass the rules yet.</div><div></div></div>`;
+      <div class="why">${esc(u.claudeWhy||whyLine(u))}</div>
+      <div class="meta">${u.status} ${u.date||""} · ${u.beds??"?"} bd · ${u.baths??"?"} ba · ${u.sqft?u.sqft.toLocaleString():"?"} sf${u.dist!=null?" · "+u.dist.toFixed(2)+" mi":""} · ${match} ${flags}</div></div>
+      <div class="right"><div class="price">${kmoney(u.price)}</div>${u.adjusted?`<div class="adj">adj ${kmoney(u.adjusted)}</div>`:""}<div class="adj">${u.claudeW!=null?u.claudeW+"%":pct(u.weight,0)} weight</div></div></div>`; }).join("") || `<div class="comp"><div></div><div class="muted">No comps pass the rules yet.</div><div></div></div>`;
   $("compList").querySelectorAll(".comp[data-id]").forEach(el=>{ el.onmouseenter=()=>highlight(el.dataset.id); el.onclick=()=>highlight(el.dataset.id); });
 }
 
 function renderMap(){
-  const svg=$("map"), s=S.subject, f=R.f, W=600,H=440,cx=W/2,cy=H/2,rpx=180, scale=rpx/Math.max(f.radius,0.1);
-  const byId=Object.fromEntries(R.arv.cands.map(c=>[c.id,c])), rank=Object.fromEntries(R.arv.used.slice(0,5).map((u,i)=>[u.id,i+1]));
+  const svg=$("map"), s=S.subject, f=R.f, W=600,H=440,cx=W/2,cy=H/2,rpx=180;
+  const byId=Object.fromEntries(R.arv.cands.map(c=>[c.id,c])), top=topList(), rank=Object.fromEntries(top.map((u,i)=>[u.id,i+1]));
+  const near=R.rows.filter(r=>r.dist!=null&&r.dist<=f.radius&&(rank[r.id]||byId[r.id])).map(r=>r.dist);
+  const viewR = near.length? Math.min(Math.max(f.radius,0.3), Math.max(0.3, Math.ceil(Math.max(...near)*1.25*20)/20)) : f.radius;
+  const scale=rpx/Math.max(viewR,0.1);
   let g=`<rect width="${W}" height="${H}" fill="var(--map-bg)"/>`;
   for(let x=0;x<=W;x+=40) g+=`<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="var(--line)" stroke-width="0.5" opacity=".6"/>`;
   for(let y=0;y<=H;y+=40) g+=`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="var(--line)" stroke-width="0.5" opacity=".6"/>`;
-  [0.5].forEach(k=>{ g+=`<circle cx="${cx}" cy="${cy}" r="${rpx*k}" fill="none" stroke="var(--map-ring)" stroke-opacity=".3"/><text x="${cx+4}" y="${cy-rpx*k-3}" font-size="11" fill="var(--muted)" font-family="JetBrains Mono,monospace">${+(f.radius*k).toFixed(2)} mi</text>`; });
+  [0.5].forEach(k=>{ g+=`<circle cx="${cx}" cy="${cy}" r="${rpx*k}" fill="none" stroke="var(--map-ring)" stroke-opacity=".3"/><text x="${cx+4}" y="${cy-rpx*k-3}" font-size="11" fill="var(--muted)" font-family="JetBrains Mono,monospace">${+(viewR*k).toFixed(2)} mi</text>`; });
   g+=`<circle cx="${cx}" cy="${cy}" r="${rpx}" fill="var(--map-ring)" fill-opacity=".05" stroke="var(--map-ring)" stroke-width="2" stroke-dasharray="6 5"/>`;
-  g+=`<rect x="${cx-46}" y="${cy-rpx-24}" width="92" height="20" rx="10" fill="var(--map-ring)"/><text x="${cx}" y="${cy-rpx-10}" text-anchor="middle" font-size="12" font-weight="600" fill="var(--accent-ink)" font-family="Source Sans 3,sans-serif">${f.radius} mile radius</text>`;
+  g+=`<rect x="10" y="10" width="112" height="22" rx="11" fill="var(--map-ring)"/><text x="66" y="25" text-anchor="middle" font-size="12" font-weight="600" fill="var(--accent-ink)" font-family="Source Sans 3,sans-serif">${+viewR.toFixed(2)} mi${viewR<f.radius?" (zoomed)":" radius"}</text>`;
   g+=`<text x="${W-14}" y="22" text-anchor="end" font-size="12" fill="var(--muted)" font-family="Source Sans 3,sans-serif">N ↑</text>`;
   const pins=[]; let missing=0;
   if(s.lat!=null&&s.lng!=null) R.rows.forEach(r=>{
@@ -757,8 +774,8 @@ function renderMap(){
   });
   pins.sort((a,b)=>(a.rk?1:0)-(b.rk?1:0) || (a.c?1:0)-(b.c?1:0));
   pins.forEach(p=>{ const col=tier(p.c?p.c.score:0,!!p.c), hl=hlId===p.r.id;
-    if(!p.c) g+=`<g class="pin" data-id="${p.r.id}" style="cursor:pointer"><circle cx="${p.x}" cy="${p.y}" r="${hl?9:6}" fill="var(--surface)" stroke="${col}" stroke-width="2.5"/></g>`;
-    else if(p.rk) g+=`<g class="pin" data-id="${p.r.id}" style="cursor:pointer"><circle cx="${p.x}" cy="${p.y}" r="${hl?16:12}" fill="${col}" stroke="var(--surface)" stroke-width="2"/><text x="${p.x}" y="${p.y+4}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff" font-family="JetBrains Mono,monospace">${p.rk}</text></g>`;
+    if(!p.c && !p.rk) g+=`<g class="pin" data-id="${p.r.id}" style="cursor:pointer"><circle cx="${p.x}" cy="${p.y}" r="${hl?9:6}" fill="var(--surface)" stroke="${col}" stroke-width="2.5"/></g>`;
+    else if(p.rk) g+=`<g class="pin" data-id="${p.r.id}" style="cursor:pointer"><circle cx="${p.x}" cy="${p.y}" r="${hl?16:12}" fill="${p.c?col:"var(--pin-wide)"}" stroke="var(--surface)" stroke-width="2"/><text x="${p.x}" y="${p.y+4}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff" font-family="JetBrains Mono,monospace">${p.rk}</text></g>`;
     else g+=`<g class="pin" data-id="${p.r.id}" style="cursor:pointer"><circle cx="${p.x}" cy="${p.y}" r="${hl?9:6}" fill="${col}" stroke="var(--surface)" stroke-width="1.5"/></g>`;
   });
   if(s.lat!=null&&s.lng!=null) g+=`<path d="M${cx} ${cy-22} l12 12 v12 h-24 v-12 z" fill="var(--pin-subject)" stroke="var(--surface)" stroke-width="2"/><text x="${cx}" y="${cy+20}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)" font-family="Source Sans 3,sans-serif">SUBJECT</text>`;
