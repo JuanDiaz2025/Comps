@@ -40,7 +40,7 @@ One internal valuation system that gives a defensible property value without rel
 - **Negative expected profit at the likely or asking price is an automatic "NO, DO NOT BUY".** Never present it as "NEEDS JUAN'S ATTENTION".
 - Verdict words (page and replies):
   - **YES, BUY IT**: price at or under the max offer, confidence 90%+.
-  - **NO, DO NOT BUY**: only when Twin would lose money (negative net profit) at the likely or asking price.
+  - **NO, DO NOT BUY**: Twin would lose money (negative net profit) at the likely or asking price, **or the house is already renovated** (condition 4 Updated or 5 Remodeled). Renovated houses are an automatic no: set `cond` to 4 or 5 whenever the listing describes a renovated kitchen or baths.
   - **NEEDS JUAN'S ATTENTION**: any positive profit that is under the target (price over the max offer), or confidence under 90%.
   - **OFFER UP TO $X**: no asking or likely price yet.
 - The listing and market data decide the likely sale price. Base the likely price on the local sale-to-list ratio (North Berkeley about 140% of list in 2026).
