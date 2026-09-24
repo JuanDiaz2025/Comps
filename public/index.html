@@ -756,7 +756,7 @@ function dealMath(arv){
   // max offer: the price where profit equals the target (solve; transfer tax is tiered)
   let P=(arv-fixedSum-(d.profit||0))/1.1;
   for(let i=0;i<8;i++){ const k=(costsAt(P)-fixedSum)/Math.max(P,1); P=(arv-fixedSum-(d.profit||0))/(1+k); }
-  const max=Math.max(0,Math.round(P/1000)*1000);
+  const max=Math.max(0,Math.floor(P/1000)*1000);
   const breakdown = p => { const v=varCosts(p), net=profitAt(p), gross=net+arv*(d.mariaelena||0)/100, cash=p-v.loan+v.buyTT+(d.escrow||0);
     return {p, v, fixed, net, gross, cash, roi: cash>1000? net/cash*12/m : null}; };
   return {max, target:max-Math.round(arv*0.02/5000)*5000, profitAt, breakdown, city:cityOf(), m};
@@ -799,7 +799,7 @@ function buildCalc(){
     S.deal={...DEFAULT_DEAL,...keep,renoAuto:true,juan:null,calcPrice:null,ttOverride:null}; render(); toast("Calculator reset to Twin's defaults"); };
 }
 function renderCalc(arv, price){
-  const box=$("calcBox"); if(!arv){ box.hidden=true; return; } box.hidden=false; buildCalc();
+  const box=$("calcBox"); if(!arv){ box.hidden=true; return null; } box.hidden=false; buildCalc();
   const cur=currentARV(), autoArv = S.deal.useClaude&&S.claude&&S.claude.arv ? S.claude.arv : R.arv.value;
   const dm=dealMath(arv), atLikely=S.calcAt==="likely"&&price, baseP=atLikely?price:dm.max, p=S.deal.calcPrice||baseP, b=dm.breakdown(p);
   $("calcAt").innerHTML = `<span class="small muted">Show the deal at:</span> <button type="button" class="btn${!atLikely&&!S.deal.calcPrice?" primary":""}" data-at="max">Max offer ${money(dm.max)}</button>`+(price?` <button type="button" class="btn${atLikely&&!S.deal.calcPrice?" primary":""}" data-at="likely">Likely price ${money(price)} · net ${money(dm.profitAt(price))}</button>`:"");
@@ -815,6 +815,7 @@ function renderCalc(arv, price){
       if(i.ph) el.placeholder=i.ph(c);
       if(document.activeElement!==el) el.value = S.deal[i.k]??""; }
   }
+  return {p, net:b.net, at: S.deal.calcPrice?"your "+kmoney(p):atLikely?"likely "+kmoney(p):"max offer "+kmoney(p)};
 }
 function whyLine(u){
   const s=S.subject, bits=[];
@@ -854,7 +855,7 @@ function renderAnswer(){
   const next = conf>=90 ? "" : conf>=75 ? " Juan checks the 5 comps before offering." : " Juan checks the comps, and order a BPO or desktop appraisal before a firm offer.";
   const nextShort = conf>=90?"ready for an offer":conf>=75?"Juan checks the comps":"Juan checks + order a BPO";
   const atList = ask ? profitAt(ask) : null;
-  const likelyTxt = likely&&ask&&likely>ask*1.03 ? `At the ${money(ask)} list price Twin would make ${money(atList)}, but homes here sell over asking, so it will likely go for about <b>${money(likely)}</b>. ` : "";
+  const likelyTxt = likely&&ask&&likely>ask*1.03 ? `At the ${money(ask)} list price Twin would ${atList<0?"lose "+money(-atList):"make "+money(atList)}, but homes here sell over asking, so it will likely go for about <b>${money(likely)}</b>. ` : "";
   let cls,word,line;
   if(!price){ cls="review"; word="OFFER UP TO"; line=`<b>${money(dm.max)}</b>. Start at <b>${money(dm.target)}</b>. Type the asking price above to get BUY / REVIEW / PASS.`; }
   else if(profitAt(price)<0){ cls="fail"; word="AUTO-FAIL"; line=`${likelyTxt}At ${money(price)} Twin would <b>lose ${money(-profitAt(price))}</b> after reno, commission, transfer taxes, loan costs and holding. Negative profit is an automatic fail: don't offer above <b>${money(dm.max)}</b>.`; }
@@ -862,14 +863,14 @@ function renderAnswer(){
   else if(price>dm.max){ cls="review"; word="NEGOTIATE"; line=`${likelyTxt}${money(price)} is just over the max offer of <b>${money(dm.max)}</b>. Profit would be ${money(profitAt(price))}.${next}`; }
   else if(conf>=90){ cls="buy"; word="BUY"; line=`At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b>. Max offer is <b>${money(dm.max)}</b>.`; }
   else { cls="review"; word="REVIEW"; line=`${likelyTxt}At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b> (max offer ${money(dm.max)}). Confidence is ${Math.round(conf)}%.${next}`; }
-  renderCalc(cur.v, price);
+  const shown = renderCalc(cur.v, price);
   $("verdict").innerHTML=`<div class="verdict ${cls}"><span class="big">${word}</span><span class="line">${line}</span></div>`;
   const arvRange = cur.src==="Claude"&&S.claude.arv_range? S.claude.arv_range : [arv.low,arv.high];
   $("kpis").innerHTML=`
     <div class="kpi hero"><div class="k">ARV${cur.src==="Juan"?" · Juan":""}</div><div class="v">${kmoney(cur.v)}</div><div class="r">${kmoney(arvRange[0])} – ${kmoney(arvRange[1])}</div></div>
     <div class="kpi"><div class="k">As-is value</div><div class="v">${kmoney(cur.src==="Claude"&&S.claude.as_is_value?S.claude.as_is_value:asis.value)}</div><div class="r">${likely?"likely sale "+kmoney(likely):"today's condition"}</div></div>
     <div class="kpi"><div class="k">Twin buy (max)</div><div class="v">${kmoney(dm.max)}</div><div class="r">start at ${kmoney(dm.target)}</div></div>
-    <div class="kpi"><div class="k">${price&&profitAt(price)<0?"Expected loss":"Expected profit"}</div><div class="v" style="color:var(--${price&&profitAt(price)<(S.deal.profit||0)?'bad':'ink'})">${kmoney(price?profitAt(price):S.deal.profit)}</div><div class="r">${price?priceLabel:"at max offer"} · reno ${kmoney(S.deal.reno)}</div></div>
+    <div class="kpi"><div class="k">${shown.net<0?"Expected loss":"Expected profit"}</div><div class="v" style="color:var(--${shown.net<0?'bad':'ink'})">${kmoney(shown.net)}</div><div class="r">at ${shown.at}${price&&price!==shown.p?` · at likely ${kmoney(price)}: ${kmoney(profitAt(price))}`:""} · reno ${kmoney(S.deal.reno)}</div></div>
     <div class="kpi"><div class="k">Confidence</div><div class="v" style="color:var(--${cc})">${Math.round(conf)}%</div><div class="r">${nextShort}</div></div>`;
   // alerts
   const al=[];
