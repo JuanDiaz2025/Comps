@@ -161,6 +161,16 @@ input.big{font-size:19px;padding:12px 14px;font-weight:600}
 @media (prefers-reduced-motion:reduce){.sweep-layer{display:none}}
 .map-tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.15);max-width:240px}
 .alerts{display:flex;flex-direction:column;gap:6px}
+.locmkt{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+.locmkt:empty{display:none}
+@media (max-width:700px){.locmkt{grid-template-columns:1fr}}
+.lm{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface-2);min-width:0;font-size:13.5px}
+.lm .h{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
+.lm .h .k{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+.lm .h .g{font-size:20px;font-weight:800}
+.lm .stats{color:var(--muted);font-size:12.5px;margin:2px 0 4px}
+.lm ul{margin:4px 0 0;padding-left:0;list-style:none}
+.lm li{margin:1px 0}
 .alert{border-radius:7px;padding:8px 12px;font-size:13.5px;border:1px solid var(--line)}
 .alert.warn{background:var(--warn-soft)}
 .alert.bad{background:var(--bad-soft)}
@@ -268,6 +278,7 @@ details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(
     <div class="pb">
       <div id="verdict"></div>
       <div class="kpis" id="kpis"></div>
+      <div class="locmkt" id="locmkt"></div>
       <div class="alerts" id="alerts"></div>
       <div class="answer-split">
         <div>
@@ -851,7 +862,7 @@ function renderAnswer(){
   $("basisChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.deal.useClaude=b.dataset.v==="1"; render();});
   if(!cur.v){
     $("verdict").innerHTML=`<div class="verdict review"><span class="big">READY</span><span class="line">Type the address and press <b>Run comps</b>. The value shows up here when Claude is done searching.</span></div>`;
-    $("kpis").innerHTML=""; $("alerts").innerHTML=""; $("compList").innerHTML=""; renderCalc(null); return;
+    $("kpis").innerHTML=""; $("locmkt").innerHTML=""; $("alerts").innerHTML=""; $("compList").innerHTML=""; renderCalc(null); return;
   }
   const dm=dealMath(cur.v);
   const conf = cur.src==="Claude"&&S.claude.confidence? S.claude.confidence : arv.conf;
@@ -876,7 +887,16 @@ function renderAnswer(){
   else if(price>dm.max){ cls="review"; word="NEEDS JUAN'S ATTENTION"; line=`${offerLine} The <b>${money(price)}</b> asking price is ${money(price-dm.max)} over the max; at asking Twin makes only ${money(profitAt(price))} (${pct(ret(price).pct)}), under the ${money(S.deal.profit)} target. Juan decides if that is worth it.`; }
   else if(sure){ cls="buy"; word="YES, BUY IT"; line=`${offerLine} Start at or below the ${money(price)} asking price and go no higher than ${money(dm.max)} if others bid. Confidence ${Math.round(conf)}%.${next}`; }
   else { cls="review"; word="NEEDS JUAN'S ATTENTION"; line=`${offerLine} The ${money(price)} asking price is under the max, but confidence is ${Math.round(conf)}%.${next}`; }
+  // Location and market (from Claude's research) can overrule a yes.
+  const L = S.claude&&S.claude.location, M = S.claude&&S.claude.market, grade = L&&String(L.grade||"").toUpperCase(), trend = M&&String(M.trend||"").toLowerCase();
+  if(!renovated && grade==="D" && cls!=="fail"){ cls="fail"; word="NO, DO NOT BUY"; line=`<b>Location grade D.</b> ${esc(L.summary||"The location hurts resale too much for a flip.")} Twin can't fix the location, so it's a no at any price.`; }
+  else if(cls==="buy" && (grade==="C" || trend==="falling")){ cls="review"; word="NEEDS JUAN'S ATTENTION"; line+=` ${grade==="C"?`<b>Location grade C</b>: ${esc(String(L.summary||"weaker resale location").replace(/\.\s*$/,""))}. `:""}${trend==="falling"?`<b>The market is falling</b>: ${esc(String(M.summary||"prices are dropping").replace(/\.\s*$/,""))}. `:""}Juan decides.`; }
   renderCalc(cur.v, price);
+  const gcol = g => g==="A"?"good":g==="B"?"good":g==="C"?"warn":"bad", tcol = t => t==="rising"?"good":t==="falling"?"bad":"warn";
+  const li = a => (a||[]).length?`<ul>${a.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:"";
+  const fmtPct = v => v==null||v===""?null:(Number(v)>0?"+":"")+Number(v).toFixed(1).replace(/\.0$/,"")+"%";
+  $("locmkt").innerHTML = (L?`<div class="lm"><div class="h"><span class="k">Location</span><span class="g" style="color:var(--${gcol(grade)})">${esc(grade||"?")}</span></div><div>${esc(L.summary||"")}</div>${li((L.pluses||[]).map(x=>"+ "+x))}${li((L.minuses||[]).map(x=>"− "+x))}</div>`:"")
+    + (M?`<div class="lm"><div class="h"><span class="k">Market</span><span class="g" style="color:var(--${tcol(trend)})">${esc(trend||"?")}</span></div><div class="stats">${[M.median_price?"median "+kmoney(M.median_price):null, fmtPct(M.yoy_pct)?fmtPct(M.yoy_pct)+" vs last year":null, M.dom!=null?M.dom+" days on market":null, M.sale_to_list_pct?M.sale_to_list_pct+"% of list":null].filter(Boolean).join(" · ")}</div><div>${esc(M.summary||"")}</div>${(M.sources||[]).length?`<div class="stats">${M.sources.slice(0,3).map((u,i)=>`<a href="${esc(u)}" target="_blank" rel="noopener">source ${i+1}</a>`).join(" · ")}</div>`:""}</div>`:"");
   $("verdict").innerHTML=`<div class="verdict ${cls}"><span class="big">${word}</span><span class="line">${line}</span></div>`;
   const arvRange = cur.src==="Claude"&&S.claude.arv_range? S.claude.arv_range : [arv.low,arv.high];
   $("kpis").innerHTML=`

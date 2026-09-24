@@ -51,6 +51,19 @@ One internal valuation system that gives a defensible property value without rel
   - A spike farther away is an outlier: give it little weight or leave it out, and say why.
   - A market-wide spike (several recent sales all well above last year) means prices moved: weight the newest sales and apply a time adjustment, don't average it away.
   - The page flags spikes the same way (location spike, low sale nearby, outlier) and cuts the weight of far outliers.
+- **Location grade and market read on every run.** Claude decides whether it's a great location and reads the market, and writes both into `claude`:
+  - `location: {grade: "A"|"B"|"C"|"D", summary, pluses[], minuses[]}`.
+    - **A**: best blocks (views, top schools, quiet, walkable).
+    - **B**: solid residential.
+    - **C**: resale drag (busy street, next to commercial, weak block, steep or odd lot).
+    - **D**: location a flip can't fix (on or next to a freeway, rail line, industrial use, major arterial, flood zone, high-crime pocket).
+  - `market: {trend: "rising"|"flat"|"falling", summary, median_price, yoy_pct, dom, sale_to_list_pct, sources[]}`, from the neighborhood's latest stats (Redfin neighborhood housing-market page, local market reports).
+
+  Effect on the verdict (the page applies it):
+  - **D is an automatic NO, DO NOT BUY.**
+  - **C or a falling market turns a YES into NEEDS JUAN'S ATTENTION.**
+
+  Value at today's prices; never add expected appreciation to the ARV.
 - Separate as-is comps (condition 1–3) from ARV comps (condition 4–5). Use active and pending listings as competition, not as sold evidence.
 - **No guessing what the seller will get.** Claude is the decision maker: decide on facts only, meaning the offer range from the comps and the asking price when there is one. Don't set `likely_sale_price` and don't write "the seller will likely get". When the ask is under the max offer (common with bait list prices), the offer range runs from the ask up to the max, and the max is the ceiling if others bid.
 - Flag thin data (few 2026 sales, no dates, no condition) with lower confidence instead of false precision.
