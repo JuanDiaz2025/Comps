@@ -1276,7 +1276,7 @@ function renderAnswer(){
   else if(sure){ cls="buy"; word="YES, BUY IT"; line=`${offerLine} Start at or below the ${money(price)} asking price and go no higher than ${money(dm.max)} if others bid. Confidence ${Math.round(conf)}%.${next}`; }
   else { cls="review"; word="NEEDS JUAN'S ATTENTION"; line=`${offerLine} The ${money(price)} asking price is under the max, but confidence is ${Math.round(conf)}%.${next}`; }
   // Location and market (from Claude's research) can overrule a yes.
-  if(!renovated && grade==="D" && cls!=="fail"){ cls="fail"; word="NO, DO NOT BUY"; line=`<b>Location grade D.</b> ${esc(L.summary||"The location hurts resale too much for a flip.")} Twin can't fix the location, so it's a no at any price.`; }
+  if(!renovated && grade==="D"){ cls="fail"; word="NO, DO NOT BUY"; line=`<b>Location grade D.</b> ${esc(L.summary||"The location hurts resale too much for a flip.")} Twin can't fix the location, so it's a no at any price.`; }
   else if(cls==="buy" && (grade==="C" || trend==="falling")){ cls="review"; word="NEEDS JUAN'S ATTENTION"; line+=` ${grade==="C"?`<b>Location grade C</b>: ${esc(String(L.summary||"weaker resale location").replace(/\.\s*$/,""))}. `:""}${trend==="falling"?`<b>The market is falling</b>: ${esc(String(M.summary||"prices are dropping").replace(/\.\s*$/,""))}. `:""}Juan decides.`; }
   renderCalc(cur.v, price);
   const gcol = g => g==="A"?"good":g==="B"?"good":g==="C"?"warn":"bad", tcol = t => t==="rising"?"good":t==="falling"?"bad":"warn";
@@ -1289,8 +1289,8 @@ function renderAnswer(){
   $("verdict").innerHTML=`<div class="verdict ${cls}"><span class="big">${word}</span><span class="line">${line}</span></div>`;
   const arvRange = cur.src==="Claude"&&S.claude.arv_range? S.claude.arv_range : [arv.low,arv.high];
   $("kpis").innerHTML=`
-    <div class="kpi hero"><div class="k">Offer range</div>${renovated?`<div class="v">Don't offer</div><div class="r">already nice · no flip upside</div>`:`<div class="v">${lo===hi?kmoney(hi):kmoney(lo)+"–"+kmoney(hi)}</div><div class="r">start ${kmoney(lo)} · walk away above ${kmoney(dm.max)}</div>`}</div>
-    <div class="kpi"><div class="k">Twin's return</div>${renovated?`<div class="v" style="color:var(--bad)">None</div><div class="r">nothing left to renovate</div>`:`<div class="v" style="color:var(--${rHi.n<0?'bad':'good'})">${lo===hi?kmoney(rHi.n):kmoney(rHi.n)+"–"+kmoney(rLo.n)}</div><div class="r">${lo===hi?pct(rHi.pct):pct(rHi.pct)+"–"+pct(rLo.pct)} net return on total cost</div>`}</div>
+    <div class="kpi hero"><div class="k">Offer range</div>${renovated||grade==="D"?`<div class="v">Don't offer</div><div class="r">${renovated?"already nice · no flip upside":"location D · can't fix the location"}</div>`:`<div class="v">${lo===hi?kmoney(hi):kmoney(lo)+"–"+kmoney(hi)}</div><div class="r">start ${kmoney(lo)} · walk away above ${kmoney(dm.max)}</div>`}</div>
+    <div class="kpi"><div class="k">Twin's return</div>${renovated||grade==="D"?`<div class="v" style="color:var(--bad)">None</div><div class="r">${renovated?"nothing left to renovate":"location D: automatic no"}</div>`:`<div class="v" style="color:var(--${rHi.n<0?'bad':'good'})">${lo===hi?kmoney(rHi.n):kmoney(rHi.n)+"–"+kmoney(rLo.n)}</div><div class="r">${lo===hi?pct(rHi.pct):pct(rHi.pct)+"–"+pct(rLo.pct)} net return on total cost</div>`}</div>
     <div class="kpi"><div class="k">ARV${cur.src==="Juan"?" · Juan":""}</div><div class="v">${kmoney(cur.v)}</div><div class="r">${kmoney(arvRange[0])} – ${kmoney(arvRange[1])} · reno ${kmoney(S.deal.reno)}</div></div>
     <div class="kpi"><div class="k">Confidence</div><div class="v" style="color:var(--${cc})">${Math.round(conf)}%</div><div class="r">${price?("asking "+kmoney(price)+": "+(profitAt(price)<0?"loss "+kmoney(-profitAt(price)):kmoney(profitAt(price))+" profit")):nextShort}</div></div>`;
   // alerts
