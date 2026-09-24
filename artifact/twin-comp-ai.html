@@ -146,6 +146,14 @@ input.big{font-size:19px;padding:12px 14px;font-weight:600}
 .mapbox svg{display:block;width:100%;height:auto}
 .legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--ink-2);margin-top:6px}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.sweep-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.sweep-arm{transform-box:view-box;transform-origin:300px 220px;animation:radar-spin 4.5s linear infinite}
+.mapbox.searching .sweep-arm{animation-duration:1.6s}
+.pulse{transform-box:view-box;transform-origin:300px 220px;animation:radar-pulse 3s ease-out infinite}
+.mapbox.searching .pulse{animation-duration:1.4s}
+@keyframes radar-spin{to{transform:rotate(360deg)}}
+@keyframes radar-pulse{0%{transform:scale(.08);opacity:.55}100%{transform:scale(1);opacity:0}}
+@media (prefers-reduced-motion:reduce){.sweep-layer{display:none}}
 .map-tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.15);max-width:240px}
 .alerts{display:flex;flex-direction:column;gap:6px}
 .alert{border-radius:7px;padding:8px 12px;font-size:13.5px;border:1px solid var(--line)}
@@ -252,7 +260,7 @@ details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(
           <div class="comp-list" id="compList"></div>
         </div>
         <div>
-          <div class="mapbox" id="mapbox"><svg id="map" viewBox="0 0 600 440" role="img" aria-label="Map of the comps around the subject"></svg><div class="map-tip" id="mapTip" hidden></div></div>
+          <div class="mapbox" id="mapbox"><svg id="map" viewBox="0 0 600 440" role="img" aria-label="Map of the comps around the subject"></svg><svg id="sweep" class="sweep-layer" viewBox="0 0 600 440" aria-hidden="true"></svg><div class="map-tip" id="mapTip" hidden></div></div>
           <div class="legend">
             <span><i style="background:var(--pin-subject)"></i>Subject</span>
             <span><i style="background:var(--pin-match)"></i>Strong comp</span>
@@ -1074,6 +1082,7 @@ function renderAnswer(){
   $("basisChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.deal.useClaude=b.dataset.v==="1"; render();});
   if(!cur.v){
     const sent = S.pendingFor && S.pendingFor===normAddr(s.address);
+    $("mapbox").classList.toggle("searching", !!(sent && S.pendingWoke));
     $("verdict").innerHTML = sent
       ? (()=>{ const min=Math.floor((Date.now()-(S.pendingAt||Date.now()))/60000);
           if(!S.pendingWoke) return `<div class="verdict review"><span class="big">SENT</span><span class="line"><b>${esc(street(s.address))}</b> is saved for Claude. Tell Claude in chat: <b>run comps</b>. The comps load here by themselves.</span></div>`;
@@ -1084,6 +1093,7 @@ function renderAnswer(){
       : `<div class="verdict review"><span class="big">READY</span><span class="line">Type the address and press <b>Run comps</b>.</span></div>`;
     $("kpis").innerHTML=""; $("alerts").innerHTML=""; $("compList").innerHTML=""; return;
   }
+  $("mapbox").classList.remove("searching");
   const dm=dealMath(cur.v);
   const conf = cur.src==="Claude"&&S.claude.confidence? S.claude.confidence : arv.conf;
   const ask=s.ask, likely = cur.src==="Claude"&&S.claude.likely_sale_price? S.claude.likely_sale_price : null;
@@ -1134,6 +1144,15 @@ function renderAnswer(){
   $("compList").querySelectorAll(".comp[data-id]").forEach(el=>{ el.onmouseenter=()=>highlight(el.dataset.id); el.onclick=()=>highlight(el.dataset.id); });
 }
 
+function buildSweep(){
+  const cx=300, cy=220, r=180, N=22, span=2.6; let trail="";
+  for(let i=0;i<N;i++){
+    const a0=-(i+1)*span*Math.PI/180, a1=-i*span*Math.PI/180, op=(0.30*Math.pow(1-i/N,1.6)).toFixed(3);
+    trail+=`<path d="M${cx} ${cy} L${(cx+r*Math.cos(a0)).toFixed(1)} ${(cy+r*Math.sin(a0)).toFixed(1)} A${r} ${r} 0 0 1 ${(cx+r*Math.cos(a1)).toFixed(1)} ${(cy+r*Math.sin(a1)).toFixed(1)} Z" fill="var(--map-ring)" fill-opacity="${op}"/>`;
+  }
+  $("sweep").innerHTML = `<circle class="pulse" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--map-ring)" stroke-width="2"/>`
+    + `<g class="sweep-arm">${trail}<line x1="${cx}" y1="${cy}" x2="${cx+r}" y2="${cy}" stroke="var(--map-ring)" stroke-width="2" stroke-opacity=".85"/><circle cx="${cx+r}" cy="${cy}" r="3.5" fill="var(--map-ring)"/></g>`;
+}
 function renderMap(){
   const svg=$("map"), s=S.subject, f=R.f, W=600,H=440,cx=W/2,cy=H/2,rpx=180;
   const byId=Object.fromEntries(R.arv.cands.map(c=>[c.id,c])), top=topList(), rank=Object.fromEntries(top.map((u,i)=>[u.id,i+1]));
@@ -1262,6 +1281,7 @@ $("saveVal").onclick=async()=>{
   logRows.push({...rec,_id:"l"+Date.now().toString(36)}); lsSave(logRows); renderLog(); toast("Saved to the deal log");
 };
 logRows=lsLog(); renderLog();
+buildSweep();
 render();
 })();
 </script>
