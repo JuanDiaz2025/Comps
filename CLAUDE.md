@@ -88,6 +88,13 @@ Source: Twin's Google Sheet profit calculator (fileId 1Kp52OUCR2tIQI4Lj9J1Mmbq60
 - Net profit = sale − 5% commission − transfer tax on the resale − transfer tax on the purchase − reno − contingency − purchase-loan points and interest − construction-loan points and interest − property tax − staging, insurance, escrow and other − purchase price.
 - Gross profit = net + Mariaelena's 2.5% (it comes back in-house). **Decide on net.**
 - Fixes vs. the sheet: points are charged **once**, not prorated. The construction loan equals the reno budget, not a flat $100K. Transfer tax applies to both purchase and resale. Tiered city rates: SF, Oakland, Berkeley (2.5% above about $1.8M), San Jose Measure E, LA Measure ULA. Culver City is $5.60, not $1.10.
+- **Look at the listing photos before budgeting.** Redfin blocks WebFetch, but `curl` with a desktop browser user-agent can open Redfin home pages.
+  1. Get the subject's `/home/<id>` URL from search, or from the nearby-homes links on a neighbor's Redfin page.
+  2. From that page, read the remarks (`marketing-remarks-scroll`), price, MLS number and agent.
+  3. Download the photos (`ssl.cdn-redfin.com/photo/.../bigphoto/...jpg`) and Redfin's `longCaption` for each.
+  4. Build a contact sheet with Playwright and look at every photo.
+
+  Budget only what the photos show needs work. Keep good original features (wood trim, built-ins, hardwood), and cite photo numbers in the budget lines.
 - **Claude sets the renovation budget.** Build an itemized budget for the scope needed to reach the ARV comps' finish level:
   - Items: kitchen, baths, electrical, plumbing, floors, paint, exterior, windows, roof, foundation/seismic, permits, landscaping.
   - Price at local labor costs. SF and the inner Bay Area run about $200–250/sf for a full rehab.
