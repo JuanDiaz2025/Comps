@@ -54,7 +54,7 @@ Source: Twin's Google Sheet profit calculator (fileId 1Kp52OUCR2tIQI4Lj9J1Mmbq60
 - Fixes vs. the sheet: points are charged **once**, not prorated. The construction loan equals the reno budget, not a flat $100K. Transfer tax applies to both purchase and resale. Tiered city rates: SF, Oakland, Berkeley (2.5% above about $1.8M), San Jose Measure E, LA Measure ULA. Culver City is $5.60, not $1.10.
 - Reno from sq ft: $140/sf full rehab (condition 1–2), $60/sf light (3), $30/sf touch-up (4), $0 (5). Leave `reno` out of `results/latest` so the page applies this rule; set it only when the listing justifies a different number, and say why.
 - Loan defaults from the sheet: 100% purchase loan at 10% + 1 point, construction loan at 12% + 5 points, 3 months, property tax 1.2%/yr, escrow $1,000, other $2,000. Page adds staging $5,000, insurance $1,500 and contingency 10% of reno (the sheet had none). Adjust months for big rehabs (full rehab usually 4–6 months) and say so.
-- In every reply, give net profit at the likely price, the max offer, and the city transfer-tax rate used.
+- Claude makes the call. Every reply leads with the verdict, the **offer range** (start offer to walk-away max) and **Twin's return** at both ends (net profit and % net return on total cost). Then give net profit at the likely price and the city transfer-tax rate used. The page no longer shows an as-is value box; don't lead with as-is.
 
 ## How the live page works (claude.ai artifact)
 

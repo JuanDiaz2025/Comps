@@ -126,8 +126,8 @@ input.big{font-size:19px;padding:12px 14px;font-weight:600}
 .verdict .big{font-family:var(--display);font-size:34px;font-weight:700;letter-spacing:.04em;line-height:1}
 .verdict .line{color:var(--ink);font-size:15px;max-width:70ch}
 .verdict .line b{font-family:var(--mono)}
-.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
-@media (max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpis .kpi.hero,.kpis .kpi:last-child{grid-column:1/-1}}
 .kpi{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface-2);min-width:0}
 .kpi .k{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
 .kpi .v{font-family:var(--mono);font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -848,25 +848,30 @@ function renderAnswer(){
   const priceLabel = likely && (!ask || likely>ask) ? "at the likely sale price" : "at asking price";
   const profitAt = p => dm.profitAt(p);
   const cc = conf>=90?"good":conf>=75?"warn":"bad";
-  const next = conf>=90 ? "" : conf>=75 ? " Juan checks the 5 comps before offering." : " Juan checks the comps, and order a BPO or desktop appraisal before a firm offer.";
+  const next = conf>=90 ? "" : conf>=75 ? " Juan checks the 5 comps before offering." : " Juan checks the comps and orders a BPO or desktop appraisal before a firm offer.";
   const nextShort = conf>=90?"ready for an offer":conf>=75?"Juan checks the comps":"Juan checks + order a BPO";
-  const atList = ask ? profitAt(ask) : null;
-  const likelyTxt = likely&&ask&&likely>ask*1.03 ? `At the ${money(ask)} list price Twin would ${atList<0?"lose "+money(-atList):"make "+money(atList)}, but homes here sell over asking, so it will likely go for about <b>${money(likely)}</b>. ` : "";
+  // The decision: an offer range (start .. walk-away) and the return at each end.
+  const hi = price && price<=dm.max ? price : dm.max, lo = Math.min(dm.target, hi);
+  const ret = p => { const n=profitAt(p); return {n, pct: n/Math.max(cur.v-n,1)*100}; };
+  const rLo=ret(lo), rHi=ret(hi), pct=x=>Math.round(x)+"%";
+  const rangeTxt = lo===hi ? money(hi) : `${money(lo)}–${money(hi)}`;
+  const returnTxt = lo===hi ? `${money(rHi.n)} (${pct(rHi.pct)} return)` : `${money(rHi.n)}–${money(rLo.n)} (${pct(rHi.pct)}–${pct(rLo.pct)} return)`;
+  const offerLine = `Offer <b>${rangeTxt}</b>. Twin makes <b>${returnTxt}</b>.`;
+  const sellerTxt = !price ? "" : likely&&(!ask||likely>ask*1.03) ? `The seller will likely get about <b>${money(likely)}</b>${ask?` (listed at ${money(ask)}; homes here sell over asking)`:""}` : `The asking price is <b>${money(price)}</b>`;
   let cls,word,line;
-  if(!price){ cls="review"; word="OFFER UP TO"; line=`<b>${money(dm.max)}</b>. Start at <b>${money(dm.target)}</b>. Type the asking price above to get YES / NO / NEEDS JUAN.`; }
-  else if(profitAt(price)<0){ cls="fail"; word="NO, DO NOT BUY"; line=`${likelyTxt}At ${money(price)} Twin would <b>lose ${money(-profitAt(price))}</b> after reno, commission, transfer taxes, loan costs and holding. Negative profit is an automatic no: don't offer above <b>${money(dm.max)}</b>.`; }
-  else if(price>dm.max){ cls="review"; word="NEEDS JUAN'S ATTENTION"; line=`${likelyTxt}At ${money(price)} Twin still makes <b>${money(profitAt(price))}</b>, but that is under the ${money(S.deal.profit)} target. The price is ${money(price-dm.max)} over the max offer of <b>${money(dm.max)}</b>. Juan decides if the smaller profit is worth it, or offers ${money(dm.max)} or less.${next}`; }
-  else if(conf>=90){ cls="buy"; word="YES, BUY IT"; line=`At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b>. Max offer is <b>${money(dm.max)}</b>.`; }
-  else { cls="review"; word="NEEDS JUAN'S ATTENTION"; line=`${likelyTxt}At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b> (max offer ${money(dm.max)}). Confidence is ${Math.round(conf)}%.${next}`; }
-  const shown = renderCalc(cur.v, price);
+  if(!price){ cls="review"; word="MAKE AN OFFER"; line=`${offerLine} No asking price yet; walk away above ${money(dm.max)}.`; }
+  else if(profitAt(price)<0){ cls="fail"; word="NO, DO NOT BUY"; line=`${sellerTxt}, and at that price Twin would <b>lose ${money(-profitAt(price))}</b>. Only buy if the seller takes ${rangeTxt}: then Twin makes ${returnTxt}.`; }
+  else if(price>dm.max){ cls="review"; word="NEEDS JUAN'S ATTENTION"; line=`${offerLine} ${sellerTxt}, where Twin makes only ${money(profitAt(price))} (${pct(ret(price).pct)}), under the ${money(S.deal.profit)} target. Juan decides if that is worth it.${next}`; }
+  else if(conf>=90){ cls="buy"; word="YES, BUY IT"; line=`${offerLine} ${sellerTxt}, and Twin's max is ${money(dm.max)}.`; }
+  else { cls="review"; word="NEEDS JUAN'S ATTENTION"; line=`${offerLine} ${sellerTxt}. Confidence is ${Math.round(conf)}%.${next}`; }
+  renderCalc(cur.v, price);
   $("verdict").innerHTML=`<div class="verdict ${cls}"><span class="big">${word}</span><span class="line">${line}</span></div>`;
   const arvRange = cur.src==="Claude"&&S.claude.arv_range? S.claude.arv_range : [arv.low,arv.high];
   $("kpis").innerHTML=`
-    <div class="kpi hero"><div class="k">ARV${cur.src==="Juan"?" · Juan":""}</div><div class="v">${kmoney(cur.v)}</div><div class="r">${kmoney(arvRange[0])} – ${kmoney(arvRange[1])}</div></div>
-    <div class="kpi"><div class="k">As-is value</div><div class="v">${kmoney(cur.src==="Claude"&&S.claude.as_is_value?S.claude.as_is_value:asis.value)}</div><div class="r">${likely?"likely sale "+kmoney(likely):"today's condition"}</div></div>
-    <div class="kpi"><div class="k">Twin buy (max)</div><div class="v">${kmoney(dm.max)}</div><div class="r">start at ${kmoney(dm.target)}</div></div>
-    <div class="kpi"><div class="k">${shown.net<0?"Expected loss":"Expected profit"}</div><div class="v" style="color:var(--${shown.net<0?'bad':'ink'})">${kmoney(shown.net)}</div><div class="r">at ${shown.at}${price&&price!==shown.p?` · at likely ${kmoney(price)}: ${kmoney(profitAt(price))}`:""} · reno ${kmoney(S.deal.reno)}</div></div>
-    <div class="kpi"><div class="k">Confidence</div><div class="v" style="color:var(--${cc})">${Math.round(conf)}%</div><div class="r">${nextShort}</div></div>`;
+    <div class="kpi hero"><div class="k">Offer range</div><div class="v">${lo===hi?kmoney(hi):kmoney(lo)+"–"+kmoney(hi)}</div><div class="r">start ${kmoney(lo)} · walk away above ${kmoney(dm.max)}</div></div>
+    <div class="kpi"><div class="k">Twin's return</div><div class="v" style="color:var(--${rHi.n<0?'bad':'good'})">${lo===hi?kmoney(rHi.n):kmoney(rHi.n)+"–"+kmoney(rLo.n)}</div><div class="r">${lo===hi?pct(rHi.pct):pct(rHi.pct)+"–"+pct(rLo.pct)} net return on total cost</div></div>
+    <div class="kpi"><div class="k">ARV${cur.src==="Juan"?" · Juan":""}</div><div class="v">${kmoney(cur.v)}</div><div class="r">${kmoney(arvRange[0])} – ${kmoney(arvRange[1])} · reno ${kmoney(S.deal.reno)}</div></div>
+    <div class="kpi"><div class="k">Confidence</div><div class="v" style="color:var(--${cc})">${Math.round(conf)}%</div><div class="r">${price?((likely&&price===likely?"likely ":"asking ")+kmoney(price)+": "+(profitAt(price)<0?"loss "+kmoney(-profitAt(price)):kmoney(profitAt(price))+" profit")):nextShort}</div></div>`;
   // alerts
   const al=[];
   const risk = S.claude&&S.claude.what_could_make_us_wrong ? S.claude.what_could_make_us_wrong : (AGENTS.map(a=>S.agentReports[a.key]&&S.agentReports[a.key].risks&&S.agentReports[a.key].risks[0]).find(Boolean));
@@ -992,8 +997,7 @@ $("copyBB").onclick=()=>{
   const dm=dealMath(cur.v), s=S.subject, conf=cur.src==="Claude"&&S.claude.confidence?S.claude.confidence:R.arv.conf;
   const v=$("verdict").querySelector(".big").textContent;
   const lines=[`TWIN COMP AI · ${s.address}`,`${v} · Confidence ${Math.round(conf)}%`,
-    `ARV (${cur.src}): ${money(cur.v)}`,`As-is: ${money(cur.src==="Claude"&&S.claude.as_is_value?S.claude.as_is_value:R.asis.value)}`,
-    `Max offer: ${money(dm.max)} · Start at: ${money(dm.target)}`,`Renovation: ${money(S.deal.reno)} · Target profit: ${money(S.deal.profit)}`,
+    `Offer range: ${money(dm.target)}–${money(dm.max)} · Net profit ${money(dm.profitAt(dm.max))}–${money(dm.profitAt(dm.target))}`,`ARV (${cur.src}): ${money(cur.v)}`,`Renovation: ${money(S.deal.reno)} · Target profit: ${money(S.deal.profit)}`,
     s.ask?`Asking: ${money(s.ask)} · Profit at asking: ${money(dm.profitAt(s.ask))}`:"", "", "Best comps:",
     ...R.arv.used.slice(0,5).map((u,i)=>`${i+1}. ${street(u.address)} · ${u.status} ${money(u.price)} ${u.date||""} · ${u.sqft||"?"} sf · ${whyLine(u)}`),
     S.claude&&S.claude.why_this_value?`\nWhy: ${S.claude.why_this_value}`:"", S.claude&&S.claude.what_could_make_us_wrong?`Risk: ${S.claude.what_could_make_us_wrong}`:""].filter(x=>x!=="");
