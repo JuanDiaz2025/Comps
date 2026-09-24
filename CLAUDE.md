@@ -33,6 +33,18 @@ One internal valuation system that gives a defensible property value without rel
 
 - Use only real, sourced sales. Never invent an address, price or date. If a fact can't be confirmed, say so on the page.
 - Search the web for every run. The page has no condition picker: Claude sets the subject's condition (`cond` in `results/latest`) from the listing photos and remarks. With no listing, use Dated (2) and say so.
+- **Claude is the master comper, and location comes first.** Pick and weight comps in this order:
+  1. Same street or block.
+  2. Within 0.25 mi, same side of any major road, freeway or rail line, same school/neighborhood boundary.
+  3. Within 0.5 mi.
+  4. Up to 1 mi, only if needed.
+
+  A closer comp with a bigger size gap beats a farther "perfect" match. Say in `why` how far each comp is and what location factors it shares or doesn't (view, busy street, slope, corner, block quality).
+- **Spikes.** A spike is a sale 20%+ above or below the others on $/sf once size is accounted for. Explain every spike from the listing (view, lot, ADU, luxury finish, busy street, distressed sale).
+  - A spike on the subject's street or within 0.25 mi is a real location signal: use it and say so.
+  - A spike farther away is an outlier: give it little weight or leave it out, and say why.
+  - A market-wide spike (several recent sales all well above last year) means prices moved: weight the newest sales and apply a time adjustment, don't average it away.
+  - The page flags spikes the same way (location spike, low sale nearby, outlier) and cuts the weight of far outliers.
 - Separate as-is comps (condition 1–3) from ARV comps (condition 4–5). Use active and pending listings as competition, not as sold evidence.
 - Treat SF and Bay Area list prices as bait. When overbids are typical, set a likely sale price and decide on that price, not on the ask.
 - Flag thin data (few 2026 sales, no dates, no condition) with lower confidence instead of false precision.
