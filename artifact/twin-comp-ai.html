@@ -115,6 +115,9 @@ input.big{font-size:19px;padding:12px 14px;font-weight:600}
 .verdict.buy{background:var(--good-soft);color:var(--good)}
 .verdict.review{background:var(--warn-soft);color:var(--warn)}
 .verdict.pass{background:var(--bad-soft);color:var(--bad)}
+.verdict.fail{background:var(--bad);color:var(--surface)}
+.verdict.fail .line{color:var(--surface)}
+.verdict.fail .line b{color:var(--surface)}
 .verdict .big{font-family:var(--display);font-size:40px;font-weight:700;letter-spacing:.04em;line-height:1}
 .verdict .line{color:var(--ink);font-size:15px;max-width:70ch}
 .verdict .line b{font-family:var(--mono)}
@@ -1093,6 +1096,7 @@ function renderAnswer(){
   const likelyTxt = likely&&ask&&likely>ask*1.03 ? `Listed at ${money(ask)}, but it will likely sell around <b>${money(likely)}</b>. ` : "";
   let cls,word,line;
   if(!price){ cls="review"; word="OFFER UP TO"; line=`<b>${money(dm.max)}</b>. Start at <b>${money(dm.target)}</b>. Type the asking price above to get BUY / REVIEW / PASS.`; }
+  else if(profitAt(price)<0){ cls="fail"; word="AUTO-FAIL"; line=`${likelyTxt}At ${money(price)} Twin would <b>lose ${money(-profitAt(price))}</b> after reno, selling, holding and contingency. Negative profit is an automatic fail: don't offer above <b>${money(dm.max)}</b>.`; }
   else if(price>dm.max*1.04){ cls="pass"; word="PASS"; line=`${likelyTxt}That is ${money(price-dm.max)} over Twin's max offer of <b>${money(dm.max)}</b>: ${profitAt(price)<0?`a loss of ${money(-profitAt(price))}`:`leaving only ${money(profitAt(price))} profit`}. Buy only at or under ${money(dm.max)}.`; }
   else if(price>dm.max){ cls="review"; word="NEGOTIATE"; line=`${likelyTxt}${money(price)} is just over the max offer of <b>${money(dm.max)}</b>. Profit would be ${money(profitAt(price))}.${next}`; }
   else if(conf>=90){ cls="buy"; word="BUY"; line=`At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b>. Max offer is <b>${money(dm.max)}</b>.`; }
@@ -1103,7 +1107,7 @@ function renderAnswer(){
     <div class="kpi hero"><div class="k">ARV${cur.src==="Juan"?" · Juan":""}</div><div class="v">${kmoney(cur.v)}</div><div class="r">${kmoney(arvRange[0])} – ${kmoney(arvRange[1])}</div></div>
     <div class="kpi"><div class="k">As-is value</div><div class="v">${kmoney(cur.src==="Claude"&&S.claude.as_is_value?S.claude.as_is_value:asis.value)}</div><div class="r">${likely?"likely sale "+kmoney(likely):"today's condition"}</div></div>
     <div class="kpi"><div class="k">Twin buy (max)</div><div class="v">${kmoney(dm.max)}</div><div class="r">start at ${kmoney(dm.target)}</div></div>
-    <div class="kpi"><div class="k">Expected profit</div><div class="v" style="color:var(--${price&&profitAt(price)<(S.deal.profit||0)?'bad':'ink'})">${kmoney(price?profitAt(price):S.deal.profit)}</div><div class="r">${price?priceLabel:"at max offer"} · reno ${kmoney(S.deal.reno)}</div></div>
+    <div class="kpi"><div class="k">${price&&profitAt(price)<0?"Expected loss":"Expected profit"}</div><div class="v" style="color:var(--${price&&profitAt(price)<(S.deal.profit||0)?'bad':'ink'})">${kmoney(price?profitAt(price):S.deal.profit)}</div><div class="r">${price?priceLabel:"at max offer"} · reno ${kmoney(S.deal.reno)}</div></div>
     <div class="kpi"><div class="k">Confidence</div><div class="v" style="color:var(--${cc})">${Math.round(conf)}%</div><div class="r">${nextShort}</div></div>`;
   // alerts
   const al=[];

@@ -37,6 +37,7 @@ One internal valuation system that gives a defensible property value without rel
 - Treat SF and Bay Area list prices as bait. When overbids are typical, set a likely sale price and decide on that price, not on the ask.
 - Flag thin data (few 2026 sales, no dates, no condition) with lower confidence instead of false precision.
 - When the default deal numbers don't fit the price point (for example a $175K profit target on a $650K house), adjust them and say so.
+- **Negative expected profit at the likely or asking price is an automatic FAIL.** Never present it as REVIEW or NEGOTIATE.
 
 ## How the live page works (claude.ai artifact)
 
