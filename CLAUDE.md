@@ -38,6 +38,7 @@ One internal valuation system that gives a defensible property value without rel
 - Flag thin data (few 2026 sales, no dates, no condition) with lower confidence instead of false precision.
 - When the default deal numbers don't fit the price point (for example a $175K profit target on a $650K house), adjust them and say so.
 - **Negative expected profit at the likely or asking price is an automatic FAIL.** Never present it as REVIEW or NEGOTIATE.
+- The listing and market data decide the likely sale price. A requested condition that contradicts the listing is shown as a what-if in the reply, not used for the verdict. Base the likely price on the local sale-to-list ratio (North Berkeley about 140% of list in 2026).
 
 ## How the live page works (claude.ai artifact)
 

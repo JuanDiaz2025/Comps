@@ -1103,7 +1103,8 @@ function renderAnswer(){
   const cc = conf>=90?"good":conf>=75?"warn":"bad";
   const next = conf>=90 ? "" : conf>=75 ? " Juan checks the 5 comps before offering." : " Juan checks the comps, and order a BPO or desktop appraisal before a firm offer.";
   const nextShort = conf>=90?"ready for an offer":conf>=75?"Juan checks the comps":"Juan checks + order a BPO";
-  const likelyTxt = likely&&ask&&likely>ask*1.03 ? `Listed at ${money(ask)}, but it will likely sell around <b>${money(likely)}</b>. ` : "";
+  const atList = ask ? profitAt(ask) : null;
+  const likelyTxt = likely&&ask&&likely>ask*1.03 ? `At the ${money(ask)} list price Twin would make ${money(atList)}, but homes here sell over asking, so it will likely go for about <b>${money(likely)}</b>. ` : "";
   let cls,word,line;
   if(!price){ cls="review"; word="OFFER UP TO"; line=`<b>${money(dm.max)}</b>. Start at <b>${money(dm.target)}</b>. Type the asking price above to get BUY / REVIEW / PASS.`; }
   else if(profitAt(price)<0){ cls="fail"; word="AUTO-FAIL"; line=`${likelyTxt}At ${money(price)} Twin would <b>lose ${money(-profitAt(price))}</b> after reno, selling, holding and contingency. Negative profit is an automatic fail: don't offer above <b>${money(dm.max)}</b>.`; }
