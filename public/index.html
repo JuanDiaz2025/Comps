@@ -702,7 +702,7 @@ function renderAnswer(){
   $("basisChips").innerHTML = S.claude&&S.claude.arv && !S.deal.juan ? [["1","Claude's ARV"],["0","Engine ARV"]].map(([v,l])=>`<button type="button" class="chipbtn" aria-pressed="${String(!!S.deal.useClaude?1:0)===v}" data-v="${v}">${l}</button>`).join("") : (S.deal.juan?`<span class="pill info">Using Juan's ARV</span>`:"");
   $("basisChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.deal.useClaude=b.dataset.v==="1"; render();});
   if(!cur.v){
-    $("verdict").innerHTML=`<div class="verdict review"><span class="big">WAITING</span><span class="line">Type the address and press <b>Run comps</b>. The value shows up here when Claude is done.</span></div>`;
+    $("verdict").innerHTML=`<div class="verdict review"><span class="big">READY</span><span class="line">Type the address and press <b>Run comps</b>. The value shows up here when Claude is done searching.</span></div>`;
     $("kpis").innerHTML=""; $("alerts").innerHTML=""; $("compList").innerHTML=""; return;
   }
   const dm=dealMath(cur.v);
@@ -765,7 +765,7 @@ function renderMap(){
   for(let y=0;y<=H;y+=40) g+=`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="var(--line)" stroke-width="0.5" opacity=".6"/>`;
   [0.5].forEach(k=>{ g+=`<circle cx="${cx}" cy="${cy}" r="${rpx*k}" fill="none" stroke="var(--map-ring)" stroke-opacity=".3"/><text x="${cx+4}" y="${cy-rpx*k-3}" font-size="11" fill="var(--muted)" font-family="JetBrains Mono,monospace">${+(viewR*k).toFixed(2)} mi</text>`; });
   g+=`<circle cx="${cx}" cy="${cy}" r="${rpx}" fill="var(--map-ring)" fill-opacity=".05" stroke="var(--map-ring)" stroke-width="2" stroke-dasharray="6 5"/>`;
-  g+=`<rect x="10" y="10" width="112" height="22" rx="11" fill="var(--map-ring)"/><text x="66" y="25" text-anchor="middle" font-size="12" font-weight="600" fill="var(--accent-ink)" font-family="Source Sans 3,sans-serif">${+viewR.toFixed(2)} mi${viewR<f.radius?" (zoomed)":" radius"}</text>`;
+  g+=`<rect x="10" y="10" width="140" height="22" rx="11" fill="var(--map-ring)"/><text x="80" y="25" text-anchor="middle" font-size="12" font-weight="600" fill="var(--accent-ink)" font-family="Source Sans 3,sans-serif">${+viewR.toFixed(2)} mi${viewR<f.radius?" (zoomed)":" radius"}</text>`;
   g+=`<text x="${W-14}" y="22" text-anchor="end" font-size="12" fill="var(--muted)" font-family="Source Sans 3,sans-serif">N ↑</text>`;
   const pins=[]; let missing=0;
   if(s.lat!=null&&s.lng!=null) R.rows.forEach(r=>{
