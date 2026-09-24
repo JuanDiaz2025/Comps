@@ -46,16 +46,14 @@ One internal valuation system that gives a defensible property value without rel
   - A market-wide spike (several recent sales all well above last year) means prices moved: weight the newest sales and apply a time adjustment, don't average it away.
   - The page flags spikes the same way (location spike, low sale nearby, outlier) and cuts the weight of far outliers.
 - Separate as-is comps (condition 1–3) from ARV comps (condition 4–5). Use active and pending listings as competition, not as sold evidence.
-- Treat SF and Bay Area list prices as bait. When overbids are typical, set a likely sale price and decide on that price, not on the ask.
+- **No guessing what the seller will get.** Claude is the decision maker: decide on facts only, meaning the offer range from the comps and the asking price when there is one. Don't set `likely_sale_price` and don't write "the seller will likely get". When the ask is under the max offer (common with bait list prices), the offer range runs from the ask up to the max, and the max is the ceiling if others bid.
 - Flag thin data (few 2026 sales, no dates, no condition) with lower confidence instead of false precision.
 - When the default deal numbers don't fit the price point (for example a $175K profit target on a $650K house), adjust them and say so.
-- **Negative expected profit at the likely or asking price is an automatic "NO, DO NOT BUY".** Never present it as "NEEDS JUAN'S ATTENTION".
+- **Negative expected profit at the asking price is an automatic "NO, DO NOT BUY".** Never present it as "NEEDS JUAN'S ATTENTION".
 - Verdict words (page and replies):
-  - **YES, BUY IT**: price at or under the max offer, confidence 90%+.
-  - **NO, DO NOT BUY**: Twin would lose money (negative net profit) at the likely or asking price, **or the house is already renovated** (condition 4 Updated or 5 Remodeled). Renovated houses are an automatic no: set `cond` to 4 or 5 whenever the listing describes a renovated kitchen or baths.
-  - **NEEDS JUAN'S ATTENTION**: any positive profit that is under the target (price over the max offer), or confidence under 90%.
-  - **OFFER UP TO $X**: no asking or likely price yet.
-- The listing and market data decide the likely sale price. Base the likely price on the local sale-to-list ratio (North Berkeley about 140% of list in 2026).
+  - **YES, BUY IT**: confidence 60%+ and either no asking price (off-market: buy at the offer range) or an asking price at or under the max offer.
+  - **NO, DO NOT BUY**: Twin would lose money (negative net profit) at the asking price, **or the house is already renovated** (condition 4 Updated or 5 Remodeled). Renovated houses are an automatic no: set `cond` to 4 or 5 whenever the listing describes a renovated kitchen or baths.
+  - **NEEDS JUAN'S ATTENTION**: the asking price is over the max offer but still profitable, or confidence is under 60%.
 
 ## Profit calculator (Twin's sheet, corrected) — use on every run
 
@@ -66,7 +64,7 @@ Source: Twin's Google Sheet profit calculator (fileId 1Kp52OUCR2tIQI4Lj9J1Mmbq60
 - Fixes vs. the sheet: points are charged **once**, not prorated. The construction loan equals the reno budget, not a flat $100K. Transfer tax applies to both purchase and resale. Tiered city rates: SF, Oakland, Berkeley (2.5% above about $1.8M), San Jose Measure E, LA Measure ULA. Culver City is $5.60, not $1.10.
 - Reno from sq ft: $140/sf full rehab (condition 1–2), $60/sf light (3), $30/sf touch-up (4), $0 (5). Leave `reno` out of `results/latest` so the page applies this rule; set it only when the listing justifies a different number, and say why.
 - Loan defaults from the sheet: 100% purchase loan at 10% + 1 point, construction loan at 12% + 5 points, 3 months, property tax 1.2%/yr, escrow $1,000, other $2,000. Page adds staging $5,000, insurance $1,500 and contingency 10% of reno (the sheet had none). Adjust months for big rehabs (full rehab usually 4–6 months) and say so.
-- Claude makes the call. Every reply leads with the verdict, the **offer range** (start offer to walk-away max) and **Twin's return** at both ends (net profit and % net return on total cost). Then give net profit at the likely price and the city transfer-tax rate used. The page no longer shows an as-is value box; don't lead with as-is.
+- Claude makes the call. Every reply leads with the verdict, the **offer range** (start offer to walk-away max) and **Twin's return** at both ends (net profit and % net return on total cost). Then give net profit at the asking price (if any) and the city transfer-tax rate used. The page no longer shows an as-is value box; don't lead with as-is.
 
 ## How the live page works (claude.ai artifact)
 
@@ -75,7 +73,7 @@ Page: https://claude.ai/artifact/FDVtVuAGpwdBwHkSSmDx71 (source: `artifact/twin-
 1. Juan presses **Run comps**. The page writes `requests/latest` in the artifact database and sends a comment to Claude ("Run comps: <address>…"), which wakes the session.
 2. On wake, write progress to `status/latest` as `{address, message, ts}`. The page shows it live ("✓ Claude got it · …").
 3. Research the subject and the comps with web search.
-4. Write `results/latest` as `{address, ts (new each run), cond, ask, reno, deal, replaceFacts:true, notes, claude:{arv, arv_range, as_is_value, as_is_range, confidence, likely_sale_price, top_comps[{address, weight_pct, why}], why_this_value, what_could_make_us_wrong, flags_for_juan}, result:{subject_facts, summary, value_as_is, value_arv, risks, comps[...]}}`. The page loads it automatically.
+4. Write `results/latest` as `{address, ts (new each run), cond, ask, reno, deal, replaceFacts:true, notes, claude:{arv, arv_range, as_is_value, as_is_range, confidence, top_comps[{address, weight_pct, why}], why_this_value, what_could_make_us_wrong, flags_for_juan}, result:{subject_facts, summary, value_as_is, value_arv, risks, comps[...]}}`. The page loads it automatically.
 5. Set `status/latest` to "done, results loaded". Reply in the comment thread with a short summary, then resolve the thread.
 
 Always pin database writes with `if_version`.

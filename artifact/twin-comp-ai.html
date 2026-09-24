@@ -1155,7 +1155,7 @@ const CALC_ROWS = [
   {id:"ins", label:"− Insurance", val:c=>-c.f.ins, inp:[{k:"ins",pre:"$"}]},
   {id:"esc", label:"− Escrow", val:c=>-c.f.escrow, inp:[{k:"escrow",pre:"$"}]},
   {id:"oth", label:"− Other", val:c=>-c.f.other, inp:[{k:"other",pre:"$"}]},
-  {id:"price", label:"− Purchase price", val:c=>-c.p, inp:[{k:"calcPrice",pre:"$",ph:c=>Math.round(c.baseP)}], note:c=>S.deal.calcPrice?"what-if (verdict still uses the likely price)":c.p===c.dm.max?"max offer: net equals your target profit":"likely price the house will sell for"},
+  {id:"price", label:"− Purchase price", val:c=>-c.p, inp:[{k:"calcPrice",pre:"$",ph:c=>Math.round(c.baseP)}], note:c=>S.deal.calcPrice?"what-if (verdict still uses your offer range)":c.p===c.dm.max?"max offer: net equals your target profit":"the asking price"},
   {id:"net", label:"<b>Net profit</b>", strong:true, val:c=>c.b.net, note:()=>"after paying the full commission"},
   {id:"gross", label:"Gross profit", val:c=>c.b.gross, inp:[{k:"mariaelena",post:"% back"}], note:()=>"Mariaelena's share comes back in-house"},
   {id:"max", label:"Max offer", val:c=>c.dm.max, inp:[{k:"profit",pre:"$",post:"target profit"}]},
@@ -1178,10 +1178,10 @@ function renderCalc(arv, price){
   const box=$("calcBox"); if(!arv){ box.hidden=true; return null; } box.hidden=false; buildCalc();
   const cur=currentARV(), autoArv = S.deal.useClaude&&S.claude&&S.claude.arv ? S.claude.arv : R.arv.value;
   const dm=dealMath(arv), atLikely=S.calcAt==="likely"&&price, baseP=atLikely?price:dm.max, p=S.deal.calcPrice||baseP, b=dm.breakdown(p);
-  $("calcAt").innerHTML = `<span class="small muted">Show the deal at:</span> <button type="button" class="btn${!atLikely&&!S.deal.calcPrice?" primary":""}" data-at="max">Max offer ${money(dm.max)}</button>`+(price?` <button type="button" class="btn${atLikely&&!S.deal.calcPrice?" primary":""}" data-at="likely">Likely price ${money(price)} · net ${money(dm.profitAt(price))}</button>`:"");
+  $("calcAt").innerHTML = `<span class="small muted">Show the deal at:</span> <button type="button" class="btn${!atLikely&&!S.deal.calcPrice?" primary":""}" data-at="max">Max offer ${money(dm.max)}</button>`+(price?` <button type="button" class="btn${atLikely&&!S.deal.calcPrice?" primary":""}" data-at="likely">Asking price ${money(price)} · net ${money(dm.profitAt(price))}</button>`:"");
   $("calcAt").onclick=e=>{ const at=e.target.closest("button")?.dataset.at; if(!at) return; S.calcAt=at; S.deal.calcPrice=null; render(); };
   const c={arv,autoArv,arvSrc:S.deal.useClaude&&S.claude&&S.claude.arv?"Claude":"engine",dm,p,baseP,b,f:b.fixed,v:b.v};
-  $("calcSum").textContent=`Profit calculator (editable) at ${money(p)} (${S.deal.calcPrice?"what-if price":atLikely?"likely price":"max offer"}) · ${dm.city||"city not found"} · ${dm.m} months · net ${money(b.net)}`;
+  $("calcSum").textContent=`Profit calculator (editable) at ${money(p)} (${S.deal.calcPrice?"what-if price":atLikely?"asking price":"max offer"}) · ${dm.city||"city not found"} · ${dm.m} months · net ${money(b.net)}`;
   for(const r of CALC_ROWS){
     const cell=$("cv_"+r.id);
     if(r.text) cell.textContent=r.text(c);
@@ -1191,7 +1191,7 @@ function renderCalc(arv, price){
       if(i.ph) el.placeholder=i.ph(c);
       if(document.activeElement!==el) el.value = S.deal[i.k]??""; }
   }
-  return {p, net:b.net, at: S.deal.calcPrice?"your "+kmoney(p):atLikely?"likely "+kmoney(p):"max offer "+kmoney(p)};
+  return {p, net:b.net, at: S.deal.calcPrice?"your "+kmoney(p):atLikely?"asking "+kmoney(p):"max offer "+kmoney(p)};
 }
 function whyLine(u){
   const s=S.subject, bits=[];
@@ -1233,29 +1233,27 @@ function renderAnswer(){
   $("mapbox").classList.remove("searching");
   const dm=dealMath(cur.v);
   const conf = cur.src==="Claude"&&S.claude.confidence? S.claude.confidence : arv.conf;
-  const ask=s.ask, likely = S.deal.useClaude&&S.claude&&S.claude.likely_sale_price? S.claude.likely_sale_price : null;
-  const price = Math.max(ask||0, likely||0) || null;
-  const priceLabel = likely && (!ask || likely>ask) ? "at the likely sale price" : "at asking price";
+  // Decide on facts only: the offer range from the comps and the asking price if there is one. No guess at what the seller will get.
+  const ask=s.ask, price = ask||null;
   const profitAt = p => dm.profitAt(p);
   const cc = conf>=90?"good":conf>=75?"warn":"bad";
-  const next = conf>=90 ? "" : conf>=75 ? " Juan checks the 5 comps before offering." : " Juan checks the comps and orders a BPO or desktop appraisal before a firm offer.";
-  const nextShort = conf>=90?"ready for an offer":conf>=75?"Juan checks the comps":"Juan checks + order a BPO";
+  const next = conf>=75 ? "" : conf>=60 ? " Walk through the house before a firm offer." : " Juan confirms the condition and comps before a firm offer.";
+  const nextShort = conf>=75?"ready for an offer":conf>=60?"walk through first":"Juan confirms first";
   // The decision: an offer range (start .. walk-away) and the return at each end.
-  const hi = price && price<=dm.max ? price : dm.max, lo = Math.min(dm.target, hi);
+  const hi = dm.max, lo = price && price<=dm.max ? Math.min(price, dm.target) : dm.target;
   const ret = p => { const n=profitAt(p); return {n, pct: n/Math.max(cur.v-n,1)*100}; };
   const rLo=ret(lo), rHi=ret(hi), pct=x=>Math.round(x)+"%";
   const rangeTxt = lo===hi ? money(hi) : `${money(lo)}–${money(hi)}`;
   const returnTxt = lo===hi ? `${money(rHi.n)} (${pct(rHi.pct)} return)` : `${money(rHi.n)}–${money(rLo.n)} (${pct(rHi.pct)}–${pct(rLo.pct)} return)`;
   const offerLine = `Offer <b>${rangeTxt}</b>. Twin makes <b>${returnTxt}</b>.`;
-  const sellerTxt = !price ? "" : likely&&(!ask||likely>ask*1.03) ? `The seller will likely get about <b>${money(likely)}</b>${ask?` (listed at ${money(ask)}; homes here sell over asking)`:""}` : `The asking price is <b>${money(price)}</b>`;
   let cls,word,line;
-  const renovated = Number(s.cond)>=4;
+  const renovated = Number(s.cond)>=4, sure = conf>=60;
   if(renovated){ cls="fail"; word="NO, DO NOT BUY"; line=`<b>Already renovated</b> (condition: ${condLabel(s.cond)}). Twin buys houses to renovate; this one has no renovation upside left, so it is an automatic no. If the listing is wrong and it needs real work, rerun comps with a note saying so.`; }
-  else if(!price){ cls="review"; word="MAKE AN OFFER"; line=`${offerLine} No asking price yet; walk away above ${money(dm.max)}.`; }
-  else if(profitAt(price)<0){ cls="fail"; word="NO, DO NOT BUY"; line=`${sellerTxt}, and at that price Twin would <b>lose ${money(-profitAt(price))}</b>. Only buy if the seller takes ${rangeTxt}: then Twin makes ${returnTxt}.`; }
-  else if(price>dm.max){ cls="review"; word="NEEDS JUAN'S ATTENTION"; line=`${offerLine} ${sellerTxt}, where Twin makes only ${money(profitAt(price))} (${pct(ret(price).pct)}), under the ${money(S.deal.profit)} target. Juan decides if that is worth it.${next}`; }
-  else if(conf>=90){ cls="buy"; word="YES, BUY IT"; line=`${offerLine} ${sellerTxt}, and Twin's max is ${money(dm.max)}.`; }
-  else { cls="review"; word="NEEDS JUAN'S ATTENTION"; line=`${offerLine} ${sellerTxt}. Confidence is ${Math.round(conf)}%.${next}`; }
+  else if(!price){ cls=sure?"buy":"review"; word=sure?"YES, BUY IT":"NEEDS JUAN'S ATTENTION"; line=`${offerLine} Walk away above ${money(dm.max)}. ${sure?`Confidence ${Math.round(conf)}%.`:`Confidence is ${Math.round(conf)}%.`}${next}`; }
+  else if(profitAt(price)<0){ cls="fail"; word="NO, DO NOT BUY"; line=`At the <b>${money(price)}</b> asking price Twin would <b>lose ${money(-profitAt(price))}</b>. Counter at ${rangeTxt} (Twin makes ${returnTxt}) or walk away.`; }
+  else if(price>dm.max){ cls="review"; word="NEEDS JUAN'S ATTENTION"; line=`${offerLine} The <b>${money(price)}</b> asking price is ${money(price-dm.max)} over the max; at asking Twin makes only ${money(profitAt(price))} (${pct(ret(price).pct)}), under the ${money(S.deal.profit)} target. Juan decides if that is worth it.`; }
+  else if(sure){ cls="buy"; word="YES, BUY IT"; line=`${offerLine} Start at or below the ${money(price)} asking price and go no higher than ${money(dm.max)} if others bid. Confidence ${Math.round(conf)}%.${next}`; }
+  else { cls="review"; word="NEEDS JUAN'S ATTENTION"; line=`${offerLine} The ${money(price)} asking price is under the max, but confidence is ${Math.round(conf)}%.${next}`; }
   renderCalc(cur.v, price);
   $("verdict").innerHTML=`<div class="verdict ${cls}"><span class="big">${word}</span><span class="line">${line}</span></div>`;
   const arvRange = cur.src==="Claude"&&S.claude.arv_range? S.claude.arv_range : [arv.low,arv.high];
@@ -1263,7 +1261,7 @@ function renderAnswer(){
     <div class="kpi hero"><div class="k">Offer range</div>${renovated?`<div class="v">Don't offer</div><div class="r">already renovated · no flip upside</div>`:`<div class="v">${lo===hi?kmoney(hi):kmoney(lo)+"–"+kmoney(hi)}</div><div class="r">start ${kmoney(lo)} · walk away above ${kmoney(dm.max)}</div>`}</div>
     <div class="kpi"><div class="k">Twin's return</div>${renovated?`<div class="v" style="color:var(--bad)">None</div><div class="r">nothing left to renovate</div>`:`<div class="v" style="color:var(--${rHi.n<0?'bad':'good'})">${lo===hi?kmoney(rHi.n):kmoney(rHi.n)+"–"+kmoney(rLo.n)}</div><div class="r">${lo===hi?pct(rHi.pct):pct(rHi.pct)+"–"+pct(rLo.pct)} net return on total cost</div>`}</div>
     <div class="kpi"><div class="k">ARV${cur.src==="Juan"?" · Juan":""}</div><div class="v">${kmoney(cur.v)}</div><div class="r">${kmoney(arvRange[0])} – ${kmoney(arvRange[1])} · reno ${kmoney(S.deal.reno)}</div></div>
-    <div class="kpi"><div class="k">Confidence</div><div class="v" style="color:var(--${cc})">${Math.round(conf)}%</div><div class="r">${price?((likely&&price===likely?"likely ":"asking ")+kmoney(price)+": "+(profitAt(price)<0?"loss "+kmoney(-profitAt(price)):kmoney(profitAt(price))+" profit")):nextShort}</div></div>`;
+    <div class="kpi"><div class="k">Confidence</div><div class="v" style="color:var(--${cc})">${Math.round(conf)}%</div><div class="r">${price?("asking "+kmoney(price)+": "+(profitAt(price)<0?"loss "+kmoney(-profitAt(price)):kmoney(profitAt(price))+" profit")):nextShort}</div></div>`;
   // alerts
   const al=[];
   const risk = S.claude&&S.claude.what_could_make_us_wrong ? S.claude.what_could_make_us_wrong : (AGENTS.map(a=>S.agentReports[a.key]&&S.agentReports[a.key].risks&&S.agentReports[a.key].risks[0]).find(Boolean));
