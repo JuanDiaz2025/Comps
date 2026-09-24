@@ -32,6 +32,12 @@ One internal valuation system that gives a defensible property value without rel
 ## Rules for every comp run
 
 - Use only real, sourced sales. Never invent an address, price or date. If a fact can't be confirmed, say so on the page.
+- **Step 1 of every run: find the listing price. No guessing.** Before any comps:
+  1. Search the subject on Redfin, then Compass, Zillow and Coldwell Banker, including unit and building variants.
+  2. If a listing exists, its list price is `ask`. Write the status (active, pending, Early Access or coming soon), the list date and the MLS number in `notes`, and say which site showed it.
+  3. If sources disagree on price, or the MLS number points to a different property, say "listing unconfirmed" in `notes` and `flags_for_juan`. Use only the price a listing site shows, never an estimate.
+  4. If nothing shows up anywhere, leave `ask` out and say "no listing found on Redfin, Compass, Zillow or Coldwell Banker".
+  5. Never fill `ask` from Zestimates, Redfin estimates, tax values or your own value.
 - **Always check Redfin for the subject's listing status** before calling a house off-market. Redfin blocks direct fetches from this container, so search for it:
   - `redfin <address>` and `"<address>" redfin for sale`.
   - Unit and building variants for multi-unit addresses (e.g. `327 San Jose Ave #323`, `323-327 San Jose Ave`).
@@ -82,7 +88,12 @@ Source: Twin's Google Sheet profit calculator (fileId 1Kp52OUCR2tIQI4Lj9J1Mmbq60
 - Net profit = sale − 5% commission − transfer tax on the resale − transfer tax on the purchase − reno − contingency − purchase-loan points and interest − construction-loan points and interest − property tax − staging, insurance, escrow and other − purchase price.
 - Gross profit = net + Mariaelena's 2.5% (it comes back in-house). **Decide on net.**
 - Fixes vs. the sheet: points are charged **once**, not prorated. The construction loan equals the reno budget, not a flat $100K. Transfer tax applies to both purchase and resale. Tiered city rates: SF, Oakland, Berkeley (2.5% above about $1.8M), San Jose Measure E, LA Measure ULA. Culver City is $5.60, not $1.10.
-- Reno from sq ft: $140/sf full rehab (condition 1–2), $60/sf light (3), $30/sf touch-up (4), $0 (5). Leave `reno` out of `results/latest` so the page applies this rule; set it only when the listing justifies a different number, and say why.
+- **Claude sets the renovation budget.** Build an itemized budget for the scope needed to reach the ARV comps' finish level:
+  - Items: kitchen, baths, electrical, plumbing, floors, paint, exterior, windows, roof, foundation/seismic, permits, landscaping.
+  - Price at local labor costs. SF and the inner Bay Area run about $200–250/sf for a full rehab.
+  - Write it as `claude.reno_budget: {total, summary, items[{item, cost}]}` and set `reno` to the total. The page shows it as a Renovation budget card, and the calculator uses the total.
+
+  The sq-ft rule is only the fallback when there's nothing to scope from: $140/sf full rehab (condition 1–2), $60/sf light (3), $30/sf touch-up (4), $0 (5).
 - Loan defaults from the sheet: 100% purchase loan at 10% + 1 point, construction loan at 12% + 5 points, 3 months, property tax 1.2%/yr, escrow $1,000, other $2,000. Page adds staging $5,000, insurance $1,500 and contingency 10% of reno (the sheet had none). Adjust months for big rehabs (full rehab usually 4–6 months) and say so.
 - Claude makes the call. Every reply leads with the verdict, the **offer range** (start offer to walk-away max) and **Twin's return** at both ends (net profit and % net return on total cost). Then give net profit at the asking price (if any) and the city transfer-tax rate used. The page no longer shows an as-is value box; don't lead with as-is.
 
