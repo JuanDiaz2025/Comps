@@ -40,6 +40,17 @@ One internal valuation system that gives a defensible property value without rel
 - **Negative expected profit at the likely or asking price is an automatic FAIL.** Never present it as REVIEW or NEGOTIATE.
 - The listing and market data decide the likely sale price. A requested condition that contradicts the listing is shown as a what-if in the reply, not used for the verdict. Base the likely price on the local sale-to-list ratio (North Berkeley about 140% of list in 2026).
 
+## Profit calculator (Twin's sheet, corrected) — use on every run
+
+Source: Twin's Google Sheet profit calculator (fileId 1Kp52OUCR2tIQI4Lj9J1Mmbq604McOMyQhEA01kbacwY). The page implements it in `dealMath()`.
+
+- Net profit = sale − 5% commission − transfer tax on the resale − transfer tax on the purchase − reno − contingency − purchase-loan points and interest − construction-loan points and interest − property tax − staging, insurance, escrow and other − purchase price.
+- Gross profit = net + Mariaelena's 2.5% (it comes back in-house). **Decide on net.**
+- Fixes vs. the sheet: points are charged **once**, not prorated. The construction loan equals the reno budget, not a flat $100K. Transfer tax applies to both purchase and resale. Tiered city rates: SF, Oakland, Berkeley (2.5% above about $1.8M), San Jose Measure E, LA Measure ULA. Culver City is $5.60, not $1.10.
+- Reno from sq ft: $140/sf full rehab (condition 1–2), $60/sf light (3), $30/sf touch-up (4), $0 (5). Leave `reno` out of `results/latest` so the page applies this rule; set it only when the listing justifies a different number, and say why.
+- Loan defaults from the sheet: 100% purchase loan at 10% + 1 point, construction loan at 12% + 5 points, 3 months, property tax 1.2%/yr, escrow $1,000, other $2,000. Page adds staging $5,000, insurance $1,500 and contingency 10% of reno (the sheet had none). Adjust months for big rehabs (full rehab usually 4–6 months) and say so.
+- In every reply, give net profit at the likely price, the max offer, and the city transfer-tax rate used.
+
 ## How the live page works (claude.ai artifact)
 
 Page: https://claude.ai/artifact/FDVtVuAGpwdBwHkSSmDx71 (source: `artifact/twin-comp-ai.html`, republish it with the Artifact tool using that URL; the website version is `public/index.html` + `api/comps.js`).

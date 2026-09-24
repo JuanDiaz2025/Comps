@@ -274,6 +274,7 @@ details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(
         <button class="btn" id="copyBB" type="button">Copy for REI BlackBook</button>
         <button class="btn" id="saveVal" type="button">Save to deal log</button>
       </div>
+      <details class="inner" id="calcBox"><summary id="calcSum">Profit calculator</summary><div class="tblwrap" style="margin-top:8px"><table id="calcTable"></table></div></details>
       <p class="small muted" id="summaryLine" style="margin:0"></p>
       <textarea id="copyFallback" rows="6" hidden aria-label="Text to copy"></textarea>
     </div>
@@ -281,15 +282,29 @@ details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(
 
   <!-- ADVANCED -->
   <details class="adv" id="advDeal">
-    <summary>Deal numbers <span class="sub">selling costs, holding, profit target, Juan's ARV override</span></summary>
+    <summary>Deal numbers <span class="sub">Twin profit calculator: loans, transfer tax, commissions, reno per sq ft</span></summary>
     <div class="adv-body">
+      <label class="chk"><input type="checkbox" id="d_renoAuto"> Reno from square feet: $140/sf full rehab (Fixer/Dated), $60/sf light (Clean), $30/sf touch-up (Updated), $0 (Remodeled)</label>
       <div class="formgrid">
-        <label class="f">Selling costs (% of ARV)<input type="number" step="0.1" id="d_sell"></label>
-        <label class="f">Holding + financing ($)<input type="number" id="d_hold"></label>
-        <label class="f">Contingency ($)<input type="number" id="d_cont"></label>
+        <label class="f">City for transfer tax<input type="text" id="d_city" placeholder="auto from address"></label>
+        <label class="f">Months until sale<input type="number" id="d_months"></label>
+        <label class="f">Sale commission (%)<input type="number" step="0.1" id="d_sell"></label>
+        <label class="f">Mariaelena's share (%)<input type="number" step="0.1" id="d_mariaelena"></label>
+        <label class="f">Purchase loan (% of price)<input type="number" id="d_loanPct"></label>
+        <label class="f">Purchase loan rate (%)<input type="number" step="0.1" id="d_rate"></label>
+        <label class="f">Purchase loan points<input type="number" step="0.25" id="d_points"></label>
+        <label class="f">Construction loan rate (%)<input type="number" step="0.1" id="d_crate"></label>
+        <label class="f">Construction loan points<input type="number" step="0.25" id="d_cpoints"></label>
+        <label class="f">Property tax (%/yr)<input type="number" step="0.05" id="d_ptax"></label>
+        <label class="f">Staging ($)<input type="number" id="d_staging"></label>
+        <label class="f">Insurance ($)<input type="number" id="d_ins"></label>
+        <label class="f">Escrow &amp; notary ($)<input type="number" id="d_escrow"></label>
+        <label class="f">Other fixed costs ($)<input type="number" id="d_other"></label>
+        <label class="f">Contingency (% of reno)<input type="number" id="d_contPct"></label>
         <label class="f">Target profit ($)<input type="number" id="d_profit"></label>
         <label class="f">Juan's ARV override ($)<input type="number" id="d_juan" placeholder="leave blank"></label>
       </div>
+      <p class="small muted" style="margin:0">Points are charged once (not per month). The construction loan equals the reno budget. Transfer tax is charged on both the purchase and the resale, using the city's rate for that price.</p>
     </div>
   </details>
 
@@ -415,7 +430,7 @@ const EXAMPLE = {
 
 const DEFAULT_FILTERS = {auto:true,radius:1,types:["SFR"],bedsMin:2,bedsMax:4,bathsMin:1,bathsMax:3,sqftMin:800,sqftMax:1600,yearMin:1900,yearMax:1950,months:12,includeListings:false,topN:6};
 const DEFAULT_ADJ = {glaAuto:1,gla:450,bed:25000,bath:35000,lot:15,cond:6,time:0.3,arvCond:4};
-const DEFAULT_DEAL = {reno:120000,sell:5,hold:45000,cont:20000,profit:175000,juan:null,useClaude:true};
+const DEFAULT_DEAL = {reno:120000,renoAuto:true,city:"",months:3,sell:5,mariaelena:2.5,loanPct:100,rate:10,points:1,crate:12,cpoints:5,ptax:1.2,staging:5000,ins:1500,escrow:1000,other:2000,contPct:10,profit:175000,juan:null,useClaude:true};
 
 function freshState(example){
   const base = {subject:{address:"",lat:null,lng:null,beds:null,baths:null,sqft:null,lot:null,year:null,type:"SFR",cond:2,ask:null,notes:""},
@@ -428,7 +443,7 @@ function freshState(example){
   }
   return base;
 }
-const LS_KEY = "twin-comp-ai-draft-v4";
+const LS_KEY = "twin-comp-ai-draft-v5";
 let S=null;
 try{ const raw=localStorage.getItem(LS_KEY); if(raw) S=JSON.parse(raw); }catch(e){}
 if(!S || !S.subject) S = freshState(false);
@@ -540,8 +555,8 @@ fillSelect($("c_cond"),CONDS.map(c=>[c[0],c[0]+" · "+c[1]])); fillSelect($("a_a
 const SUBJ = {s_address:"address",s_lat:"lat",s_lng:"lng",s_beds:"beds",s_baths:"baths",s_year:"year",s_sqft:"sqft",s_lot:"lot",s_type:"type",s_ask:"ask",s_notes:"notes"};
 const FILT = {f_bedsMin:"bedsMin",f_bedsMax:"bedsMax",f_bathsMin:"bathsMin",f_bathsMax:"bathsMax",f_sqftMin:"sqftMin",f_sqftMax:"sqftMax",f_yearMin:"yearMin",f_yearMax:"yearMax",f_months:"months",f_topN:"topN"};
 const ADJ = {a_gla:"gla",a_glaAuto:"glaAuto",a_bed:"bed",a_bath:"bath",a_lot:"lot",a_cond:"cond",a_time:"time",a_arvCond:"arvCond"};
-const DEAL = {d_reno:"reno",d_sell:"sell",d_hold:"hold",d_cont:"cont",d_profit:"profit",d_juan:"juan"};
-const TEXT = new Set(["address","type","notes"]);
+const DEAL = {d_reno:"reno",d_city:"city",d_months:"months",d_sell:"sell",d_mariaelena:"mariaelena",d_loanPct:"loanPct",d_rate:"rate",d_points:"points",d_crate:"crate",d_cpoints:"cpoints",d_ptax:"ptax",d_staging:"staging",d_ins:"ins",d_escrow:"escrow",d_other:"other",d_contPct:"contPct",d_profit:"profit",d_juan:"juan"};
+const TEXT = new Set(["address","type","notes","city"]);
 function bind(map,key){
   for(const [id,k] of Object.entries(map)){
     const el=$(id);
@@ -555,6 +570,8 @@ function bind(map,key){
   }
 }
 bind(SUBJ,"subject"); bind(FILT,"filters"); bind(ADJ,"adj"); bind(DEAL,"deal");
+$("d_reno").addEventListener("input",()=>{ S.deal.renoAuto=false; render(); });
+$("d_renoAuto").addEventListener("change",e=>{ S.deal.renoAuto=e.target.checked; render(); });
 $("f_includeListings").addEventListener("change",e=>{S.filters.includeListings=e.target.checked; render();});
 $("f_auto").addEventListener("change",e=>{ if(e.target.checked) S.filters={...DEFAULT_FILTERS,radius:S.filters.radius,months:S.filters.months,topN:S.filters.topN,includeListings:S.filters.includeListings,auto:true}; else S.filters={...effFilters(),auto:false}; render(); });
 function setVals(map,obj){ for(const [id,k] of Object.entries(map)){ const el=$(id); if(document.activeElement!==el) el.value = obj[k]??""; } }
@@ -573,6 +590,8 @@ function resetIfNewAddress(){
 }
 $("s_address").addEventListener("change",()=>{ if(resetIfNewAddress()){ render(); toast("New address: cleared the last house's details"); } });
 function render(){
+  if(S.deal.renoAuto){ const r=autoReno(); if(r!=null) S.deal.reno=r; }
+  $("d_renoAuto").checked=!!S.deal.renoAuto;
   R=compute(); persist();
   $("exampleNote").hidden=!S.example;
   setVals(SUBJ,S.subject); setVals(ADJ,S.adj); setVals(DEAL,S.deal); setVals(FILT,R.f);
@@ -1000,7 +1019,7 @@ setInterval(()=>{ if(S.pendingFor && S.pendingFor!==S.factsFor && S.pendingFor==
     if(!snap.exists) return; const d=snap.data(); if(!d||!d.result||d.ts===S.lastResultTs) return;
     S.lastResultTs=d.ts;
     if(normAddr(d.address)!==normAddr(S.subject.address)){ S.subject={address:d.address,lat:null,lng:null,beds:null,baths:null,sqft:null,lot:null,year:null,type:"SFR",cond:d.cond||S.subject.cond||2,ask:d.ask??null,notes:""}; S.comps=[]; }
-    if(d.ask!=null) S.subject.ask=d.ask; if(d.reno!=null) S.deal.reno=d.reno;
+    if(d.ask!=null) S.subject.ask=d.ask; if(d.reno!=null){ S.deal.reno=d.reno; S.deal.renoAuto=false; } else S.deal.renoAuto=true;
     if(d.deal) Object.assign(S.deal,d.deal);
     if(d.cond) S.subject.cond=d.cond;
     if(d.replaceFacts && d.result.subject_facts){ const f=d.result.subject_facts; Object.assign(S.subject,{beds:num(f.beds),baths:num(f.baths),sqft:num(f.sqft),lot:num(f.lot_sqft),year:num(f.year_built),lat:num(f.lat),lng:num(f.lng),type:"SFR",notes:d.notes||""}); S.comps=[]; }
@@ -1051,10 +1070,79 @@ function currentARV(){
   if(d.useClaude && S.claude && S.claude.arv) return {v:S.claude.arv,src:"Claude"};
   return {v:R.arv.value,src:"Engine"};
 }
+// Transfer tax per $1,000 of price (city + county), from Twin's calculator sheet with tiered cities corrected.
+const TT = {
+  "SAN FRANCISCO": p => p<=250000?5.00 : p<=1000000?6.80 : p<=5000000?7.50 : p<=10000000?22.50 : p<=25000000?55.00 : 60.00,
+  "OAKLAND": p => 1.10 + (p<=300000?10.00 : p<=2000000?15.00 : p<=5000000?17.50 : 25.00),
+  "BERKELEY": p => 1.10 + (p<=1800000?15.00 : 25.00),
+  "ALBANY": ()=>16.10, "ALAMEDA": ()=>13.10, "EMERYVILLE": ()=>13.10, "PIEDMONT": ()=>14.10, "SAN LEANDRO": ()=>12.10, "HAYWARD": ()=>9.60,
+  "EL CERRITO": ()=>13.10, "RICHMOND": ()=>8.10,
+  "SAN JOSE": p => 4.40 + (p<2000000?0 : p<5000000?7.50 : p<10000000?10.00 : 15.00),
+  "MOUNTAIN VIEW": ()=>4.40, "PALO ALTO": ()=>4.40, "VALLEJO": ()=>4.40,
+  "SANTA ROSA": ()=>3.10, "PETALUMA": ()=>3.10, "SAN RAFAEL": ()=>3.10, "SACRAMENTO": ()=>3.85, "RIVERSIDE": ()=>2.20,
+  "LOS ANGELES": p => 5.60 + (p<5300000?0 : p<10600000?40.00 : 55.00), "CULVER CITY": ()=>5.60, "SANTA MONICA": ()=>4.10,
+  "POMONA": ()=>3.30, "REDONDO BEACH": ()=>3.30
+};
+function cityOf(){
+  if(S.deal.city) return String(S.deal.city).toUpperCase().trim();
+  const parts=String(S.subject.address||"").split(",").map(x=>x.trim()).filter(Boolean);
+  const k=parts.findIndex(x=>/^(CA|California)\b/i.test(x));
+  return (k>0?parts[k-1]:parts[1]||"").toUpperCase();
+}
+function ttRate(p){ const f=TT[cityOf()]; return f? f(p) : 1.10; }
+function autoReno(){
+  const sf=S.subject.sqft; if(!sf) return null;
+  const rate = S.subject.cond<=2?140 : S.subject.cond==3?60 : S.subject.cond==4?30 : 0;
+  return Math.round(sf*rate/1000)*1000;
+}
 function dealMath(arv){
-  const d=S.deal; const sell=arv*(d.sell||0)/100; const costs=(d.reno||0)+sell+(d.hold||0)+(d.cont||0);
-  const max=arv-costs-(d.profit||0);
-  return {sell,costs,max,target:max-Math.round(arv*0.02/5000)*5000};
+  const d=S.deal, m=d.months||3, reno=d.reno||0;
+  const fixed = {
+    commission: arv*(d.sell||0)/100,
+    saleTT: arv*ttRate(arv)/1000,
+    reno,
+    cPoints: reno*(d.cpoints||0)/100,
+    cInterest: reno*(d.crate||0)/100*m/12,
+    staging: d.staging||0, ins: d.ins||0, escrow: d.escrow||0, other: d.other||0,
+    cont: reno*(d.contPct||0)/100
+  };
+  const fixedSum = Object.values(fixed).reduce((a,b)=>a+b,0);
+  const varCosts = p => { const loan=p*(d.loanPct||0)/100; return {
+    buyTT: p*ttRate(p)/1000, points: loan*(d.points||0)/100, interest: loan*(d.rate||0)/100*m/12, ptax: p*(d.ptax||0)/100*m/12, loan }; };
+  const costsAt = p => { const v=varCosts(p); return fixedSum+v.buyTT+v.points+v.interest+v.ptax; };
+  const profitAt = p => arv - costsAt(p) - p;
+  // max offer: the price where profit equals the target (solve; transfer tax is tiered)
+  let P=(arv-fixedSum-(d.profit||0))/1.1;
+  for(let i=0;i<8;i++){ const k=(costsAt(P)-fixedSum)/Math.max(P,1); P=(arv-fixedSum-(d.profit||0))/(1+k); }
+  const max=Math.max(0,Math.round(P/1000)*1000);
+  const breakdown = p => { const v=varCosts(p), net=profitAt(p), gross=net+arv*(d.mariaelena||0)/100, cash=p-v.loan+v.buyTT+(d.escrow||0);
+    return {p, v, fixed, net, gross, cash, roi: cash>1000? net/cash*12/m : null}; };
+  return {max, target:max-Math.round(arv*0.02/5000)*5000, profitAt, breakdown, city:cityOf(), m};
+}
+function renderCalc(arv, price){
+  const box=$("calcBox"); if(!arv){ box.hidden=true; return; } box.hidden=false;
+  const dm=dealMath(arv), p=price||dm.max, b=dm.breakdown(p), f=b.fixed, v=b.v;
+  $("calcSum").textContent=`Profit calculator at ${money(p)} (${price?"likely/asking price":"max offer"}) · ${dm.city||"city not found"} · ${dm.m} months`;
+  const row=(k,val,note)=>`<tr><td>${k}</td><td class="n">${money(val)}</td><td class="small muted" style="white-space:normal">${note||""}</td></tr>`;
+  $("calcTable").innerHTML=`<tbody>
+    ${row("Estimated sale (ARV)",arv)}
+    ${row("− Sale commission",-f.commission,`${S.deal.sell}% of sale`)}
+    ${row("− Transfer tax on resale",-f.saleTT,`$${ttRate(arv).toFixed(2)} per $1,000`)}
+    ${row("− Transfer tax on purchase",-v.buyTT,`$${ttRate(p).toFixed(2)} per $1,000`)}
+    ${row("− Renovation (hard costs)",-f.reno,S.deal.renoAuto?"from sq ft":"entered")}
+    ${row("− Contingency",-f.cont,`${S.deal.contPct}% of reno`)}
+    ${row("− Purchase loan points",-v.points,`${S.deal.points} pt on ${money(v.loan)}, charged once`)}
+    ${row("− Purchase loan interest",-v.interest,`${S.deal.rate}% for ${dm.m} months`)}
+    ${row("− Construction loan points",-f.cPoints,`${S.deal.cpoints} pts on the reno, charged once`)}
+    ${row("− Construction loan interest",-f.cInterest,`${S.deal.crate}% for ${dm.m} months`)}
+    ${row("− Property tax",-v.ptax,`${S.deal.ptax}%/yr for ${dm.m} months`)}
+    ${row("− Staging, insurance, escrow, other",-(f.staging+f.ins+f.escrow+f.other))}
+    ${row("− Purchase price",-p)}
+    <tr><td><b>Net profit</b></td><td class="n"><b style="color:var(--${b.net<0?'bad':'good'})">${money(b.net)}</b></td><td class="small muted">after paying the full commission</td></tr>
+    ${row("Gross profit",b.gross,`adds back Mariaelena's ${S.deal.mariaelena}%`)}
+    ${row("Cash needed",b.cash,"down payment + purchase transfer tax + escrow")}
+    <tr><td>ROI (annualized)</td><td class="n">${b.roi==null?"n/a":b.roi>10?"over 1,000%":Math.round(b.roi*100)+"%"}</td><td class="small muted">${b.roi==null||b.roi>10?"almost no cash in at "+S.deal.loanPct+"% financing, so ROI isn't meaningful":""}</td></tr>
+  </tbody>`;
 }
 function whyLine(u){
   const s=S.subject, bits=[];
@@ -1091,7 +1179,7 @@ function renderAnswer(){
           const steps = ls ? `<br><span style="font-size:13.5px">✓ Claude got it · ${esc(ls.message||"")}</span>` : `<br><span style="font-size:13.5px">Waiting for Claude to pick it up…</span>`;
           return `<div class="verdict review"><span class="big">SEARCHING</span><span class="line">Claude is searching sold records for <b>${esc(street(s.address))}</b>. Results load here by themselves, usually in 3–8 minutes${min?` (${min} min so far)`:""}.${steps}</span></div>`; })()
       : `<div class="verdict review"><span class="big">READY</span><span class="line">Type the address and press <b>Run comps</b>.</span></div>`;
-    $("kpis").innerHTML=""; $("alerts").innerHTML=""; $("compList").innerHTML=""; return;
+    $("kpis").innerHTML=""; $("alerts").innerHTML=""; $("compList").innerHTML=""; renderCalc(null); return;
   }
   $("mapbox").classList.remove("searching");
   const dm=dealMath(cur.v);
@@ -1099,7 +1187,7 @@ function renderAnswer(){
   const ask=s.ask, likely = cur.src==="Claude"&&S.claude.likely_sale_price? S.claude.likely_sale_price : null;
   const price = Math.max(ask||0, likely||0) || null;
   const priceLabel = likely && (!ask || likely>ask) ? "at the likely sale price" : "at asking price";
-  const profitAt = p => cur.v-dm.costs-p;
+  const profitAt = p => dm.profitAt(p);
   const cc = conf>=90?"good":conf>=75?"warn":"bad";
   const next = conf>=90 ? "" : conf>=75 ? " Juan checks the 5 comps before offering." : " Juan checks the comps, and order a BPO or desktop appraisal before a firm offer.";
   const nextShort = conf>=90?"ready for an offer":conf>=75?"Juan checks the comps":"Juan checks + order a BPO";
@@ -1107,11 +1195,12 @@ function renderAnswer(){
   const likelyTxt = likely&&ask&&likely>ask*1.03 ? `At the ${money(ask)} list price Twin would make ${money(atList)}, but homes here sell over asking, so it will likely go for about <b>${money(likely)}</b>. ` : "";
   let cls,word,line;
   if(!price){ cls="review"; word="OFFER UP TO"; line=`<b>${money(dm.max)}</b>. Start at <b>${money(dm.target)}</b>. Type the asking price above to get BUY / REVIEW / PASS.`; }
-  else if(profitAt(price)<0){ cls="fail"; word="AUTO-FAIL"; line=`${likelyTxt}At ${money(price)} Twin would <b>lose ${money(-profitAt(price))}</b> after reno, selling, holding and contingency. Negative profit is an automatic fail: don't offer above <b>${money(dm.max)}</b>.`; }
+  else if(profitAt(price)<0){ cls="fail"; word="AUTO-FAIL"; line=`${likelyTxt}At ${money(price)} Twin would <b>lose ${money(-profitAt(price))}</b> after reno, commission, transfer taxes, loan costs and holding. Negative profit is an automatic fail: don't offer above <b>${money(dm.max)}</b>.`; }
   else if(price>dm.max*1.04){ cls="pass"; word="PASS"; line=`${likelyTxt}That is ${money(price-dm.max)} over Twin's max offer of <b>${money(dm.max)}</b>: ${profitAt(price)<0?`a loss of ${money(-profitAt(price))}`:`leaving only ${money(profitAt(price))} profit`}. Buy only at or under ${money(dm.max)}.`; }
   else if(price>dm.max){ cls="review"; word="NEGOTIATE"; line=`${likelyTxt}${money(price)} is just over the max offer of <b>${money(dm.max)}</b>. Profit would be ${money(profitAt(price))}.${next}`; }
   else if(conf>=90){ cls="buy"; word="BUY"; line=`At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b>. Max offer is <b>${money(dm.max)}</b>.`; }
   else { cls="review"; word="REVIEW"; line=`${likelyTxt}At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b> (max offer ${money(dm.max)}). Confidence is ${Math.round(conf)}%.${next}`; }
+  renderCalc(cur.v, price);
   $("verdict").innerHTML=`<div class="verdict ${cls}"><span class="big">${word}</span><span class="line">${line}</span></div>`;
   const arvRange = cur.src==="Claude"&&S.claude.arv_range? S.claude.arv_range : [arv.low,arv.high];
   $("kpis").innerHTML=`
@@ -1247,7 +1336,7 @@ $("copyBB").onclick=()=>{
   const lines=[`TWIN COMP AI · ${s.address}`,`${v} · Confidence ${Math.round(conf)}%`,
     `ARV (${cur.src}): ${money(cur.v)}`,`As-is: ${money(cur.src==="Claude"&&S.claude.as_is_value?S.claude.as_is_value:R.asis.value)}`,
     `Max offer: ${money(dm.max)} · Start at: ${money(dm.target)}`,`Renovation: ${money(S.deal.reno)} · Target profit: ${money(S.deal.profit)}`,
-    s.ask?`Asking: ${money(s.ask)} · Profit at asking: ${money(cur.v-dm.costs-s.ask)}`:"", "", "Best comps:",
+    s.ask?`Asking: ${money(s.ask)} · Profit at asking: ${money(dm.profitAt(s.ask))}`:"", "", "Best comps:",
     ...R.arv.used.slice(0,5).map((u,i)=>`${i+1}. ${street(u.address)} · ${u.status} ${money(u.price)} ${u.date||""} · ${u.sqft||"?"} sf · ${whyLine(u)}`),
     S.claude&&S.claude.why_this_value?`\nWhy: ${S.claude.why_this_value}`:"", S.claude&&S.claude.what_could_make_us_wrong?`Risk: ${S.claude.what_could_make_us_wrong}`:""].filter(x=>x!=="");
   copyText(lines.join("\n"),"Deal summary copied. Paste it into the REI BlackBook lead notes.");
