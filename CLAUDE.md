@@ -32,6 +32,12 @@ One internal valuation system that gives a defensible property value without rel
 ## Rules for every comp run
 
 - Use only real, sourced sales. Never invent an address, price or date. If a fact can't be confirmed, say so on the page.
+- **Always check Redfin for the subject's listing status** before calling a house off-market. Redfin blocks direct fetches from this container, so search for it:
+  - `redfin <address>` and `"<address>" redfin for sale`.
+  - Unit and building variants for multi-unit addresses (e.g. `327 San Jose Ave #323`, `323-327 San Jose Ave`).
+  - Cross-check with Compass, Coldwell Banker and Zillow search results.
+
+  If any of them shows an active or pending listing, use that list price as `ask` and the listing text for condition. Only write "no listing found" after all of these come up empty.
 - Search the web for every run. The page has no condition picker: Claude sets the subject's condition (`cond` in `results/latest`) from the listing photos and remarks. With no listing, use Dated (2) and say so.
 - **Claude is the master comper, and location comes first.** Pick and weight comps in this order:
   1. Same street or block.
