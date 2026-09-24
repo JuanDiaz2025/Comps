@@ -1,0 +1,1263 @@
+<title>Twin Comp AI</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ink:#13233F; --ink-2:#34445F; --muted:#66748A; --line:#D9DFE8; --line-2:#E8ECF2;
+  --bg:#EEF1F5; --surface:#FFFFFF; --surface-2:#F6F8FB; --bar:#13233F; --bar-ink:#F2F5FA;
+  --accent:#1F5FD6; --accent-soft:#E3ECFC; --accent-ink:#FFFFFF;
+  --good:#1E8E5A; --good-soft:#E1F3EA; --warn:#B7790C; --warn-soft:#FBF0DA; --bad:#C8372D; --bad-soft:#FBE4E2;
+  --pin-subject:#C8372D; --pin-match:#1F5FD6; --pin-similar:#1E8E5A; --pin-wide:#D69A10; --pin-out:#9AA5B5;
+  --map-bg:#E9EEE6; --map-ring:#1F5FD6;
+  --display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Source Sans 3",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ink:#E6ECF5; --ink-2:#C3CDDC; --muted:#8E9BB0; --line:#2A3850; --line-2:#223047;
+    --bg:#0C1320; --surface:#141E30; --surface-2:#19253A; --bar:#0A101B; --bar-ink:#E6ECF5;
+    --accent:#6E9BFF; --accent-soft:#1D2E52; --accent-ink:#0C1320;
+    --good:#4CC38A; --good-soft:#15342A; --warn:#E4B04A; --warn-soft:#3A2E14; --bad:#F07068; --bad-soft:#3E1D1C;
+    --pin-subject:#F07068; --pin-match:#6E9BFF; --pin-similar:#4CC38A; --pin-wide:#E4B04A; --pin-out:#5A6880;
+    --map-bg:#172233; --map-ring:#6E9BFF;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ink:#E6ECF5; --ink-2:#C3CDDC; --muted:#8E9BB0; --line:#2A3850; --line-2:#223047;
+  --bg:#0C1320; --surface:#141E30; --surface-2:#19253A; --bar:#0A101B; --bar-ink:#E6ECF5;
+  --accent:#6E9BFF; --accent-soft:#1D2E52; --accent-ink:#0C1320;
+  --good:#4CC38A; --good-soft:#15342A; --warn:#E4B04A; --warn-soft:#3A2E14; --bad:#F07068; --bad-soft:#3E1D1C;
+  --pin-subject:#F07068; --pin-match:#6E9BFF; --pin-similar:#4CC38A; --pin-wide:#E4B04A; --pin-out:#5A6880;
+  --map-bg:#172233; --map-ring:#6E9BFF;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;margin:0}
+.num,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:.01em}
+a{color:var(--accent)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.topbar{background:var(--bar);color:var(--bar-ink);padding:14px 20px}
+.topbar-in{max-width:1200px;margin:0 auto;display:flex;flex-wrap:wrap;gap:6px 24px;align-items:baseline;justify-content:space-between}
+.topbar h1{font-size:30px;font-weight:700;line-height:1}
+.topbar p{margin:0;opacity:.8;font-size:14px}
+
+.wrap{max-width:1200px;margin:0 auto;padding-inline:16px;padding-block:16px 48px;display:flex;flex-direction:column;gap:16px}
+.example-note{background:var(--warn-soft);border:1px solid var(--line);border-radius:var(--r);padding:8px 12px;font-size:13.5px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.example-note b{color:var(--warn)}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.ph{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 0;flex-wrap:wrap}
+.ph h2{font-size:22px;font-weight:700;display:flex;gap:10px;align-items:center}
+.ph h2 .step{width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--mono);font-size:13px;flex:none}
+.ph .sub{color:var(--muted);font-size:14px}
+.pb{padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px}
+
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);font-weight:600;letter-spacing:.02em;min-width:0}
+input[type=text],input[type=number],input[type=date],select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%;min-width:0;color:var(--ink);font-weight:400;font-size:15px}
+textarea{font-family:var(--mono);font-size:12.5px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+input.big{font-size:19px;padding:12px 14px;font-weight:600}
+
+.prop-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:end}
+@media (max-width:760px){.prop-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.prop-grid .span-all{grid-column:1/-1}}
+.cond-row{display:flex;flex-wrap:wrap;gap:6px}
+.condbtn{flex:1 1 90px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 6px;cursor:pointer;text-align:center;line-height:1.15}
+.condbtn b{display:block;font-size:14px}
+.condbtn span{font-size:11.5px;color:var(--muted)}
+.condbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.condbtn[aria-pressed="true"] span{color:var(--accent-ink);opacity:.85}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:8px 14px;cursor:pointer;font-weight:600;font-size:14px;color:var(--ink)}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.small{padding:4px 9px;font-size:12.5px}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chipbtn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px;font-family:var(--mono)}
+.chipbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 8px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.info{background:var(--accent-soft);color:var(--accent)}
+.pill.mute{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+
+/* step 2: AI cards */
+.ai-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media (max-width:900px){.ai-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ai{border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;background:var(--surface-2)}
+.ai.done{border-color:var(--good);background:var(--good-soft)}
+.ai .nm{font-weight:700;font-size:15px;display:flex;justify-content:space-between;gap:6px;align-items:center}
+.ai .jb{font-size:12.5px;color:var(--muted);min-height:2.6em}
+.ai .ck{color:var(--good);font-weight:700;font-size:12px}
+.progress{font-size:14px;color:var(--ink-2)}
+.progress b{font-family:var(--mono)}
+.status{font-size:13px;color:var(--muted)}
+.status.ok{color:var(--good)}
+.status.err{color:var(--bad)}
+
+/* step 3: answer */
+.verdict{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 16px;border-radius:8px}
+.verdict.buy{background:var(--good-soft);color:var(--good)}
+.verdict.review{background:var(--warn-soft);color:var(--warn)}
+.verdict.pass{background:var(--bad-soft);color:var(--bad)}
+.verdict .big{font-family:var(--display);font-size:40px;font-weight:700;letter-spacing:.04em;line-height:1}
+.verdict .line{color:var(--ink);font-size:15px;max-width:70ch}
+.verdict .line b{font-family:var(--mono)}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface-2);min-width:0}
+.kpi .k{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.kpi .v{font-family:var(--mono);font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .r{font-size:12px;color:var(--muted);font-family:var(--mono)}
+.kpi.hero{background:var(--accent-soft);border-color:transparent}
+.kpi.hero .v{color:var(--accent)}
+.answer-split{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.answer-split{grid-template-columns:minmax(0,1fr)}}
+.comp-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.comp{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line-2);cursor:pointer;align-items:start}
+.comp:last-child{border-bottom:none}
+.comp:hover,.comp.hl{background:var(--surface-2)}
+.comp .rank{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:600;color:#fff}
+.comp .addr{font-weight:700}
+.comp .why{font-size:13px;color:var(--ink-2)}
+.comp .meta{font-size:12.5px;color:var(--muted)}
+.comp .right{text-align:right}
+.comp .price{font-family:var(--mono);font-weight:600}
+.comp .adj{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.mapbox{position:relative;background:var(--map-bg);border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.mapbox svg{display:block;width:100%;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--ink-2);margin-top:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.map-tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.15);max-width:240px}
+.alerts{display:flex;flex-direction:column;gap:6px}
+.alert{border-radius:7px;padding:8px 12px;font-size:13.5px;border:1px solid var(--line)}
+.alert.warn{background:var(--warn-soft)}
+.alert.bad{background:var(--bad-soft)}
+.alert.good{background:var(--good-soft)}
+.alert b{color:var(--ink)}
+
+.report{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line-2);padding-top:12px}
+.report p{margin:0;max-width:78ch}
+.report h3{font-size:17px}
+.report ul{margin:0;padding-left:18px}
+.runbtn{font-size:18px;padding:12px 28px}
+.elapsed{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.stream{white-space:pre-wrap;font-family:var(--mono);font-size:12px;color:var(--muted);max-height:140px;overflow:auto}
+
+/* advanced */
+details.adv{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+details.adv>summary{cursor:pointer;padding:14px 16px;font-family:var(--display);font-size:19px;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:10px;align-items:center}
+details.adv>summary::-webkit-details-marker{display:none}
+details.adv>summary::after{content:"Show";font-family:var(--body);font-size:13px;color:var(--accent);font-weight:600}
+details.adv[open]>summary::after{content:"Hide"}
+details.adv>summary .sub{font-family:var(--body);font-size:13px;color:var(--muted);font-weight:400;flex:1}
+.adv-body{padding:0 16px 16px;display:flex;flex-direction:column;gap:18px}
+.adv-body h3{font-size:17px;margin-bottom:6px}
+.cols3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:900px){.cols3{grid-template-columns:minmax(0,1fr)}}
+.range{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
+.range span{color:var(--muted);font-size:12px}
+.chk{display:flex;gap:6px;align-items:center;font-size:13.5px;color:var(--ink-2)}
+.tblwrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line-2);text-align:left;white-space:nowrap}
+th{font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.03em;text-transform:uppercase;background:var(--surface-2)}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+tr.out td{color:var(--muted)}
+tr.out td.addr{text-decoration:line-through}
+td select{padding:2px 4px;font-size:12px;width:auto}
+pre.prompt{background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:10px;font-family:var(--mono);font-size:11.5px;white-space:pre-wrap;word-break:break-word;max-height:260px;overflow:auto;margin:0}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(--ink-2)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:7px;font-size:14px;z-index:10}
+@media (max-width:600px){input.big{font-size:16px;padding:10px 12px}details.adv>summary .sub{display:none}.verdict .big{font-size:32px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <h1>Twin Comp AI</h1>
+    <p>One number. Five comps. One confidence score. One buy price.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="example-note" id="exampleNote">
+    <span><b>Example loaded.</b> This Berkeley house and its comps are made up. Press “Start a new property”, type your address and press Run comps.</span>
+    <button class="btn small" id="clearExample" type="button">Start a new property</button>
+  </div>
+
+  <!-- STEP 1 -->
+  <section class="panel" aria-labelledby="h1s">
+    <div class="ph"><h2 id="h1s"><span class="step">1</span>The property</h2><span class="sub">Only the address is required. Claude looks up the rest.</span></div>
+    <div class="pb">
+      <div class="prop-grid">
+        <label class="f span-all">Address<input type="text" class="big" id="s_address" placeholder="123 Main St, San Mateo, CA 94401"></label>
+        <label class="f">Asking / contract price<input type="number" id="s_ask" placeholder="optional"></label>
+        <label class="f">Renovation budget<input type="number" id="d_reno"></label>
+      </div>
+      <div class="f" style="display:flex;flex-direction:column;gap:4px"><span class="small muted" style="font-weight:600">Condition today</span>
+        <div class="cond-row" id="condRow"></div>
+      </div>
+      <details class="inner"><summary>Property details (<span id="factsSummary"></span>)</summary>
+        <div class="formgrid" style="margin-top:10px">
+          <label class="f">Beds<input type="number" id="s_beds"></label>
+          <label class="f">Baths<input type="number" step="0.5" id="s_baths"></label>
+          <label class="f">Living sf<input type="number" id="s_sqft"></label>
+          <label class="f">Lot sf<input type="number" id="s_lot"></label>
+          <label class="f">Year built<input type="number" id="s_year"></label>
+          <label class="f">Type<select id="s_type"><option>SFR</option><option>Condo</option><option>Townhome</option><option>2-4 Unit</option></select></label>
+          <label class="f">Latitude<input type="number" step="any" id="s_lat"></label>
+          <label class="f">Longitude<input type="number" step="any" id="s_lng"></label>
+          <label class="f" style="grid-column:1/-1">Anything Claude must know<input type="text" id="s_notes" placeholder="cul-de-sac, bay view, backs to freeway, unpermitted ADU…"></label>
+        </div>
+      </details>
+      <div class="btnrow">
+        <button class="btn primary runbtn" id="runBtn" type="button">Run comps</button>
+        <button class="btn" id="cancelRun" type="button" hidden>Cancel</button>
+        <span class="status" id="runStatus"></span> <span class="elapsed" id="elapsed"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="panel" aria-labelledby="h3s">
+    <div class="ph"><h2 id="h3s"><span class="step">2</span>The answer</h2><span id="basisChips" class="chips"></span></div>
+    <div class="pb">
+      <div id="verdict"></div>
+      <div class="kpis" id="kpis"></div>
+      <div class="alerts" id="alerts"></div>
+      <div class="answer-split">
+        <div>
+          <h3 style="font-size:17px;margin-bottom:8px">Best 5 comps and why</h3>
+          <div class="comp-list" id="compList"></div>
+        </div>
+        <div>
+          <div class="mapbox" id="mapbox"><svg id="map" viewBox="0 0 600 440" role="img" aria-label="Map of the comps around the subject"></svg><div class="map-tip" id="mapTip" hidden></div></div>
+          <div class="legend">
+            <span><i style="background:var(--pin-subject)"></i>Subject</span>
+            <span><i style="background:var(--pin-match)"></i>Strong comp</span>
+            <span><i style="background:var(--pin-similar)"></i>Good</span>
+            <span><i style="background:var(--pin-wide)"></i>Weak</span>
+            <span><i style="background:transparent;border:2px solid var(--pin-out)"></i>Thrown out</span>
+          </div>
+        </div>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="copyBB" type="button">Copy for REI BlackBook</button>
+        <button class="btn" id="saveVal" type="button">Save to deal log</button>
+      </div>
+      <p class="small muted" id="summaryLine" style="margin:0"></p>
+      <textarea id="copyFallback" rows="6" hidden aria-label="Text to copy"></textarea>
+    </div>
+  </section>
+
+  <!-- ADVANCED -->
+  <details class="adv" id="advDeal">
+    <summary>Deal numbers <span class="sub">selling costs, holding, profit target, Juan's ARV override</span></summary>
+    <div class="adv-body">
+      <div class="formgrid">
+        <label class="f">Selling costs (% of ARV)<input type="number" step="0.1" id="d_sell"></label>
+        <label class="f">Holding + financing ($)<input type="number" id="d_hold"></label>
+        <label class="f">Contingency ($)<input type="number" id="d_cont"></label>
+        <label class="f">Target profit ($)<input type="number" id="d_profit"></label>
+        <label class="f">Juan's ARV override ($)<input type="number" id="d_juan" placeholder="leave blank"></label>
+      </div>
+    </div>
+  </details>
+
+  <details class="adv" id="advComps">
+    <summary>All comps &amp; rules <span class="sub" id="poolSub"></span></summary>
+    <div class="adv-body">
+      <div class="cols3">
+        <div>
+          <h3>Comp rules</h3>
+          <label class="chk" style="margin-bottom:8px"><input type="checkbox" id="f_auto"> Set automatically from the property</label>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div><span class="small muted" style="font-weight:600">Radius (miles)</span><div class="chips" id="radiusChips"></div></div>
+            <div><span class="small muted" style="font-weight:600">Property types</span><div class="chips" id="typeChips"></div></div>
+            <label class="f">Bedrooms<span class="range"><input type="number" id="f_bedsMin"><span>to</span><input type="number" id="f_bedsMax"></span></label>
+            <label class="f">Bathrooms<span class="range"><input type="number" step="0.5" id="f_bathsMin"><span>to</span><input type="number" step="0.5" id="f_bathsMax"></span></label>
+            <label class="f">Living sf<span class="range"><input type="number" id="f_sqftMin"><span>to</span><input type="number" id="f_sqftMax"></span></label>
+            <label class="f">Year built<span class="range"><input type="number" id="f_yearMin"><span>to</span><input type="number" id="f_yearMax"></span></label>
+            <label class="f">Sold within
+              <select id="f_months"><option value="3">90 days</option><option value="6">6 months</option><option value="12">12 months</option><option value="18">18 months</option><option value="24">24 months</option></select></label>
+            <label class="f">Comps used in the value<input type="number" id="f_topN" min="3" max="12"></label>
+            <label class="chk"><input type="checkbox" id="f_includeListings"> Count pending/active listings in the value</label>
+          </div>
+        </div>
+        <div>
+          <h3>Adjustment rates</h3>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <label class="f">Size adjustment<select id="a_glaAuto"><option value="1">Auto (half of median $/sf)</option><option value="0">Manual</option></select></label>
+            <label class="f">$ per sf of size difference<input type="number" id="a_gla"></label>
+            <label class="f">Per bedroom ($)<input type="number" id="a_bed"></label>
+            <label class="f">Per bath ($)<input type="number" id="a_bath"></label>
+            <label class="f">Lot $ per sf<input type="number" step="any" id="a_lot"></label>
+            <label class="f">Per condition step (% of price)<input type="number" step="0.5" id="a_cond"></label>
+            <label class="f">Market trend (% per month)<input type="number" step="0.1" id="a_time"></label>
+            <label class="f">ARV = renovated to<select id="a_arvCond"></select></label>
+          </div>
+        </div>
+        <div>
+          <h3>Your MLS export</h3>
+          <p class="small muted" style="margin:0 0 6px">Paste a CSV from MLS, PropStream or Redfin. It beats anything the AIs find online.</p>
+          <textarea id="csvIn" rows="6" placeholder="Address,Status,Sold Price,Sold Date,Beds,Baths,SqFt,Lot SqFt,Year Built,Latitude,Longitude"></textarea>
+          <div class="btnrow" style="margin-top:6px"><button class="btn" id="csvBtn" type="button">Import rows</button><span class="status" id="csvStatus"></span></div>
+          <h3 style="margin-top:14px">Method check</h3>
+          <div id="methods" class="small"></div>
+        </div>
+      </div>
+      <div>
+        <div class="btnrow" style="justify-content:space-between;margin-bottom:6px"><h3 style="margin:0">Every comp found</h3><button class="btn small" id="addCompBtn" type="button">Add a comp</button></div>
+        <div class="tblwrap"><table id="poolTable"></table></div>
+      </div>
+      <div id="compForm" hidden>
+        <h3 id="compFormTitle">Add a comp</h3>
+        <div class="formgrid">
+          <label class="f" style="grid-column:span 2">Address<input type="text" id="c_address"></label>
+          <label class="f">Status<select id="c_status"><option>Sold</option><option>Pending</option><option>Active</option><option>Withdrawn</option></select></label>
+          <label class="f">Price<input type="number" id="c_price"></label>
+          <label class="f">Date<input type="date" id="c_date"></label>
+          <label class="f">Beds<input type="number" id="c_beds"></label>
+          <label class="f">Baths<input type="number" step="0.5" id="c_baths"></label>
+          <label class="f">Sqft<input type="number" id="c_sqft"></label>
+          <label class="f">Lot sf<input type="number" id="c_lot"></label>
+          <label class="f">Year<input type="number" id="c_year"></label>
+          <label class="f">Type<select id="c_type"><option>SFR</option><option>Condo</option><option>Townhome</option><option>2-4 Unit</option></select></label>
+          <label class="f">Condition<select id="c_cond"></select></label>
+          <label class="f">Lat<input type="number" step="any" id="c_lat"></label>
+          <label class="f">Lng<input type="number" step="any" id="c_lng"></label>
+          <label class="f">Miles away (if no lat/lng)<input type="number" step="0.01" id="c_dist"></label>
+          <label class="f" style="grid-column:1/-1">Source link(s)<input type="text" id="c_src"></label>
+          <label class="f" style="grid-column:1/-1">Notes<input type="text" id="c_notes"></label>
+        </div>
+        <div class="btnrow" style="margin-top:8px"><button class="btn primary" id="saveComp" type="button">Save comp</button><button class="btn" id="cancelComp" type="button">Cancel</button></div>
+      </div>
+    </div>
+  </details>
+
+  <details class="adv" id="advLog">
+    <summary>Deal log &amp; backtest <span class="sub" id="logSub"></span></summary>
+    <div class="adv-body">
+      <p class="small" style="margin:0;max-width:75ch">To test the system, run houses Twin already sold without telling the AIs the sale price. Save each one, then type the real sale price here. The error columns show who is most accurate: the engine, Claude or Juan.</p>
+      <div class="kpis" id="accuracy" style="grid-template-columns:repeat(3,minmax(0,1fr))"></div>
+      <div class="tblwrap"><table id="logTable"></table></div>
+      <span class="status" id="logStatus"></span>
+    </div>
+  </details>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+const $ = id => document.getElementById(id);
+const CONDS = [[1,"Fixer","heavy work"],[2,"Dated","original"],[3,"Clean","cosmetic"],[4,"Updated","kitchen/baths"],[5,"Remodeled","high-end"]];
+const condLabel = c => { const f=CONDS.find(x=>x[0]===Number(c)); return f?f[1]:"—"; };
+const TYPES = ["SFR","Condo","Townhome","2-4 Unit"];
+const RADII = [0.25,0.5,1,2,3];
+const AGENTS = [{key:"ai",name:"Claude"},{key:"mls",name:"MLS"}];
+
+const EXAMPLE = {
+  subject:{address:"1466 Scenic Ave, Berkeley, CA 94708",lat:37.8792,lng:-122.2594,beds:3,baths:2,sqft:1036,lot:7290,year:1924,type:"SFR",cond:2,ask:1050000,notes:"Berkeley Hills edge, quiet street, some bay view potential"},
+  comps:[
+    {address:"1444 Scenic Ave, Berkeley, CA 94708",status:"Sold",price:1300000,date:"2026-01-07",beds:4,baths:2,sqft:1583,lot:7200,year:1925,type:"SFR",cond:3,lat:37.8781,lng:-122.2590,agents:["ai","perplexity","grok","gemini"],src:["https://www.redfin.com/"],notes:""},
+    {address:"1079 Keith Ave, Berkeley, CA 94708",status:"Sold",price:1145000,date:"2025-11-15",beds:2,baths:1,sqft:1012,lot:5000,year:1924,type:"SFR",cond:3,lat:37.8832,lng:-122.2695,agents:["ai","perplexity","gemini"],src:["https://www.zillow.com/"],notes:""},
+    {address:"2925 Shasta Rd, Berkeley, CA 94708",status:"Sold",price:1225000,date:"2025-10-28",beds:3,baths:1,sqft:1196,lot:5200,year:1930,type:"SFR",cond:3,lat:37.8887,lng:-122.2508,agents:["ai","grok"],src:[],notes:"Upper hills, winding road"},
+    {address:"1460 Olympus Ave, Berkeley, CA 94708",status:"Sold",price:1250000,date:"2025-09-12",beds:3,baths:2,sqft:1248,lot:6000,year:1932,type:"SFR",cond:3,lat:37.8761,lng:-122.2552,agents:["ai","perplexity","gemini"],src:["https://www.redfin.com/"],notes:""},
+    {address:"1622 Scenic Ave, Berkeley, CA 94709",status:"Sold",price:1727000,date:"2025-08-03",beds:3,baths:2,sqft:1815,lot:7150,year:1928,type:"SFR",cond:5,lat:37.8704,lng:-122.2629,agents:["perplexity","grok"],src:["https://www.realtor.com/"],notes:"Full remodel, staged"},
+    {address:"1510 Arch St, Berkeley, CA 94708",status:"Sold",price:1495000,date:"2026-04-18",beds:3,baths:2,sqft:1310,lot:6100,year:1926,type:"SFR",cond:4,lat:37.8768,lng:-122.2695,agents:["ai","gemini","grok"],src:["https://www.redfin.com/"],notes:"Updated kitchen and baths"},
+    {address:"1350 Hawthorne Ter, Berkeley, CA 94708",status:"Sold",price:1560000,date:"2026-06-02",beds:3,baths:2,sqft:1240,lot:5800,year:1935,type:"SFR",cond:4,lat:37.8827,lng:-122.2552,agents:["ai","perplexity"],src:["https://www.zillow.com/"],notes:"Renovated 2024"},
+    {address:"1400 Le Roy Ave, Berkeley, CA 94708",status:"Sold",price:1080000,date:"2026-03-09",beds:3,baths:1,sqft:1100,lot:5500,year:1922,type:"SFR",cond:2,lat:37.8810,lng:-122.2574,agents:["grok","gemini"],src:["https://www.redfin.com/"],notes:"Original condition, estate sale"},
+    {address:"1520 Euclid Ave #3, Berkeley, CA 94708",status:"Sold",price:865000,date:"2026-02-20",beds:2,baths:2,sqft:1080,lot:0,year:1972,type:"Condo",cond:3,lat:37.8739,lng:-122.2618,agents:["ai"],src:[],notes:"Condo, wrong type"},
+    {address:"1733 Spruce St, Berkeley, CA 94709",status:"Sold",price:1395000,date:"2026-05-14",beds:3,baths:2,sqft:1420,lot:4800,year:1915,type:"SFR",cond:4,lat:37.8689,lng:-122.2750,agents:["gemini"],src:["https://www.redfin.com/"],notes:"Busier street, across Spruce"},
+    {address:"1195 Oxford St, Berkeley, CA 94707",status:"Sold",price:1610000,date:"2025-05-30",beds:4,baths:3,sqft:1980,lot:6500,year:1938,type:"SFR",cond:4,lat:37.8920,lng:-122.2750,agents:["grok"],src:[],notes:"Older sale, larger"},
+    {address:"1488 Scenic Ave, Berkeley, CA 94708",status:"Active",price:1549000,date:"2026-09-02",beds:3,baths:2,sqft:1290,lot:6900,year:1927,type:"SFR",cond:4,lat:37.8801,lng:-122.2603,agents:["ai","grok"],src:["https://www.redfin.com/"],notes:"Renovated flip on market, 22 DOM"},
+    {address:"1360 Cedar St, Berkeley, CA 94702",status:"Pending",price:1325000,date:"2026-08-20",beds:3,baths:2,sqft:1260,lot:5000,year:1924,type:"SFR",cond:4,lat:37.8744,lng:-122.2893,agents:["ai"],src:[],notes:""}
+  ],
+  agentReports:{
+    chatgpt:{value_as_is:1160000,value_arv:1385000},
+    perplexity:{value_as_is:1140000,value_arv:1350000},
+    grok:{value_as_is:1095000,value_arv:1450000,risks:["Two of the strongest renovated sales sit on quieter, higher streets with better views than the subject."]},
+    gemini:{value_as_is:1170000,value_arv:1365000}
+  }
+};
+
+
+
+const DEFAULT_FILTERS = {auto:true,radius:1,types:["SFR"],bedsMin:2,bedsMax:4,bathsMin:1,bathsMax:3,sqftMin:800,sqftMax:1600,yearMin:1900,yearMax:1950,months:12,includeListings:false,topN:6};
+const DEFAULT_ADJ = {glaAuto:1,gla:450,bed:25000,bath:35000,lot:15,cond:6,time:0.3,arvCond:4};
+const DEFAULT_DEAL = {reno:120000,sell:5,hold:45000,cont:20000,profit:175000,juan:null,useClaude:true};
+
+function freshState(example){
+  const base = {subject:{address:"",lat:null,lng:null,beds:null,baths:null,sqft:null,lot:null,year:null,type:"SFR",cond:2,ask:null,notes:""},
+    comps:[],filters:{...DEFAULT_FILTERS},adj:{...DEFAULT_ADJ},deal:{...DEFAULT_DEAL},agentReports:{},claude:null,example:false,copied:{}};
+  if(example){
+    base.subject = {...EXAMPLE.subject, ask:875000};
+    base.comps = EXAMPLE.comps.map((c,i)=>({...c,id:"ex"+i,include:true,conflicts:[]}));
+    base.agentReports = JSON.parse(JSON.stringify(EXAMPLE.agentReports));
+    base.example = true;
+  }
+  return base;
+}
+const LS_KEY = "twin-comp-ai-draft-v4";
+let S=null;
+try{ const raw=localStorage.getItem(LS_KEY); if(raw) S=JSON.parse(raw); }catch(e){}
+if(!S || !S.subject) S = freshState(false);
+S.filters={...DEFAULT_FILTERS,...S.filters}; S.adj={...DEFAULT_ADJ,...S.adj}; S.deal={...DEFAULT_DEAL,...S.deal}; S.copied=S.copied||{};
+function persist(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(S)); }catch(e){} }
+
+/* ---------- utils ---------- */
+const money = v => v==null||!isFinite(v) ? "—" : (v<0?"−$":"$") + Math.abs(Math.round(v)).toLocaleString("en-US");
+const kmoney = v => { if(v==null||!isFinite(v)) return "—"; const a=Math.abs(v); const s=a>=1e6? "$"+(a/1e6).toFixed(3).replace(/0+$/,"").replace(/\.$/,"")+"M" : "$"+Math.round(a/1000)+"K"; return (v<0?"−":"")+s; };
+const pct = (v,d=1) => v==null||!isFinite(v) ? "—" : (v*100).toFixed(d)+"%";
+const num = v => { if(v===""||v==null) return null; const n=Number(String(v).replace(/[$,\s]/g,"")); return isFinite(n)?n:null; };
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const street = a => String(a||"").split(",")[0];
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true,2400); }
+async function copyText(text, msg){
+  try{ await navigator.clipboard.writeText(text); toast(msg||"Copied"); return true; }
+  catch(e){ const ta=$("copyFallback"); ta.value=text; ta.hidden=false; ta.focus(); ta.select(); toast("Copy was blocked. The text is selected; press Ctrl/Cmd+C."); return false; }
+}
+function haversine(a,b,c,d){ const R=3958.8,t=x=>x*Math.PI/180; const dl=t(c-a),dn=t(d-b); const h=Math.sin(dl/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(dn/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
+function monthsAgo(ds){ if(!ds) return null; const d=new Date(ds+"T12:00:00"); if(isNaN(d)) return null; return Math.max(0,(Date.now()-d.getTime())/(30.44*864e5)); }
+function normAddr(a){ return String(a||"").toLowerCase().replace(/[.,#]/g," ").replace(/\bstreet\b/g,"st").replace(/\bavenue\b/g,"ave").replace(/\broad\b/g,"rd").replace(/\bdrive\b/g,"dr").replace(/\bboulevard\b/g,"blvd").replace(/\bterrace\b/g,"ter").replace(/\bcourt\b/g,"ct").replace(/\bplace\b/g,"pl").replace(/\blane\b/g,"ln").replace(/\b(ca|california)\b/g,"").replace(/\b\d{5}(-\d{4})?\b/g,"").replace(/\s+/g," ").trim().split(" ").slice(0,4).join(" "); }
+const median = a => { if(!a.length) return null; const s=[...a].sort((x,y)=>x-y),m=s.length>>1; return s.length%2?s[m]:(s[m-1]+s[m])/2; };
+const mean = a => a.length? a.reduce((x,y)=>x+y,0)/a.length : null;
+function wstats(vals,ws){ const W=ws.reduce((a,b)=>a+b,0); if(!W) return {m:null,sd:null}; const m=vals.reduce((a,v,i)=>a+v*ws[i],0)/W; const v=vals.reduce((a,x,i)=>a+ws[i]*(x-m)**2,0)/W; return {m,sd:Math.sqrt(v)}; }
+
+/* ---------- engine ---------- */
+function effFilters(){
+  const f=S.filters, s=S.subject;
+  if(!f.auto) return f;
+  return {...f, types:[s.type||"SFR"],
+    bedsMin: s.beds!=null? Math.max(0,s.beds-1):0, bedsMax: s.beds!=null? s.beds+1:99,
+    bathsMin: s.baths!=null? 1:0, bathsMax: s.baths!=null? s.baths+2:99,
+    sqftMin: s.sqft? Math.round(s.sqft*0.65/50)*50:0, sqftMax: s.sqft? Math.round(s.sqft*1.6/50)*50:99999,
+    yearMin: s.year? s.year-30:0, yearMax: s.year? s.year+30:9999};
+}
+function compute(){
+  const s=S.subject, f=effFilters(), a=S.adj;
+  const hasCoords = s.lat!=null && s.lng!=null;
+  const rows = S.comps.map(c=>{
+    const r={...c};
+    r.dist = (hasCoords&&c.lat!=null&&c.lng!=null) ? haversine(s.lat,s.lng,c.lat,c.lng) : (c.dist!=null?Number(c.dist):null);
+    r.months = monthsAgo(c.date);
+    r.ppsf = c.price&&c.sqft ? c.price/c.sqft : null;
+    r.isListing = c.status!=="Sold";
+    const why=[];
+    if(!c.price) why.push("no price");
+    if(r.dist==null) why.push("no location");
+    else if(r.dist>f.radius) why.push(`over ${f.radius} mi away`);
+    if(!f.types.includes(c.type)) why.push(`${c.type}, not ${f.types.join("/")}`);
+    if(c.beds!=null&&(c.beds<f.bedsMin||c.beds>f.bedsMax)) why.push(`${c.beds} beds`);
+    if(c.baths!=null&&(c.baths<f.bathsMin||c.baths>f.bathsMax)) why.push(`${c.baths} baths`);
+    if(c.sqft!=null&&(c.sqft<f.sqftMin||c.sqft>f.sqftMax)) why.push(`${c.sqft.toLocaleString()} sf, too different`);
+    if(c.year!=null&&(c.year<f.yearMin||c.year>f.yearMax)) why.push(`built ${c.year}`);
+    if(c.status==="Sold"&&r.months!=null&&r.months>f.months) why.push(`sold ${Math.round(r.months)} months ago`);
+    if(c.status==="Withdrawn") why.push("withdrawn");
+    if(c.include===false) why.push("thrown out by you");
+    r.why=why; r.eligible=why.length===0;
+    return r;
+  });
+  const sold = rows.filter(r=>r.status==="Sold"&&r.ppsf);
+  const medPpsf = median((sold.filter(r=>r.eligible).length?sold.filter(r=>r.eligible):sold).map(r=>r.ppsf));
+  const glaRate = a.glaAuto==1&&medPpsf ? Math.round(medPpsf*0.5/5)*5 : a.gla;
+  const nAgents = Math.max(1,new Set(S.comps.flatMap(c=>c.agents||[])).size);
+  function scoreAdj(r,tc){
+    const sc={};
+    sc.loc = r.dist==null?0:30*Math.max(0,1-r.dist/Math.max(f.radius,0.1));
+    sc.gla = (s.sqft&&r.sqft)?20*Math.max(0,1-Math.abs(r.sqft-s.sqft)/(0.35*s.sqft)):8;
+    sc.type = r.type===s.type?15:0;
+    sc.cond = 15*Math.max(0,1-Math.abs((r.cond||3)-tc)/4);
+    sc.bb = (s.beds!=null&&s.baths!=null)? 7*Math.max(0,1-((Math.abs((r.beds??s.beds)-s.beds)*0.5)+(Math.abs((r.baths??s.baths)-s.baths)*0.5))/2) : 3.5;
+    sc.lot = (s.lot&&r.lot)?5*Math.max(0,1-Math.abs(r.lot-s.lot)/s.lot):(s.lot?0:2.5);
+    sc.rec = r.months==null?0:5*Math.max(0,1-r.months/Math.max(f.months,1));
+    sc.cons = 3*Math.min(1,(r.agents||[]).length/nAgents);
+    const score=Object.values(sc).reduce((x,y)=>x+y,0);
+    const adj={};
+    adj.time = r.status==="Sold"&&r.months? r.price*(a.time/100)*r.months:0;
+    adj.gla = (s.sqft&&r.sqft)?(s.sqft-r.sqft)*glaRate:0;
+    adj.bed = (s.beds!=null&&r.beds!=null)?(s.beds-r.beds)*a.bed:0;
+    adj.bath = (s.baths!=null&&r.baths!=null)?(s.baths-r.baths)*a.bath:0;
+    adj.lot = (s.lot&&r.lot)?(s.lot-r.lot)*a.lot:0;
+    adj.cond = (tc-(r.cond||3))*(a.cond/100)*r.price;
+    const net=Object.values(adj).reduce((x,y)=>x+y,0), gross=Object.values(adj).reduce((x,y)=>x+Math.abs(y),0);
+    return {score,sc,adj,adjusted:r.price+net,grossPct:gross/r.price};
+  }
+  function valueFor(tc){
+    const cands = rows.filter(r=>r.eligible&&r.price&&(f.includeListings||!r.isListing)).map(r=>({...r,...scoreAdj(r,tc)})).sort((x,y)=>y.score-x.score);
+    const used = cands.slice(0,f.topN||6);
+    const ws = used.map(u=>u.score**2);
+    const {m,sd}=wstats(used.map(u=>u.adjusted),ws);
+    const W=ws.reduce((x,y)=>x+y,0); used.forEach((u,i)=>u.weight=W?ws[i]/W:0);
+    const cv=m?sd/m:1, avgScore=mean(used.map(u=>u.score))||0, avgGross=mean(used.map(u=>u.grossPct))||0;
+    let conf = 100 - cv*400 - Math.max(0,5-used.length)*7 - Math.max(0,85-avgScore)*0.6 - Math.max(0,avgGross-0.2)*60;
+    conf = used.length? Math.max(30,Math.min(97,conf)) : 0;
+    const half = m? Math.max(sd,m*0.02):null;
+    const soldUsed=used.filter(u=>u.status==="Sold");
+    const ppsfAdj=soldUsed.map(u=>u.ppsf*(1+(tc-(u.cond||3))*(a.cond/100))*(1+(a.time/100)*(u.months||0)));
+    const sortedAdj=used.map(u=>u.adjusted).sort((x,y)=>x-y);
+    const methods={"Weighted comps":m,"Median comp":median(sortedAdj),"Trimmed mean":sortedAdj.length>=5?mean(sortedAdj.slice(1,-1)):mean(sortedAdj),"Median $/sf × size":s.sqft&&ppsfAdj.length?median(ppsfAdj)*s.sqft:null,"Top 3 closest matches":used.length?mean(used.slice(0,3).map(u=>u.adjusted)):null};
+    return {cands,used,value:m,sd,low:m?m-half:null,high:m?m+half:null,conf,methods};
+  }
+  const asis=valueFor(s.cond||2), arv=valueFor(Number(a.arvCond)||4);
+  const competition = rows.filter(r=>(r.status==="Active"||r.status==="Pending")&&r.dist!=null&&r.dist<=f.radius&&f.types.includes(r.type));
+  return {rows,asis,arv,glaRate,medPpsf,competition,nAgents,f};
+}
+
+/* ---------- bindings ---------- */
+function fillSelect(el,opts){ el.innerHTML=opts.map(([v,l])=>`<option value="${v}">${esc(l)}</option>`).join(""); }
+fillSelect($("c_cond"),CONDS.map(c=>[c[0],c[0]+" · "+c[1]])); fillSelect($("a_arvCond"),CONDS.filter(c=>c[0]>=3).map(c=>[c[0],c[0]+" · "+c[1]]));
+const SUBJ = {s_address:"address",s_lat:"lat",s_lng:"lng",s_beds:"beds",s_baths:"baths",s_year:"year",s_sqft:"sqft",s_lot:"lot",s_type:"type",s_ask:"ask",s_notes:"notes"};
+const FILT = {f_bedsMin:"bedsMin",f_bedsMax:"bedsMax",f_bathsMin:"bathsMin",f_bathsMax:"bathsMax",f_sqftMin:"sqftMin",f_sqftMax:"sqftMax",f_yearMin:"yearMin",f_yearMax:"yearMax",f_months:"months",f_topN:"topN"};
+const ADJ = {a_gla:"gla",a_glaAuto:"glaAuto",a_bed:"bed",a_bath:"bath",a_lot:"lot",a_cond:"cond",a_time:"time",a_arvCond:"arvCond"};
+const DEAL = {d_reno:"reno",d_sell:"sell",d_hold:"hold",d_cont:"cont",d_profit:"profit",d_juan:"juan"};
+const TEXT = new Set(["address","type","notes"]);
+function bind(map,key){
+  for(const [id,k] of Object.entries(map)){
+    const el=$(id);
+    el.addEventListener("input",()=>{
+      if(key==="filters" && S.filters.auto){ S.filters={...effFilters(),auto:false}; }
+      S[key][k] = TEXT.has(k)? el.value : num(el.value);
+      if(k==="glaAuto"||k==="arvCond") S[key][k]=Number(el.value);
+      if(key==="subject"&&k!=="address"&&k!=="ask"&&k!=="notes") S.claude=null;
+      render();
+    });
+  }
+}
+bind(SUBJ,"subject"); bind(FILT,"filters"); bind(ADJ,"adj"); bind(DEAL,"deal");
+$("f_includeListings").addEventListener("change",e=>{S.filters.includeListings=e.target.checked; render();});
+$("f_auto").addEventListener("change",e=>{ if(e.target.checked) S.filters={...DEFAULT_FILTERS,radius:S.filters.radius,months:S.filters.months,topN:S.filters.topN,includeListings:S.filters.includeListings,auto:true}; else S.filters={...effFilters(),auto:false}; render(); });
+function setVals(map,obj){ for(const [id,k] of Object.entries(map)){ const el=$(id); if(document.activeElement!==el) el.value = obj[k]??""; } }
+$("clearExample").onclick=()=>{ S=freshState(false); render(); $("s_address").focus(); toast("Blank property ready"); };
+
+/* ---------- render ---------- */
+let R=null, hlId=null;
+const tier = (sc,ok)=> !ok?"var(--pin-out)": sc>=80?"var(--pin-match)": sc>=65?"var(--pin-similar)":"var(--pin-wide)";
+function resetIfNewAddress(){
+  const n=normAddr(S.subject.address);
+  if(!n || !S.factsFor || n===S.factsFor) return false;
+  Object.assign(S.subject,{beds:null,baths:null,sqft:null,lot:null,year:null,lat:null,lng:null,notes:"",ask:null});
+  S.comps=S.comps.filter(c=>(c.agents||[]).includes("mls")); S.agentReports={}; S.claude=null; S.factsFor=null;
+  const st=$("runStatus"); st.className="status"; st.textContent="";
+  return true;
+}
+$("s_address").addEventListener("change",()=>{ if(resetIfNewAddress()){ render(); toast("New address: cleared the last house's details"); } });
+function render(){
+  R=compute(); persist();
+  $("exampleNote").hidden=!S.example;
+  setVals(SUBJ,S.subject); setVals(ADJ,S.adj); setVals(DEAL,S.deal); setVals(FILT,R.f);
+  $("f_auto").checked=!!S.filters.auto; $("f_includeListings").checked=!!S.filters.includeListings;
+  const s=S.subject;
+  const facts=[s.beds!=null?s.beds+" bd":null,s.baths!=null?s.baths+" ba":null,s.sqft?s.sqft.toLocaleString()+" sf":null,s.year?"built "+s.year:null].filter(Boolean);
+  $("factsSummary").textContent = facts.length? facts.join(" · ") : "blank, the AIs will fill these in";
+  $("condRow").innerHTML = CONDS.map(([v,l,d])=>`<button type="button" class="condbtn" aria-pressed="${Number(s.cond)===v}" data-v="${v}"><b>${l}</b><span>${d}</span></button>`).join("");
+  $("condRow").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.subject.cond=Number(b.dataset.v); render();});
+  renderAnswer(); renderPool(); renderMap(); renderRules();
+  const rep=S.agentReports.ai; $("summaryLine").textContent = rep&&rep.summary? rep.summary : "";
+}
+function renderRules(){
+  const f=R.f;
+  $("radiusChips").innerHTML=RADII.map(r=>`<button type="button" class="chipbtn" aria-pressed="${f.radius===r}" data-r="${r}">${r}</button>`).join("");
+  $("radiusChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.filters.radius=Number(b.dataset.r); render();});
+  $("typeChips").innerHTML=TYPES.map(t=>`<button type="button" class="chipbtn" aria-pressed="${f.types.includes(t)}" data-t="${t}">${t}</button>`).join("");
+  $("typeChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{ if(S.filters.auto) S.filters={...effFilters(),auto:false}; const t=b.dataset.t; S.filters.types=S.filters.types.includes(t)?S.filters.types.filter(x=>x!==t):[...S.filters.types,t]; render();});
+  const set=R.arv;
+  $("methods").innerHTML = set.value? `<table><tbody>${Object.entries(set.methods).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${kmoney(v)}</td><td class="n muted">${v?((v-set.value)/set.value>=0?"+":"")+pct((v-set.value)/set.value):""}</td></tr>`).join("")}</tbody></table><p class="muted" style="margin:6px 0 0">ARV by five methods. If they spread more than 5%, the comps disagree.</p>` : `<span class="muted">No value yet.</span>`;
+}
+
+/* ---------- run comps (Claude via /api/comps) ---------- */
+const mapType = t=>{ t=String(t||"").toLowerCase(); if(t.includes("condo")) return "Condo"; if(t.includes("town")) return "Townhome"; if(/duplex|triplex|2-4|multi|fourplex/.test(t)) return "2-4 Unit"; return "SFR"; };
+const mapStatus = t=>{ t=String(t||"sold").toLowerCase(); if(t.startsWith("pend")||t.includes("contract")) return "Pending"; if(t.startsWith("act")||t.includes("list")) return "Active"; if(t.startsWith("with")||t.startsWith("exp")) return "Withdrawn"; return "Sold"; };
+const agentName = k => (AGENTS.find(a=>a.key===k)||{name:k?k:"import"}).name;
+function mergeComps(list, key){
+  let added=0,merged=0,conflicts=0;
+  for(const raw of list||[]){
+    const addr=raw.address||raw.street||""; if(!addr) continue;
+    const c={address:addr,status:mapStatus(raw.status),price:num(raw.price??raw.sold_price??raw.sale_price),date:String(raw.date||raw.sold_date||raw.sale_date||"").slice(0,10),
+      beds:num(raw.beds),baths:num(raw.baths),sqft:num(raw.sqft??raw.living_sqft),lot:num(raw.lot_sqft??raw.lot),year:num(raw.year_built??raw.year),
+      type:mapType(raw.property_type||raw.type),cond:Math.min(5,Math.max(1,Math.round(num(raw.condition)||3))),
+      lat:num(raw.lat),lng:num(raw.lng??raw.lon),dist:num(raw.distance_mi),src:[].concat(raw.source_urls||raw.sources||[]).filter(Boolean),notes:raw.notes||"",aiconf:raw.confidence||null};
+    const ex=S.comps.find(x=>normAddr(x.address)===normAddr(addr));
+    if(ex){
+      merged++;
+      if(key&&!(ex.agents||[]).includes(key)) ex.agents=[...(ex.agents||[]),key];
+      ex.src=[...new Set([...(ex.src||[]),...c.src])]; ex.conflicts=ex.conflicts||[];
+      if(c.price&&ex.price&&Math.abs(c.price-ex.price)/ex.price>0.01){ ex.conflicts.push(`${agentName(key)} says ${kmoney(c.price)}`); conflicts++; }
+      if(c.sqft&&ex.sqft&&Math.abs(c.sqft-ex.sqft)/ex.sqft>0.05){ ex.conflicts.push(`${agentName(key)} says ${c.sqft} sf`); conflicts++; }
+      for(const k of ["lat","lng","lot","year","date","beds","baths","sqft","dist"]) if(ex[k]==null||ex[k]==="") ex[k]=c[k];
+      if(c.notes&&!String(ex.notes).includes(c.notes)) ex.notes=[ex.notes,c.notes].filter(Boolean).join(" | ");
+    } else { S.comps.push({...c,id:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),include:true,agents:key?[key]:[],conflicts:[]}); added++; }
+  }
+  return {added,merged,conflicts};
+}
+function fillSubject(sf){
+  if(!sf) return 0; let n=0; const s=S.subject;
+  const m={beds:"beds",baths:"baths",sqft:"sqft",lot_sqft:"lot",year_built:"year",lat:"lat",lng:"lng"};
+  for(const [k,t] of Object.entries(m)){ const v=num(sf[k]); if(v && (s[t]==null||s[t]==="")){ s[t]=v; n++; } }
+  if(sf.property_type && !s._typeSet){ s.type=mapType(sf.property_type); }
+  return n;
+}
+const PW_KEY="twin-comp-ai-pw";
+const getPw=()=>{ try{ return localStorage.getItem(PW_KEY)||""; }catch(e){ return ""; } };
+
+const DEMO = {
+ "subject_facts": {
+  "beds": 3,
+  "baths": 2,
+  "sqft": 1036,
+  "lot_sqft": 7290,
+  "year_built": 1924,
+  "property_type": "SFR",
+  "lat": 37.8792,
+  "lng": -122.2594
+ },
+ "comps": [
+  {
+   "address": "1444 Scenic Ave, Berkeley, CA 94708",
+   "status": "Sold",
+   "price": 1300000,
+   "date": "2026-01-07",
+   "beds": 4,
+   "baths": 2,
+   "sqft": 1583,
+   "lot_sqft": 7200,
+   "year_built": 1925,
+   "property_type": "SFR",
+   "condition": 3,
+   "lat": 37.8781,
+   "lng": -122.259,
+   "source_urls": [
+    "https://www.redfin.com/"
+   ],
+   "notes": ""
+  },
+  {
+   "address": "1079 Keith Ave, Berkeley, CA 94708",
+   "status": "Sold",
+   "price": 1145000,
+   "date": "2025-11-15",
+   "beds": 2,
+   "baths": 1,
+   "sqft": 1012,
+   "lot_sqft": 5000,
+   "year_built": 1924,
+   "property_type": "SFR",
+   "condition": 3,
+   "lat": 37.8832,
+   "lng": -122.2695,
+   "source_urls": [
+    "https://www.zillow.com/"
+   ],
+   "notes": ""
+  },
+  {
+   "address": "2925 Shasta Rd, Berkeley, CA 94708",
+   "status": "Sold",
+   "price": 1225000,
+   "date": "2025-10-28",
+   "beds": 3,
+   "baths": 1,
+   "sqft": 1196,
+   "lot_sqft": 5200,
+   "year_built": 1930,
+   "property_type": "SFR",
+   "condition": 3,
+   "lat": 37.8887,
+   "lng": -122.2508,
+   "source_urls": [],
+   "notes": "Upper hills, winding road"
+  },
+  {
+   "address": "1460 Olympus Ave, Berkeley, CA 94708",
+   "status": "Sold",
+   "price": 1250000,
+   "date": "2025-09-12",
+   "beds": 3,
+   "baths": 2,
+   "sqft": 1248,
+   "lot_sqft": 6000,
+   "year_built": 1932,
+   "property_type": "SFR",
+   "condition": 3,
+   "lat": 37.8761,
+   "lng": -122.2552,
+   "source_urls": [
+    "https://www.redfin.com/"
+   ],
+   "notes": ""
+  },
+  {
+   "address": "1622 Scenic Ave, Berkeley, CA 94709",
+   "status": "Sold",
+   "price": 1727000,
+   "date": "2025-08-03",
+   "beds": 3,
+   "baths": 2,
+   "sqft": 1815,
+   "lot_sqft": 7150,
+   "year_built": 1928,
+   "property_type": "SFR",
+   "condition": 5,
+   "lat": 37.8704,
+   "lng": -122.2629,
+   "source_urls": [
+    "https://www.realtor.com/"
+   ],
+   "notes": "Full remodel, staged"
+  },
+  {
+   "address": "1510 Arch St, Berkeley, CA 94708",
+   "status": "Sold",
+   "price": 1495000,
+   "date": "2026-04-18",
+   "beds": 3,
+   "baths": 2,
+   "sqft": 1310,
+   "lot_sqft": 6100,
+   "year_built": 1926,
+   "property_type": "SFR",
+   "condition": 4,
+   "lat": 37.8768,
+   "lng": -122.2695,
+   "source_urls": [
+    "https://www.redfin.com/"
+   ],
+   "notes": "Updated kitchen and baths"
+  },
+  {
+   "address": "1350 Hawthorne Ter, Berkeley, CA 94708",
+   "status": "Sold",
+   "price": 1560000,
+   "date": "2026-06-02",
+   "beds": 3,
+   "baths": 2,
+   "sqft": 1240,
+   "lot_sqft": 5800,
+   "year_built": 1935,
+   "property_type": "SFR",
+   "condition": 4,
+   "lat": 37.8827,
+   "lng": -122.2552,
+   "source_urls": [
+    "https://www.zillow.com/"
+   ],
+   "notes": "Renovated 2024"
+  },
+  {
+   "address": "1400 Le Roy Ave, Berkeley, CA 94708",
+   "status": "Sold",
+   "price": 1080000,
+   "date": "2026-03-09",
+   "beds": 3,
+   "baths": 1,
+   "sqft": 1100,
+   "lot_sqft": 5500,
+   "year_built": 1922,
+   "property_type": "SFR",
+   "condition": 2,
+   "lat": 37.881,
+   "lng": -122.2574,
+   "source_urls": [
+    "https://www.redfin.com/"
+   ],
+   "notes": "Original condition, estate sale"
+  },
+  {
+   "address": "1520 Euclid Ave #3, Berkeley, CA 94708",
+   "status": "Sold",
+   "price": 865000,
+   "date": "2026-02-20",
+   "beds": 2,
+   "baths": 2,
+   "sqft": 1080,
+   "lot_sqft": 0,
+   "year_built": 1972,
+   "property_type": "Condo",
+   "condition": 3,
+   "lat": 37.8739,
+   "lng": -122.2618,
+   "source_urls": [],
+   "notes": "Condo, wrong type"
+  },
+  {
+   "address": "1733 Spruce St, Berkeley, CA 94709",
+   "status": "Sold",
+   "price": 1395000,
+   "date": "2026-05-14",
+   "beds": 3,
+   "baths": 2,
+   "sqft": 1420,
+   "lot_sqft": 4800,
+   "year_built": 1915,
+   "property_type": "SFR",
+   "condition": 4,
+   "lat": 37.8689,
+   "lng": -122.275,
+   "source_urls": [
+    "https://www.redfin.com/"
+   ],
+   "notes": "Busier street, across Spruce"
+  },
+  {
+   "address": "1195 Oxford St, Berkeley, CA 94707",
+   "status": "Sold",
+   "price": 1610000,
+   "date": "2025-05-30",
+   "beds": 4,
+   "baths": 3,
+   "sqft": 1980,
+   "lot_sqft": 6500,
+   "year_built": 1938,
+   "property_type": "SFR",
+   "condition": 4,
+   "lat": 37.892,
+   "lng": -122.275,
+   "source_urls": [],
+   "notes": "Older sale, larger"
+  },
+  {
+   "address": "1488 Scenic Ave, Berkeley, CA 94708",
+   "status": "Active",
+   "price": 1549000,
+   "date": "2026-09-02",
+   "beds": 3,
+   "baths": 2,
+   "sqft": 1290,
+   "lot_sqft": 6900,
+   "year_built": 1927,
+   "property_type": "SFR",
+   "condition": 4,
+   "lat": 37.8801,
+   "lng": -122.2603,
+   "source_urls": [
+    "https://www.redfin.com/"
+   ],
+   "notes": "Renovated flip on market, 22 DOM"
+  },
+  {
+   "address": "1360 Cedar St, Berkeley, CA 94702",
+   "status": "Pending",
+   "price": 1325000,
+   "date": "2026-08-20",
+   "beds": 3,
+   "baths": 2,
+   "sqft": 1260,
+   "lot_sqft": 5000,
+   "year_built": 1924,
+   "property_type": "SFR",
+   "condition": 4,
+   "lat": 37.8744,
+   "lng": -122.2893,
+   "source_urls": [],
+   "notes": ""
+  }
+ ],
+ "reject": [
+  {
+   "address": "1733 Spruce St, Berkeley, CA 94709",
+   "reason": "Busier street across Spruce, different micro-market"
+  }
+ ],
+ "value_as_is": 1160000,
+ "value_arv": 1385000,
+ "risks": [
+  "Two of the strongest renovated sales sit on quieter, higher streets with better views than the subject."
+ ],
+ "summary": "MOCK DATA. These sales are made up to test the page without an OpenAI key.",
+ "citations": []
+};
+const CONDITION_SCALE = "1 heavy fixer, 2 dated/original, 3 clean cosmetic, 4 updated kitchen and baths, 5 high-end remodel";
+
+function buildPrompt(subject, rules) {
+  const v = x => (x === null || x === undefined || x === "" ? "unknown, look it up" : x);
+  const today = new Date().toISOString().slice(0, 10);
+  return `You are the comp researcher for Twin Home Buyer, a Bay Area fix-and-flip company. Search the web now for real sales. Do the work of four people:
+
+1. FACT CHECK THE SUBJECT. Look up the subject's beds, baths, living sf, lot sf, year built, property type and coordinates in public records and listing sites. Report them in "subject_facts".
+2. APPRAISER. Find 10-15 real SOLD comps. Search outward: 0.25 mi, 0.5, 0.75, then ${rules.radius || 1} mi. Sold in the last 90 days first, then 180, then 12 months only if needed (max ${rules.months || 12} months). Match property type, living area (within about 20%), beds/baths, lot, age/style and condition. We need TWO sets: AS-IS comps (condition 1-3, like the subject today) and ARV comps (renovated and staged, condition 4-5). Also list PENDING and ACTIVE listings nearby that the subject would compete with after renovation.
+3. VERIFIER. Confirm each comp's sale price, date, sf and beds/baths on at least one source (county records, Redfin, Zillow, Realtor.com, brokerage). Put the source URL in "source_urls". If sources disagree, say so in "notes". Judge condition from listing photos and remarks.
+4. DEVIL'S ADVOCATE AND LOCAL EXPERT. Flag busy streets, freeway/rail noise, commercial next door, views, slope, corner lot, cul-de-sac, school or neighborhood boundaries, unpermitted additions and outlier sales. Put nearby sales that should NOT be used in "reject" with the reason. List the biggest risks to the value in "risks".
+
+SUBJECT PROPERTY
+Address: ${subject.address}
+Type: ${v(subject.type)} · Beds: ${v(subject.beds)} · Baths: ${v(subject.baths)} · Living sf: ${v(subject.sqft)} · Lot sf: ${v(subject.lot)} · Year built: ${v(subject.year)}
+Condition today: ${subject.cond || 2} (${CONDITION_SCALE})
+Notes from the buyer: ${subject.notes || "none"}
+Today's date: ${today}
+
+RULES
+- Only real, verifiable transactions. Never invent an address, price or date. If you are not sure a sale happened, leave it out. A short honest list beats a long guessed list.
+- Give lat/lng for every comp if you can, and the distance in miles from the subject.
+- Numbers without $ or commas.
+
+Reply with ONLY one JSON object, no other text:
+{
+  "subject_facts": {"beds":0,"baths":0,"sqft":0,"lot_sqft":0,"year_built":0,"property_type":"SFR","lat":0.0,"lng":0.0},
+  "comps": [
+    {"address":"full street address, city, state zip","status":"Sold|Pending|Active|Withdrawn","price":0,"date":"YYYY-MM-DD",
+     "beds":0,"baths":0,"sqft":0,"lot_sqft":0,"year_built":0,"property_type":"SFR|Condo|Townhome|2-4 Unit",
+     "condition":1,"lat":0.0,"lng":0.0,"distance_mi":0.0,"source_urls":["https://..."],"notes":"..."}
+  ],
+  "reject": [{"address":"...","reason":"..."}],
+  "value_as_is": 0,
+  "value_arv": 0,
+  "risks": ["..."],
+  "summary": "two sentences on the market around this house"
+}`;
+}
+
+function extractJSON(text) {
+  const t = String(text || "").trim();
+  try { return JSON.parse(t); } catch (e) {}
+  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fence) { try { return JSON.parse(fence[1]); } catch (e) {} }
+  const a = t.indexOf("{"), b = t.lastIndexOf("}");
+  if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1).replace(/,\s*([}\]])/g, "$1")); } catch (e) {} }
+  return null;
+}
+
+
+let sampleFn=null;
+const CLAUDE_ERR={not_granted:"Allow Claude when the page asks, then press Run comps again.",sampling_disabled:"Claude isn't turned on for this account.",rate_limited:"Claude is busy or your usage limit was hit. Try again in a few minutes.",session_expired:"Sign in to claude.ai again, then retry.",invalid_json:"Claude's answer came back garbled. Press Run comps again.",refused:"Claude declined this request.",empty_completion:"Claude returned nothing. Press Run comps again."};
+function claudeCompPrompt(subject,rules){
+  return buildPrompt(subject,rules)
+    .replace("Search the web now for real sales. Do the work of four people:","You have no live web access in this call, so work only from real sales you actually know about. Do the work of four people:")
+    .replace('Put the source URL in "source_urls".','If you know where the sale was published, give that URL in "source_urls"; otherwise leave it empty.')
+    + '\n\nIMPORTANT: Add "confidence":"high"|"medium"|"low" to every comp for how sure you are that the sale happened at that price and date. Leave out anything below low. If you know few real sales near this address, return fewer comps. Never make one up.';
+}
+async function askClaude(){
+  const s=S.subject;
+  try{ if(!sampleFn && window.claude && claude.use) sampleFn=await claude.use("sample"); }catch(e){}
+  if(!sampleFn) throw new Error("Claude can't run on this copy of the page. Open it at claude.ai while signed in.");
+  return await sampleFn.json(claudeCompPrompt({address:s.address,type:s.type,beds:s.beds,baths:s.baths,sqft:s.sqft,lot:s.lot,year:s.year,cond:s.cond,notes:s.notes},{radius:R.f.radius,months:R.f.months}),{modelTier:"complex",signal:runCtl.signal});
+}
+let db=null;
+async function sendRequest(){
+  const s=S.subject, st=$("runStatus");
+  const req={address:s.address,cond:s.cond,ask:s.ask??null,reno:S.deal.reno??null,notes:s.notes||"",created:new Date().toISOString()};
+  if(S.pendingWoke && S.pendingFor===normAddr(s.address) && S.factsFor!==S.pendingFor && Date.now()-(S.pendingAt||0) < 15*60000){
+    st.className="status ok"; st.textContent="Already sent. Claude is working on this address, so there's no need to press again."; return;
+  }
+  // 1) Wake Claude straight from this click (Send to Claude), so nobody has to message Claude in chat.
+  let woke=false, why="";
+  try{
+    const cm = window.claude && claude.use ? await claude.use("comments") : null;
+    if(cm){
+      const can = await cm.canSendToClaude().catch(()=> "off");
+      if(can==="available"){
+        const anchor = await cm.anchorFor($("runBtn"));
+        await cm.sendToClaude({anchor, text:`Run comps: ${s.address}. Condition ${s.cond} (${condLabel(s.cond)}). Asking ${s.ask?money(s.ask):"not set"}. Reno ${S.deal.reno?money(S.deal.reno):"not set"}.${s.notes?" Notes: "+s.notes:""}`});
+        woke=true;
+      } else why = can;
+    }
+  }catch(e){ why = e && e.code || "error"; }
+  // 2) Save the request so Claude reads the exact inputs.
+  try{ if(!db && window.claude && claude.use) db=await claude.use("db"); }catch(e){}
+  let saved=false;
+  if(db){ try{ await db.doc("requests/latest").set({...req, woke}); saved=true; }catch(e){} }
+  S.pendingFor=normAddr(s.address); S.pendingAt=Date.now(); S.pendingWoke=woke; render();
+  if(woke){ st.className="status ok"; st.textContent="Claude is searching now. The comps load here by themselves. You don't need to do anything."; }
+  else { st.className="status"; st.textContent = (why==="consent_required"||why==="forbidden") ? "Allow the page to send to Claude, then press Run comps again. Or tell Claude in chat: “run comps”." : saved ? "Saved. Claude isn't connected right now, so tell Claude in chat: “run comps”." : "Send this address to Claude in chat. The comps load here when Claude is done."; }
+}
+setInterval(()=>{ if(S.pendingFor && S.pendingFor!==S.factsFor && S.pendingFor===normAddr(S.subject.address)) renderAnswer(); }, 30000);
+(async()=>{ try{ if(window.claude&&claude.use) db=await claude.use("db"); }catch(e){ db=null; }
+  if(!db) return;
+  db.doc("status/latest").onSnapshot(snap=>{
+    const d=snap.exists?snap.data():null; if(!d) return;
+    S.liveStatus=d; if(S.pendingFor && normAddr(d.address)===S.pendingFor) renderAnswer();
+  },()=>{});
+  db.doc("results/latest").onSnapshot(snap=>{
+    if(!snap.exists) return; const d=snap.data(); if(!d||!d.result||d.ts===S.lastResultTs) return;
+    S.lastResultTs=d.ts;
+    if(normAddr(d.address)!==normAddr(S.subject.address)){ S.subject={address:d.address,lat:null,lng:null,beds:null,baths:null,sqft:null,lot:null,year:null,type:"SFR",cond:d.cond||S.subject.cond||2,ask:d.ask??null,notes:""}; S.comps=[]; }
+    if(d.ask!=null) S.subject.ask=d.ask; if(d.reno!=null) S.deal.reno=d.reno;
+    if(d.deal) Object.assign(S.deal,d.deal);
+    if(d.cond) S.subject.cond=d.cond;
+    if(d.replaceFacts && d.result.subject_facts){ const f=d.result.subject_facts; Object.assign(S.subject,{beds:num(f.beds),baths:num(f.baths),sqft:num(f.sqft),lot:num(f.lot_sqft),year:num(f.year_built),lat:num(f.lat),lng:num(f.lng),type:"SFR",notes:d.notes||""}); S.comps=[]; }
+    S.claude = d.claude || null; if(d.claude) S.deal.useClaude=true;
+    S.factsFor=normAddr(d.address); S.pendingFor=null;
+    if(document.activeElement && document.activeElement.blur) document.activeElement.blur(); // let every field show the new values
+    S.example=false; runComps({...d.result,source:"Comps researched by Claude "+String(d.ts).slice(0,10)+". Check the source links before offering."});
+  },()=>{});
+})();
+let runCtl=null, tick=null;
+async function runComps(preset){
+  const s=S.subject, st=$("runStatus");
+  if(!s.address||s.address.trim().length<6){ toast("Type the full address first"); $("s_address").focus(); return; }
+  if(resetIfNewAddress()) render();
+  runCtl=new AbortController();
+  $("runBtn").disabled=true; $("cancelRun").hidden=false; st.className="status"; st.textContent=preset?"Loading the comps…":"Sending the address to Claude…";
+  const t0=Date.now(); clearInterval(tick); tick=setInterval(()=>{ const sec=Math.round((Date.now()-t0)/1000); $("elapsed").textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`; },1000);
+  try{
+    let j;
+    if(preset) j=preset;
+    else { await sendRequest(); return; }
+    // A new run replaces Claude's earlier comps; your own MLS rows and hand-added comps stay.
+    S.comps=S.comps.filter(c=>!(c.agents||[]).includes("ai")||(c.agents||[]).length>1).map(c=>({...c,agents:(c.agents||[]).filter(a=>a!=="ai")}));
+    if(S.example){ S.comps=[]; S.example=false; }
+    const nf=fillSubject(j.subject_facts);
+    const m=mergeComps(j.comps||[],"ai");
+    const cites=(j.citations||[]).map(c=>c.url);
+    for(const c of S.comps) if((c.agents||[]).includes("ai")&&!(c.src||[]).length){ const hit=cites.find(u=>u.toLowerCase().includes(normAddr(c.address).split(" ").slice(0,2).join("-"))); if(hit) c.src=[hit]; }
+    for(const c of S.comps) if(!(c.src||[]).length){ c.src=["https://www.google.com/search?q="+encodeURIComponent(c.address+" sold")]; c.verifyOnly=true; }
+    for(const x of j.reject||[]){ const ex=S.comps.find(c=>normAddr(c.address)===normAddr(x.address)); if(ex){ ex.include=false; ex.conflicts=[...(ex.conflicts||[]),`Claude: ${x.reason}`]; } }
+    S.agentReports={ai:{value_as_is:num(j.value_as_is),value_arv:num(j.value_arv),risks:j.risks||[],summary:j.summary||"",count:(j.comps||[]).length,model:j.model}};
+    render();
+    st.className="status ok"; st.textContent=`Done. ${m.added} comps found${nf?`, ${nf} property details filled in`:""}.${j.source?" "+j.source:""}`;
+    $("h3s").scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(e){
+    if(e.name==="AbortError"||e.code==="cancelled"){ st.className="status"; st.textContent="Cancelled."; }
+    else { st.className="status err"; st.textContent=CLAUDE_ERR[e.code]||e.message||"Couldn't reach Claude. Try again."; }
+  }finally{ clearInterval(tick); $("elapsed").textContent=""; $("runBtn").disabled=false; $("cancelRun").hidden=true; }
+}
+$("runBtn").onclick=()=>runComps();
+$("cancelRun").onclick=()=>runCtl&&runCtl.abort();
+$("s_address").addEventListener("keydown",e=>{ if(e.key==="Enter") runComps(); });
+
+/* ---------- step 3 ---------- */
+function currentARV(){
+  const d=S.deal;
+  if(d.juan) return {v:d.juan,src:"Juan"};
+  if(d.useClaude && S.claude && S.claude.arv) return {v:S.claude.arv,src:"Claude"};
+  return {v:R.arv.value,src:"Engine"};
+}
+function dealMath(arv){
+  const d=S.deal; const sell=arv*(d.sell||0)/100; const costs=(d.reno||0)+sell+(d.hold||0)+(d.cont||0);
+  const max=arv-costs-(d.profit||0);
+  return {sell,costs,max,target:max-Math.round(arv*0.02/5000)*5000};
+}
+function whyLine(u){
+  const s=S.subject, bits=[];
+  if(u.dist!=null) bits.push(u.dist<0.1?"same block":u.dist.toFixed(2)+" mi away");
+  if(s.sqft&&u.sqft){ const d=(u.sqft-s.sqft)/s.sqft; bits.push(Math.abs(d)<0.1?"same size":`${Math.round(Math.abs(d)*100)}% ${d>0?"bigger":"smaller"}`); }
+  bits.push(condLabel(u.cond).toLowerCase());
+  if(u.months!=null) bits.push(u.months<1?"sold this month":`sold ${Math.round(u.months)} mo ago`);
+  if((u.agents||[]).includes("mls")) bits.push("in your MLS data");
+  return bits.join(" · ");
+}
+function topList(){
+  const cur=currentARV();
+  if(cur.src==="Claude" && S.claude && (S.claude.top_comps||[]).length){
+    const out=[];
+    for(const t of S.claude.top_comps){ const r=R.rows.find(x=>normAddr(x.address)===normAddr(t.address)); if(!r) continue; const c=R.arv.cands.find(x=>x.id===r.id); out.push({...r,...(c||{}),claudeW:t.weight_pct,claudeWhy:t.why}); }
+    for(const u of R.arv.used){ if(out.length>=5) break; if(!out.some(x=>x.id===u.id)) out.push(u); }
+    if(out.length) return out.slice(0,5);
+  }
+  return R.arv.used.slice(0,5);
+}
+function renderAnswer(){
+  const {asis,arv}=R, cur=currentARV(), s=S.subject;
+  // basis chips
+  $("basisChips").innerHTML = S.claude&&S.claude.arv && !S.deal.juan ? [["1","Claude's ARV"],["0","Engine ARV"]].map(([v,l])=>`<button type="button" class="chipbtn" aria-pressed="${String(!!S.deal.useClaude?1:0)===v}" data-v="${v}">${l}</button>`).join("") : (S.deal.juan?`<span class="pill info">Using Juan's ARV</span>`:"");
+  $("basisChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.deal.useClaude=b.dataset.v==="1"; render();});
+  if(!cur.v){
+    const sent = S.pendingFor && S.pendingFor===normAddr(s.address);
+    $("verdict").innerHTML = sent
+      ? (()=>{ const min=Math.floor((Date.now()-(S.pendingAt||Date.now()))/60000);
+          if(!S.pendingWoke) return `<div class="verdict review"><span class="big">SENT</span><span class="line"><b>${esc(street(s.address))}</b> is saved for Claude. Tell Claude in chat: <b>run comps</b>. The comps load here by themselves.</span></div>`;
+          if(min>=15) return `<div class="verdict review"><span class="big">STILL WORKING</span><span class="line">Claude has been on <b>${esc(street(s.address))}</b> for ${min} minutes. If nothing shows up soon, tell Claude in chat: <b>run comps</b>.</span></div>`;
+          const ls=S.liveStatus && normAddr(S.liveStatus.address)===S.pendingFor && Date.parse(S.liveStatus.ts||0)>=(S.pendingAt||0)-60000 ? S.liveStatus : null;
+          const steps = ls ? `<br><span style="font-size:13.5px">✓ Claude got it · ${esc(ls.message||"")}</span>` : `<br><span style="font-size:13.5px">Waiting for Claude to pick it up…</span>`;
+          return `<div class="verdict review"><span class="big">SEARCHING</span><span class="line">Claude is searching sold records for <b>${esc(street(s.address))}</b>. Results load here by themselves, usually in 3–8 minutes${min?` (${min} min so far)`:""}.${steps}</span></div>`; })()
+      : `<div class="verdict review"><span class="big">READY</span><span class="line">Type the address and press <b>Run comps</b>.</span></div>`;
+    $("kpis").innerHTML=""; $("alerts").innerHTML=""; $("compList").innerHTML=""; return;
+  }
+  const dm=dealMath(cur.v);
+  const conf = cur.src==="Claude"&&S.claude.confidence? S.claude.confidence : arv.conf;
+  const ask=s.ask, likely = cur.src==="Claude"&&S.claude.likely_sale_price? S.claude.likely_sale_price : null;
+  const price = Math.max(ask||0, likely||0) || null;
+  const priceLabel = likely && (!ask || likely>ask) ? "at the likely sale price" : "at asking price";
+  const profitAt = p => cur.v-dm.costs-p;
+  const cc = conf>=90?"good":conf>=75?"warn":"bad";
+  const next = conf>=90 ? "" : conf>=75 ? " Juan checks the 5 comps before offering." : " Juan checks the comps, and order a BPO or desktop appraisal before a firm offer.";
+  const nextShort = conf>=90?"ready for an offer":conf>=75?"Juan checks the comps":"Juan checks + order a BPO";
+  const likelyTxt = likely&&ask&&likely>ask*1.03 ? `Listed at ${money(ask)}, but it will likely sell around <b>${money(likely)}</b>. ` : "";
+  let cls,word,line;
+  if(!price){ cls="review"; word="OFFER UP TO"; line=`<b>${money(dm.max)}</b>. Start at <b>${money(dm.target)}</b>. Type the asking price above to get BUY / REVIEW / PASS.`; }
+  else if(price>dm.max*1.04){ cls="pass"; word="PASS"; line=`${likelyTxt}That is ${money(price-dm.max)} over Twin's max offer of <b>${money(dm.max)}</b>: ${profitAt(price)<0?`a loss of ${money(-profitAt(price))}`:`leaving only ${money(profitAt(price))} profit`}. Buy only at or under ${money(dm.max)}.`; }
+  else if(price>dm.max){ cls="review"; word="NEGOTIATE"; line=`${likelyTxt}${money(price)} is just over the max offer of <b>${money(dm.max)}</b>. Profit would be ${money(profitAt(price))}.${next}`; }
+  else if(conf>=90){ cls="buy"; word="BUY"; line=`At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b>. Max offer is <b>${money(dm.max)}</b>.`; }
+  else { cls="review"; word="REVIEW"; line=`${likelyTxt}At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b> (max offer ${money(dm.max)}). Confidence is ${Math.round(conf)}%.${next}`; }
+  $("verdict").innerHTML=`<div class="verdict ${cls}"><span class="big">${word}</span><span class="line">${line}</span></div>`;
+  const arvRange = cur.src==="Claude"&&S.claude.arv_range? S.claude.arv_range : [arv.low,arv.high];
+  $("kpis").innerHTML=`
+    <div class="kpi hero"><div class="k">ARV${cur.src==="Juan"?" · Juan":""}</div><div class="v">${kmoney(cur.v)}</div><div class="r">${kmoney(arvRange[0])} – ${kmoney(arvRange[1])}</div></div>
+    <div class="kpi"><div class="k">As-is value</div><div class="v">${kmoney(cur.src==="Claude"&&S.claude.as_is_value?S.claude.as_is_value:asis.value)}</div><div class="r">${likely?"likely sale "+kmoney(likely):"today's condition"}</div></div>
+    <div class="kpi"><div class="k">Twin buy (max)</div><div class="v">${kmoney(dm.max)}</div><div class="r">start at ${kmoney(dm.target)}</div></div>
+    <div class="kpi"><div class="k">Expected profit</div><div class="v" style="color:var(--${price&&profitAt(price)<(S.deal.profit||0)?'bad':'ink'})">${kmoney(price?profitAt(price):S.deal.profit)}</div><div class="r">${price?priceLabel:"at max offer"} · reno ${kmoney(S.deal.reno)}</div></div>
+    <div class="kpi"><div class="k">Confidence</div><div class="v" style="color:var(--${cc})">${Math.round(conf)}%</div><div class="r">${nextShort}</div></div>`;
+  // alerts
+  const al=[];
+  const risk = S.claude&&S.claude.what_could_make_us_wrong ? S.claude.what_could_make_us_wrong : (AGENTS.map(a=>S.agentReports[a.key]&&S.agentReports[a.key].risks&&S.agentReports[a.key].risks[0]).find(Boolean));
+  if(risk) al.push(`<div class="alert warn"><b>Main risk:</b> ${esc(risk)}</div>`);
+  const aiArv = (S.claude&&S.claude.arv) || (S.agentReports.ai&&S.agentReports.ai.value_arv);
+  if(aiArv && arv.value){ const d=Math.abs(aiArv-arv.value)/arv.value;
+    al.push(`<div class="alert ${d>0.07?'warn':'good'}"><b>Claude's ARV ${kmoney(aiArv)} vs the comp math ${kmoney(arv.value)}: ${d>0.07?pct(d,0)+" apart.":"within "+pct(d,0)+"."}</b> ${d>0.07?"Look at which comps drive the difference.":""}</div>`); }
+  if(arv.used.length<3) al.push(`<div class="alert ${cur.src==="Claude"?'warn':'bad'}"><b>Only ${arv.used.length} comp${arv.used.length===1?" fits":"s fit"} the automatic rules.</b> ${cur.src==="Claude"?"The list below uses Claude's picks, which include comps outside the rules.":"Run it again, add your MLS export, or widen the radius under All comps &amp; rules."}</div>`);
+  const comp=R.competition;
+  al.push(comp.length? `<div class="alert ${comp.length>4?'warn':'good'}"><b>${comp.length} competing listing${comp.length===1?"":"s"} nearby:</b> ${comp.map(c=>`${esc(street(c.address))} ${c.status.toLowerCase()} at ${kmoney(c.price)}`).join(" · ")}</div>`
+    : `<div class="alert good"><b>No competing listings nearby.</b> Low supply supports the top half of the range.</div>`);
+  $("alerts").innerHTML=al.join("");
+  // comps: Claude's picks first when Claude is the basis, then the engine's
+  const list=topList();
+  $("compList").innerHTML = list.map((u,i)=>{
+    const flags=[(!(u.src||[]).length||u.verifyOnly)?`<span class="pill warn">check this sale</span>`:"",u.aiconf&&u.aiconf!=="high"?`<span class="pill ${u.aiconf==="low"?"bad":"warn"}">${esc(u.aiconf)} confidence</span>`:"",(u.conflicts||[]).length?`<span class="pill bad">facts disagree</span>`:"",u.isListing?`<span class="pill warn">${u.status}</span>`:""].join(" ");
+    const match = u.score!=null ? `${Math.round(u.score)}% match` : `outside the rules (${esc((u.why||[]).join(", "))})`;
+    return `<div class="comp ${hlId===u.id?'hl':''}" data-id="${u.id}"><div class="rank" style="background:${tier(u.score??70,true)}">${i+1}</div>
+      <div><div class="addr">${u.src&&u.src[0]&&/^https?:/.test(u.src[0])?`<a href="${esc(u.src[0])}" target="_blank" rel="noopener">${esc(street(u.address))}</a>`:esc(street(u.address))}</div>
+      <div class="why">${esc(u.claudeWhy||whyLine(u))}</div>
+      <div class="meta">${u.status} ${u.date||""} · ${u.beds??"?"} bd · ${u.baths??"?"} ba · ${u.sqft?u.sqft.toLocaleString():"?"} sf${u.dist!=null?" · "+u.dist.toFixed(2)+" mi":""} · ${match} ${flags}</div></div>
+      <div class="right"><div class="price">${kmoney(u.price)}</div>${u.adjusted?`<div class="adj">adj ${kmoney(u.adjusted)}</div>`:""}<div class="adj">${u.claudeW!=null?u.claudeW+"%":pct(u.weight,0)} weight</div></div></div>`; }).join("") || `<div class="comp"><div></div><div class="muted">No comps pass the rules yet.</div><div></div></div>`;
+  $("compList").querySelectorAll(".comp[data-id]").forEach(el=>{ el.onmouseenter=()=>highlight(el.dataset.id); el.onclick=()=>highlight(el.dataset.id); });
+}
+
+function renderMap(){
+  const svg=$("map"), s=S.subject, f=R.f, W=600,H=440,cx=W/2,cy=H/2,rpx=180;
+  const byId=Object.fromEntries(R.arv.cands.map(c=>[c.id,c])), top=topList(), rank=Object.fromEntries(top.map((u,i)=>[u.id,i+1]));
+  const near=R.rows.filter(r=>r.dist!=null&&r.dist<=f.radius&&(rank[r.id]||byId[r.id])).map(r=>r.dist);
+  const viewR = near.length? Math.min(Math.max(f.radius,0.3), Math.max(0.3, Math.ceil(Math.max(...near)*1.25*20)/20)) : f.radius;
+  const scale=rpx/Math.max(viewR,0.1);
+  let g=`<rect width="${W}" height="${H}" fill="var(--map-bg)"/>`;
+  for(let x=0;x<=W;x+=40) g+=`<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="var(--line)" stroke-width="0.5" opacity=".6"/>`;
+  for(let y=0;y<=H;y+=40) g+=`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="var(--line)" stroke-width="0.5" opacity=".6"/>`;
+  [0.5].forEach(k=>{ g+=`<circle cx="${cx}" cy="${cy}" r="${rpx*k}" fill="none" stroke="var(--map-ring)" stroke-opacity=".3"/><text x="${cx+4}" y="${cy-rpx*k-3}" font-size="11" fill="var(--muted)" font-family="JetBrains Mono,monospace">${+(viewR*k).toFixed(2)} mi</text>`; });
+  g+=`<circle cx="${cx}" cy="${cy}" r="${rpx}" fill="var(--map-ring)" fill-opacity=".05" stroke="var(--map-ring)" stroke-width="2" stroke-dasharray="6 5"/>`;
+  g+=`<rect x="10" y="10" width="140" height="22" rx="11" fill="var(--map-ring)"/><text x="80" y="25" text-anchor="middle" font-size="12" font-weight="600" fill="var(--accent-ink)" font-family="Source Sans 3,sans-serif">${+viewR.toFixed(2)} mi${viewR<f.radius?" (zoomed)":" radius"}</text>`;
+  g+=`<text x="${W-14}" y="22" text-anchor="end" font-size="12" fill="var(--muted)" font-family="Source Sans 3,sans-serif">N ↑</text>`;
+  const pins=[]; let missing=0;
+  if(s.lat!=null&&s.lng!=null) R.rows.forEach(r=>{
+    if(r.lat==null||r.lng==null){ missing++; return; }
+    const dx=(r.lng-s.lng)*Math.cos(s.lat*Math.PI/180)*69.17, dy=(r.lat-s.lat)*69;
+    pins.push({r,x:Math.max(10,Math.min(W-10,cx+dx*scale)),y:Math.max(10,Math.min(H-10,cy-dy*scale)),c:byId[r.id],rk:rank[r.id]});
+  });
+  pins.sort((a,b)=>(a.rk?1:0)-(b.rk?1:0) || (a.c?1:0)-(b.c?1:0));
+  pins.forEach(p=>{ const col=tier(p.c?p.c.score:0,!!p.c), hl=hlId===p.r.id;
+    if(!p.c && !p.rk) g+=`<g class="pin" data-id="${p.r.id}" style="cursor:pointer"><circle cx="${p.x}" cy="${p.y}" r="${hl?9:6}" fill="var(--surface)" stroke="${col}" stroke-width="2.5"/></g>`;
+    else if(p.rk) g+=`<g class="pin" data-id="${p.r.id}" style="cursor:pointer"><circle cx="${p.x}" cy="${p.y}" r="${hl?16:12}" fill="${p.c?col:"var(--pin-wide)"}" stroke="var(--surface)" stroke-width="2"/><text x="${p.x}" y="${p.y+4}" text-anchor="middle" font-size="12" font-weight="700" fill="#fff" font-family="JetBrains Mono,monospace">${p.rk}</text></g>`;
+    else g+=`<g class="pin" data-id="${p.r.id}" style="cursor:pointer"><circle cx="${p.x}" cy="${p.y}" r="${hl?9:6}" fill="${col}" stroke="var(--surface)" stroke-width="1.5"/></g>`;
+  });
+  if(s.lat!=null&&s.lng!=null) g+=`<path d="M${cx} ${cy-22} l12 12 v12 h-24 v-12 z" fill="var(--pin-subject)" stroke="var(--surface)" stroke-width="2"/><text x="${cx}" y="${cy+20}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)" font-family="Source Sans 3,sans-serif">SUBJECT</text>`;
+  else g+=`<text x="${cx}" y="${cy}" text-anchor="middle" font-size="15" fill="var(--muted)" font-family="Source Sans 3,sans-serif">The map appears once an AI returns the property's location</text>`;
+  svg.innerHTML=g;
+  const tip=$("mapTip");
+  svg.querySelectorAll(".pin").forEach(el=>{ const p=pins.find(q=>q.r.id===el.dataset.id);
+    el.onmouseenter=()=>{ const box=$("mapbox").getBoundingClientRect(), k=box.width/W; tip.hidden=false; tip.style.left=Math.min(box.width-230,p.x*k+12)+"px"; tip.style.top=(p.y*k+12)+"px";
+      tip.innerHTML=`<b>${esc(street(p.r.address))}</b><br>${p.r.status} ${kmoney(p.r.price)} · ${p.r.sqft||"?"} sf<br>${p.c?Math.round(p.c.score)+"% match":"<span style='color:var(--bad)'>Out: "+esc(p.r.why.join(", "))+"</span>"}`; };
+    el.onmouseleave=()=>tip.hidden=true; el.onclick=()=>highlight(p.r.id); });
+}
+function highlight(id){ if(hlId===id) return; hlId=id; renderMap(); document.querySelectorAll(".comp").forEach(el=>el.classList.toggle("hl",el.dataset.id===id)); }
+
+/* ---------- pool (advanced) ---------- */
+function renderPool(){
+  const byId=Object.fromEntries(R.arv.cands.map(c=>[c.id,c])), usedIds=new Set(R.arv.used.map(u=>u.id));
+  const rows=[...R.rows].sort((a,b)=>(byId[b.id]?.score??-1)-(byId[a.id]?.score??-1));
+  $("poolSub").textContent=`${R.rows.length} found · ${R.arv.cands.length} pass the rules · ${R.arv.used.length} used`;
+  $("poolTable").innerHTML=`<thead><tr><th>Use</th><th>Address</th><th>Status</th><th class="n">Price</th><th class="n">$/sf</th><th class="n">Sf</th><th class="n">Bd/Ba</th><th class="n">Mi</th><th>Condition</th><th class="n">Match</th><th class="n">Adjusted ARV</th><th>Found by</th><th>Why out / flags</th><th></th></tr></thead><tbody>`+
+    rows.map(r=>{ const c=byId[r.id], out=!r.eligible, flags=[...r.why,...(r.conflicts||[])].map(esc).join("; ");
+      return `<tr class="${out?'out':''}" data-id="${r.id}"><td><input type="checkbox" data-act="inc" ${r.include!==false?"checked":""} aria-label="Use this comp"></td>
+      <td class="addr">${usedIds.has(r.id)?"<b>":""}${esc(street(r.address))}${usedIds.has(r.id)?"</b>":""}</td><td>${esc(r.status)}</td><td class="n">${money(r.price)}</td><td class="n">${r.ppsf?Math.round(r.ppsf):"—"}</td><td class="n">${r.sqft??"—"}</td><td class="n">${r.beds??"?"}/${r.baths??"?"}</td><td class="n">${r.dist!=null?r.dist.toFixed(2):"—"}</td>
+      <td><select data-act="cond" aria-label="Condition">${CONDS.map(([v,l])=>`<option value="${v}" ${Number(r.cond)===v?"selected":""}>${v} · ${l}</option>`).join("")}</select></td>
+      <td class="n">${c?Math.round(c.score):"—"}</td><td class="n">${c?money(c.adjusted):"—"}</td><td>${(r.agents||[]).map(a=>esc(agentName(a).split(" ")[0])).join(", ")||"you"}</td>
+      <td style="white-space:normal;min-width:180px;color:${out?'var(--bad)':'var(--warn)'}">${flags}</td>
+      <td><button class="btn small" data-act="edit" type="button">Edit</button> <button class="btn small" data-act="del" type="button">Delete</button></td></tr>`; }).join("")+"</tbody>";
+  $("poolTable").querySelectorAll("tr[data-id]").forEach(tr=>{ const id=tr.dataset.id, comp=S.comps.find(c=>c.id===id);
+    tr.querySelector('[data-act=inc]').onchange=e=>{comp.include=e.target.checked; S.claude=null; render();};
+    tr.querySelector('[data-act=cond]').onchange=e=>{comp.cond=Number(e.target.value); S.claude=null; render();};
+    tr.querySelector('[data-act=edit]').onclick=()=>openCompForm(comp);
+    const del=tr.querySelector('[data-act=del]'); del.onclick=()=>{ if(del.dataset.c){ S.comps=S.comps.filter(c=>c.id!==id); render(); } else { del.dataset.c="1"; del.textContent="Confirm"; } };
+  });
+}
+let editing=null;
+const CF={c_address:"address",c_status:"status",c_price:"price",c_date:"date",c_beds:"beds",c_baths:"baths",c_sqft:"sqft",c_lot:"lot",c_year:"year",c_type:"type",c_cond:"cond",c_lat:"lat",c_lng:"lng",c_dist:"dist",c_notes:"notes"};
+function openCompForm(comp){ editing=comp||null; $("compFormTitle").textContent=comp?"Edit comp":"Add a comp";
+  for(const [id,k] of Object.entries(CF)) $(id).value = comp?(comp[k]??""):(k==="status"?"Sold":k==="type"?"SFR":k==="cond"?3:"");
+  $("c_src").value=comp?(comp.src||[]).join(", "):""; $("compForm").hidden=false; $("c_address").focus(); }
+$("addCompBtn").onclick=()=>openCompForm(null);
+$("cancelComp").onclick=()=>{$("compForm").hidden=true;};
+$("saveComp").onclick=()=>{ const o={}; for(const [id,k] of Object.entries(CF)){ const v=$(id).value; o[k]=["address","status","date","type","notes"].includes(k)?v:num(v); }
+  o.cond=Number(o.cond)||3; o.src=$("c_src").value.split(",").map(x=>x.trim()).filter(Boolean);
+  if(!o.address||!o.price){ toast("Address and price are required"); return; }
+  if(editing) Object.assign(editing,o); else S.comps.push({...o,id:"c"+Date.now().toString(36),include:true,agents:[],conflicts:[]});
+  S.example=false; S.claude=null; $("compForm").hidden=true; render(); toast("Comp saved"); };
+function parseCSV(text){
+  const t=String(text||"").trim(); if(!t) throw new Error("Paste CSV text first.");
+  const lines=[]; let row=[],field="",q=false;
+  for(let i=0;i<t.length;i++){ const ch=t[i];
+    if(q){ if(ch==='"'&&t[i+1]==='"'){field+='"';i++;} else if(ch==='"') q=false; else field+=ch; }
+    else if(ch==='"') q=true; else if(ch===','||ch==='\t'){row.push(field);field="";} else if(ch==='\n'||ch==='\r'){ if(ch==='\r'&&t[i+1]==='\n') i++; row.push(field); lines.push(row); row=[]; field=""; } else field+=ch; }
+  row.push(field); lines.push(row);
+  const hdr=lines.shift().map(h=>h.toLowerCase().trim()), find=(...k)=>hdr.findIndex(h=>k.some(x=>h.includes(x)));
+  const ix={address:find("address","street"),city:find("city"),status:find("status"),price:find("sold price","close price","sale price","price"),date:find("sold date","close date","sale date","date"),beds:find("bed"),baths:find("bath"),sqft:find("sqft","sq ft","living","square"),lot:find("lot"),year:find("year"),type:find("type","style"),lat:find("lat"),lng:find("lng","lon")};
+  if(ix.address<0) throw new Error("No address column in the header row.");
+  const out=[]; for(const r of lines){ if(!r.join("").trim()) continue; const g=k=>ix[k]>=0?r[ix[k]]:"";
+    let d=g("date"); if(d&&/\d+\/\d+\/\d+/.test(d)){ const [m,dd,y]=d.split("/"); d=`${y.length===2?"20"+y:y}-${m.padStart(2,"0")}-${dd.padStart(2,"0")}`; }
+    out.push({address:[g("address"),g("city")].filter(Boolean).join(", "),status:g("status")||"Sold",price:g("price"),date:d,beds:g("beds"),baths:g("baths"),sqft:g("sqft"),lot_sqft:g("lot"),year_built:g("year"),property_type:g("type"),lat:g("lat"),lng:g("lng"),condition:3,source_urls:["MLS export"]}); }
+  if(!out.length) throw new Error("No data rows found."); return out;
+}
+$("csvBtn").onclick=()=>{ try{ const r=mergeComps(parseCSV($("csvIn").value),"mls"); S.example=false; S.claude=null; render(); $("csvStatus").className="status ok"; $("csvStatus").textContent=`${r.added} added, ${r.merged} matched`; }catch(e){ $("csvStatus").className="status err"; $("csvStatus").textContent=e.message; } };
+
+/* ---------- REI BlackBook summary ---------- */
+$("copyBB").onclick=()=>{
+  const cur=currentARV(); if(!cur.v){ toast("No value yet"); return; }
+  const dm=dealMath(cur.v), s=S.subject, conf=cur.src==="Claude"&&S.claude.confidence?S.claude.confidence:R.arv.conf;
+  const v=$("verdict").querySelector(".big").textContent;
+  const lines=[`TWIN COMP AI · ${s.address}`,`${v} · Confidence ${Math.round(conf)}%`,
+    `ARV (${cur.src}): ${money(cur.v)}`,`As-is: ${money(cur.src==="Claude"&&S.claude.as_is_value?S.claude.as_is_value:R.asis.value)}`,
+    `Max offer: ${money(dm.max)} · Start at: ${money(dm.target)}`,`Renovation: ${money(S.deal.reno)} · Target profit: ${money(S.deal.profit)}`,
+    s.ask?`Asking: ${money(s.ask)} · Profit at asking: ${money(cur.v-dm.costs-s.ask)}`:"", "", "Best comps:",
+    ...R.arv.used.slice(0,5).map((u,i)=>`${i+1}. ${street(u.address)} · ${u.status} ${money(u.price)} ${u.date||""} · ${u.sqft||"?"} sf · ${whyLine(u)}`),
+    S.claude&&S.claude.why_this_value?`\nWhy: ${S.claude.why_this_value}`:"", S.claude&&S.claude.what_could_make_us_wrong?`Risk: ${S.claude.what_could_make_us_wrong}`:""].filter(x=>x!=="");
+  copyText(lines.join("\n"),"Deal summary copied. Paste it into the REI BlackBook lead notes.");
+};
+
+/* ---------- deal log ---------- */
+let logRows=[];
+const LOG_LS="twin-comp-ai-log-v1";
+const lsLog=()=>{ try{ return JSON.parse(localStorage.getItem(LOG_LS)||"[]"); }catch(e){ return []; } };
+const lsSave=rows=>{ try{ localStorage.setItem(LOG_LS,JSON.stringify(rows)); }catch(e){} };
+function renderLog(){
+  const rows=[...logRows].sort((a,b)=>String(b.created).localeCompare(String(a.created)));
+  const err=(p,a)=>p&&a?(p-a)/a:null, acc={engine:[],ai:[],juan:[]};
+  rows.forEach(r=>{ if(r.actual) for(const k of Object.keys(acc)){ const e=err(r[k+"_arv"],r.actual); if(e!=null) acc[k].push(Math.abs(e)); } });
+  const sold=rows.filter(r=>r.actual).length;
+  $("logSub").textContent=`${rows.length} saved · ${sold} with a sale price · saved in this browser`;
+  $("accuracy").innerHTML=Object.entries(acc).map(([k,v])=>`<div class="kpi"><div class="k">${k==="engine"?"Engine":k==="ai"?"Claude":"Juan"} average miss</div><div class="v" style="font-size:20px">${v.length?pct(mean(v)):"—"}</div><div class="r">${v.length} sold · target ±3–5%${v.length?(mean(v)<=0.05?" · on target":" · not there yet"):""}</div></div>`).join("");
+  $("logTable").innerHTML=rows.length?`<thead><tr><th>Saved</th><th>Address</th><th class="n">Engine ARV</th><th class="n">Claude ARV</th><th class="n">Juan ARV</th><th class="n">Sold for</th><th class="n">Engine</th><th class="n">Claude</th><th class="n">Juan</th><th></th></tr></thead><tbody>`+
+    rows.map(r=>{ const f=k=>{ const e=err(r[k],r.actual); return e==null?"—":`<span style="color:${Math.abs(e)>0.05?'var(--bad)':'var(--good)'}">${e>=0?"+":""}${pct(e)}</span>`; };
+      return `<tr data-id="${esc(r._id)}"><td>${esc(String(r.created).slice(0,10))}</td><td>${esc(street(r.address))}</td><td class="n">${kmoney(r.engine_arv)}</td><td class="n">${kmoney(r.ai_arv)}</td><td class="n">${kmoney(r.juan_arv)}</td>
+      <td class="n"><input type="number" data-act="actual" value="${r.actual??""}" placeholder="sold $" style="width:120px" aria-label="Actual sale price"></td><td class="n">${f("engine_arv")}</td><td class="n">${f("ai_arv")}</td><td class="n">${f("juan_arv")}</td>
+      <td><button class="btn small" data-act="del" type="button">Delete</button></td></tr>`; }).join("")+"</tbody>":`<tbody><tr><td class="muted">Nothing saved yet. Use “Save to deal log” above.</td></tr></tbody>`;
+  $("logTable").querySelectorAll("tr[data-id]").forEach(tr=>{ const id=tr.dataset.id;
+    tr.querySelector('[data-act=actual]').onchange=e=>updateLog(id,{actual:num(e.target.value)});
+    const del=tr.querySelector('[data-act=del]'); del.onclick=()=>{ if(del.dataset.c) deleteLog(id); else { del.dataset.c="1"; del.textContent="Confirm"; } }; });
+}
+function updateLog(id,patch){ logRows=logRows.map(r=>r._id===id?{...r,...patch}:r); lsSave(logRows); renderLog(); }
+function deleteLog(id){ logRows=logRows.filter(r=>r._id!==id); lsSave(logRows); renderLog(); }
+$("saveVal").onclick=async()=>{
+  if(!R.arv.value){ toast("Nothing to save yet"); return; }
+  const rec={address:S.subject.address||"(no address)",created:new Date().toISOString(),engine_asis:Math.round(R.asis.value||0),engine_arv:Math.round(R.arv.value||0),ai_arv:S.agentReports.ai&&S.agentReports.ai.value_arv?Math.round(S.agentReports.ai.value_arv):null,juan_arv:S.deal.juan||null,confidence:Math.round(R.arv.conf),comps_used:R.arv.used.map(u=>u.address),agents:Object.keys(S.agentReports),actual:null,example:!!S.example};
+  logRows.push({...rec,_id:"l"+Date.now().toString(36)}); lsSave(logRows); renderLog(); toast("Saved to the deal log");
+};
+logRows=lsLog(); renderLog();
+render();
+})();
+</script>
