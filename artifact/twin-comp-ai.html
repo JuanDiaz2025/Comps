@@ -118,7 +118,7 @@ input.big{font-size:19px;padding:12px 14px;font-weight:600}
 .verdict.fail{background:var(--bad);color:var(--surface)}
 .verdict.fail .line{color:var(--surface)}
 .verdict.fail .line b{color:var(--surface)}
-.verdict .big{font-family:var(--display);font-size:40px;font-weight:700;letter-spacing:.04em;line-height:1}
+.verdict .big{font-family:var(--display);font-size:34px;font-weight:700;letter-spacing:.04em;line-height:1}
 .verdict .line{color:var(--ink);font-size:15px;max-width:70ch}
 .verdict .line b{font-family:var(--mono)}
 .kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
@@ -204,7 +204,7 @@ pre.prompt{background:var(--surface-2);border:1px solid var(--line);border-radiu
 .small{font-size:13px}
 details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(--ink-2)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:7px;font-size:14px;z-index:10}
-@media (max-width:600px){input.big{font-size:16px;padding:10px 12px}details.adv>summary .sub{display:none}.verdict .big{font-size:32px}}
+@media (max-width:600px){input.big{font-size:16px;padding:10px 12px}details.adv>summary .sub{display:none}.verdict .big{font-size:26px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
@@ -1231,12 +1231,12 @@ function renderAnswer(){
   const atList = ask ? profitAt(ask) : null;
   const likelyTxt = likely&&ask&&likely>ask*1.03 ? `At the ${money(ask)} list price Twin would ${atList<0?"lose "+money(-atList):"make "+money(atList)}, but homes here sell over asking, so it will likely go for about <b>${money(likely)}</b>. ` : "";
   let cls,word,line;
-  if(!price){ cls="review"; word="OFFER UP TO"; line=`<b>${money(dm.max)}</b>. Start at <b>${money(dm.target)}</b>. Type the asking price above to get BUY / REVIEW / PASS.`; }
-  else if(profitAt(price)<0){ cls="fail"; word="AUTO-FAIL"; line=`${likelyTxt}At ${money(price)} Twin would <b>lose ${money(-profitAt(price))}</b> after reno, commission, transfer taxes, loan costs and holding. Negative profit is an automatic fail: don't offer above <b>${money(dm.max)}</b>.`; }
-  else if(price>dm.max*1.04){ cls="pass"; word="PASS"; line=`${likelyTxt}That is ${money(price-dm.max)} over Twin's max offer of <b>${money(dm.max)}</b>: ${profitAt(price)<0?`a loss of ${money(-profitAt(price))}`:`leaving only ${money(profitAt(price))} profit`}. Buy only at or under ${money(dm.max)}.`; }
-  else if(price>dm.max){ cls="review"; word="NEGOTIATE"; line=`${likelyTxt}${money(price)} is just over the max offer of <b>${money(dm.max)}</b>. Profit would be ${money(profitAt(price))}.${next}`; }
-  else if(conf>=90){ cls="buy"; word="BUY"; line=`At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b>. Max offer is <b>${money(dm.max)}</b>.`; }
-  else { cls="review"; word="REVIEW"; line=`${likelyTxt}At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b> (max offer ${money(dm.max)}). Confidence is ${Math.round(conf)}%.${next}`; }
+  if(!price){ cls="review"; word="OFFER UP TO"; line=`<b>${money(dm.max)}</b>. Start at <b>${money(dm.target)}</b>. Type the asking price above to get YES / NO / NEEDS JUAN.`; }
+  else if(profitAt(price)<0){ cls="fail"; word="NO, DO NOT BUY"; line=`${likelyTxt}At ${money(price)} Twin would <b>lose ${money(-profitAt(price))}</b> after reno, commission, transfer taxes, loan costs and holding. Negative profit is an automatic no: don't offer above <b>${money(dm.max)}</b>.`; }
+  else if(price>dm.max*1.04){ cls="pass"; word="NO, DO NOT BUY"; line=`${likelyTxt}That is ${money(price-dm.max)} over Twin's max offer of <b>${money(dm.max)}</b>: ${profitAt(price)<0?`a loss of ${money(-profitAt(price))}`:`leaving only ${money(profitAt(price))} profit`}. Buy only at or under ${money(dm.max)}.`; }
+  else if(price>dm.max){ cls="review"; word="NEEDS JUAN'S ATTENTION"; line=`${likelyTxt}${money(price)} is just over the max offer of <b>${money(dm.max)}</b>. Profit would be ${money(profitAt(price))}.${next}`; }
+  else if(conf>=90){ cls="buy"; word="YES, BUY IT"; line=`At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b>. Max offer is <b>${money(dm.max)}</b>.`; }
+  else { cls="review"; word="NEEDS JUAN'S ATTENTION"; line=`${likelyTxt}At <b>${money(price)}</b> Twin makes about <b>${money(profitAt(price))}</b> (max offer ${money(dm.max)}). Confidence is ${Math.round(conf)}%.${next}`; }
   const shown = renderCalc(cur.v, price);
   $("verdict").innerHTML=`<div class="verdict ${cls}"><span class="big">${word}</span><span class="line">${line}</span></div>`;
   const arvRange = cur.src==="Claude"&&S.claude.arv_range? S.claude.arv_range : [arv.low,arv.high];
