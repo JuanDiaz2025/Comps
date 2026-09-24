@@ -1264,17 +1264,18 @@ function renderAnswer(){
   const rLo=ret(lo), rHi=ret(hi), pct=x=>Math.round(x)+"%";
   const rangeTxt = lo===hi ? money(hi) : `${money(lo)}–${money(hi)}`;
   const returnTxt = lo===hi ? `${money(rHi.n)} (${pct(rHi.pct)} return)` : `${money(rHi.n)}–${money(rLo.n)} (${pct(rHi.pct)}–${pct(rLo.pct)} return)`;
-  const offerLine = `Offer <b>${rangeTxt}</b>. Twin makes <b>${returnTxt}</b>${S.deal.locTarget&&S.deal.profit===100000?" (target $100K for a grade "+esc(String(S.claude.location.grade).toUpperCase())+" location)":""}.`;
+  const offerLine = `Offer <b>${rangeTxt}</b>. Twin makes <b>${S.deal.locTarget&&S.deal.profit===100000?returnTxt.replace(/ return\)$/," return; $100K target for a grade "+esc(String(S.claude.location.grade).toUpperCase())+" location)"):returnTxt}</b>.`;
   let cls,word,line;
+  const L = S.claude&&S.claude.location, M = S.claude&&S.claude.market, grade = L&&String(L.grade||"").toUpperCase(), trend = M&&String(M.trend||"").toLowerCase();
   const renovated = Number(s.cond)>=4, sure = conf>=60;
   if(renovated){ cls="fail"; word="NO, DO NOT BUY"; line=`<b>Already renovated</b> (condition: ${condLabel(s.cond)}). Twin buys houses to renovate; this one has no renovation upside left, so it is an automatic no. If the listing is wrong and it needs real work, rerun comps with a note saying so.`; }
   else if(!price){ cls=sure?"buy":"review"; word=sure?"YES, BUY IT":"NEEDS JUAN'S ATTENTION"; line=`${offerLine} Walk away above ${money(dm.max)}. ${sure?`Confidence ${Math.round(conf)}%.`:`Confidence is ${Math.round(conf)}%.`}${next}`; }
+  else if(price>dm.max && (grade==="A"||grade==="B")){ cls=sure?"buy":"review"; word=sure?"YES, BUY IT":"NEEDS JUAN'S ATTENTION"; line=`${offerLine} Offer under the ${money(price)} asking price and walk away above <b>${money(dm.max)}</b>: at the full ask Twin would ${profitAt(price)<0?"lose "+money(-profitAt(price)):"make only "+money(profitAt(price))}. Grade ${grade} location, so it's worth making the offer.${sure?"":next}`; }
   else if(profitAt(price)<0){ cls="fail"; word="NO, DO NOT BUY"; line=`At the <b>${money(price)}</b> asking price Twin would <b>lose ${money(-profitAt(price))}</b>. Counter at ${rangeTxt} (Twin makes ${returnTxt}) or walk away.`; }
   else if(price>dm.max){ cls="review"; word="NEEDS JUAN'S ATTENTION"; line=`${offerLine} The <b>${money(price)}</b> asking price is ${money(price-dm.max)} over the max; at asking Twin makes only ${money(profitAt(price))} (${pct(ret(price).pct)}), under the ${money(S.deal.profit)} target. Juan decides if that is worth it.`; }
   else if(sure){ cls="buy"; word="YES, BUY IT"; line=`${offerLine} Start at or below the ${money(price)} asking price and go no higher than ${money(dm.max)} if others bid. Confidence ${Math.round(conf)}%.${next}`; }
   else { cls="review"; word="NEEDS JUAN'S ATTENTION"; line=`${offerLine} The ${money(price)} asking price is under the max, but confidence is ${Math.round(conf)}%.${next}`; }
   // Location and market (from Claude's research) can overrule a yes.
-  const L = S.claude&&S.claude.location, M = S.claude&&S.claude.market, grade = L&&String(L.grade||"").toUpperCase(), trend = M&&String(M.trend||"").toLowerCase();
   if(!renovated && grade==="D" && cls!=="fail"){ cls="fail"; word="NO, DO NOT BUY"; line=`<b>Location grade D.</b> ${esc(L.summary||"The location hurts resale too much for a flip.")} Twin can't fix the location, so it's a no at any price.`; }
   else if(cls==="buy" && (grade==="C" || trend==="falling")){ cls="review"; word="NEEDS JUAN'S ATTENTION"; line+=` ${grade==="C"?`<b>Location grade C</b>: ${esc(String(L.summary||"weaker resale location").replace(/\.\s*$/,""))}. `:""}${trend==="falling"?`<b>The market is falling</b>: ${esc(String(M.summary||"prices are dropping").replace(/\.\s*$/,""))}. `:""}Juan decides.`; }
   renderCalc(cur.v, price);

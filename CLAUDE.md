@@ -75,11 +75,14 @@ One internal valuation system that gives a defensible property value without rel
 - **No guessing what the seller will get.** Claude is the decision maker: decide on facts only, meaning the offer range from the comps and the asking price when there is one. Don't set `likely_sale_price` and don't write "the seller will likely get". When the ask is under the max offer (common with bait list prices), the offer range runs from the ask up to the max, and the max is the ceiling if others bid.
 - Flag thin data (few 2026 sales, no dates, no condition) with lower confidence instead of false precision.
 - When the default deal numbers don't fit the price point (for example a $175K profit target on a $650K house), adjust them and say so.
-- **Negative expected profit at the asking price is an automatic "NO, DO NOT BUY".** Never present it as "NEEDS JUAN'S ATTENTION".
+- **Negative profit at the asking price is an automatic "NO, DO NOT BUY" for C and D locations**, never "NEEDS JUAN'S ATTENTION". For A and B locations, the ask is only the seller's opening number: the verdict is **YES, BUY IT at our offer range** (confidence 60%+), walking away above the max. Say what Twin would make or lose at the full ask.
 - Verdict words (page and replies):
-  - **YES, BUY IT**: confidence 60%+ and either no asking price (off-market: buy at the offer range) or an asking price at or under the max offer.
-  - **NO, DO NOT BUY**: Twin would lose money (negative net profit) at the asking price, **or the house is already renovated** (condition 4 Updated or 5 Remodeled). Renovated houses are an automatic no: set `cond` to 4 or 5 whenever the listing describes a renovated kitchen or baths.
-  - **NEEDS JUAN'S ATTENTION**: the asking price is over the max offer but still profitable, or confidence is under 60%.
+  - **YES, BUY IT**: confidence 60%+, and one of:
+    - no asking price (off-market: buy at the offer range);
+    - an asking price at or under the max offer;
+    - an A/B location with the ask over the max (offer our range, walk away above the max).
+  - **NO, DO NOT BUY**: Twin would lose money at the asking price in a C or D location, a grade-D location at any price, **or the house is already renovated** (condition 4 Updated or 5 Remodeled). Renovated houses are an automatic no: set `cond` to 4 or 5 whenever the listing describes a renovated kitchen or baths.
+  - **NEEDS JUAN'S ATTENTION**: confidence under 60%; a C location or falling market; or a C-location ask over the max that is still profitable.
 
 ## Profit calculator (Twin's sheet, corrected) — use on every run
 
