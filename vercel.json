@@ -1,0 +1,3 @@
+{
+  "functions": { "api/comps.js": { "maxDuration": 300 } }
+}

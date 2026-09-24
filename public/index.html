@@ -1,5 +1,10 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Twin Comp AI</title>
-<meta name="description" content="Type an address, get one ARV, five comps, one confidence score and one buy price. Five AIs find the comps, Claude checks the work.">
+<meta name="description" content="Type an address, press Run comps. ChatGPT finds and verifies the comps; the page gives one ARV, five comps, one confidence score and one buy price.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
@@ -155,6 +160,8 @@ input.big{font-size:19px;padding:12px 14px;font-weight:600}
 .report p{margin:0;max-width:78ch}
 .report h3{font-size:17px}
 .report ul{margin:0;padding-left:18px}
+.runbtn{font-size:18px;padding:12px 28px}
+.elapsed{font-family:var(--mono);font-size:13px;color:var(--muted)}
 .stream{white-space:pre-wrap;font-family:var(--mono);font-size:12px;color:var(--muted);max-height:140px;overflow:auto}
 
 /* advanced */
@@ -186,6 +193,8 @@ details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:7px;font-size:14px;z-index:10}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
+</head>
+<body>
 
 <header class="topbar">
   <div class="topbar-in">
@@ -202,7 +211,7 @@ details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(
 
   <!-- STEP 1 -->
   <section class="panel" aria-labelledby="h1s">
-    <div class="ph"><h2 id="h1s"><span class="step">1</span>The property</h2><span class="sub">Only the address is required. The AIs fill in the rest.</span></div>
+    <div class="ph"><h2 id="h1s"><span class="step">1</span>The property</h2><span class="sub">Only the address is required. ChatGPT looks up the rest.</span></div>
     <div class="pb">
       <div class="prop-grid">
         <label class="f span-all">Address<input type="text" class="big" id="s_address" placeholder="123 Main St, San Mateo, CA 94401"></label>
@@ -222,33 +231,24 @@ details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(
           <label class="f">Type<select id="s_type"><option>SFR</option><option>Condo</option><option>Townhome</option><option>2-4 Unit</option></select></label>
           <label class="f">Latitude<input type="number" step="any" id="s_lat"></label>
           <label class="f">Longitude<input type="number" step="any" id="s_lng"></label>
-          <label class="f" style="grid-column:1/-1">Anything the AIs must know<input type="text" id="s_notes" placeholder="cul-de-sac, bay view, backs to freeway, unpermitted ADU…"></label>
+          <label class="f" style="grid-column:1/-1">Anything ChatGPT must know<input type="text" id="s_notes" placeholder="cul-de-sac, bay view, backs to freeway, unpermitted ADU…"></label>
         </div>
       </details>
-    </div>
-  </section>
-
-  <!-- STEP 2 -->
-  <section class="panel" aria-labelledby="h2s">
-    <div class="ph"><h2 id="h2s"><span class="step">2</span>Get the comps</h2><span class="progress" id="progress"></span></div>
-    <div class="pb">
-      <p class="small muted" style="margin:0">Click an AI to copy its prompt, paste it into that AI, then paste the answer in the box below. Each AI has a different job. DeepSeek goes last because it checks the math on the comps the others found.</p>
-      <div class="ai-grid" id="aiGrid"></div>
-      <label class="f">Paste an AI's answer here
-        <textarea id="pasteIn" rows="4" placeholder='Paste the whole reply. The page finds the JSON in it.'></textarea>
-      </label>
       <div class="btnrow">
-        <button class="btn primary" id="pasteBtn" type="button">Add to comps</button>
-        <label class="f" style="flex-direction:row;align-items:center;gap:6px">From
-          <select id="pasteFrom" style="width:auto"></select></label>
-        <span class="status" id="pasteStatus"></span>
+        <button class="btn primary runbtn" id="runBtn" type="button">Run comps</button>
+        <button class="btn" id="cancelRun" type="button" hidden>Cancel</button>
+        <span class="status" id="runStatus"></span> <span class="elapsed" id="elapsed"></span>
+      </div>
+      <div class="btnrow" id="pwRow" hidden>
+        <label class="f" style="flex:1;max-width:320px">Team password<input type="password" id="pwIn" autocomplete="current-password"></label>
+        <button class="btn" id="pwSave" type="button" style="align-self:flex-end">Save password</button>
       </div>
     </div>
   </section>
 
   <!-- STEP 3 -->
   <section class="panel" aria-labelledby="h3s">
-    <div class="ph"><h2 id="h3s"><span class="step">3</span>The answer</h2><span id="basisChips" class="chips"></span></div>
+    <div class="ph"><h2 id="h3s"><span class="step">2</span>The answer</h2><span id="basisChips" class="chips"></span></div>
     <div class="pb">
       <div id="verdict"></div>
       <div class="kpis" id="kpis"></div>
@@ -270,15 +270,11 @@ details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(
         </div>
       </div>
       <div class="btnrow">
-        <button class="btn primary" id="runClaude" type="button" hidden>Have Claude check it</button>
-        <button class="btn" id="stopClaude" type="button" hidden>Stop</button>
-        <button class="btn" id="copyClaude" type="button">Copy Claude check prompt</button>
         <button class="btn" id="copyBB" type="button">Copy for REI BlackBook</button>
         <button class="btn" id="saveVal" type="button">Save to deal log</button>
-        <span class="status" id="claudeStatus"></span>
       </div>
-      <div class="stream" id="claudeStream" hidden></div>
-      <div id="claudeReport"></div>
+      <p class="small muted" id="summaryLine" style="margin:0"></p>
+      <textarea id="copyFallback" rows="6" hidden aria-label="Text to copy"></textarea>
     </div>
   </section>
 
@@ -364,14 +360,13 @@ details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(
         </div>
         <div class="btnrow" style="margin-top:8px"><button class="btn primary" id="saveComp" type="button">Save comp</button><button class="btn" id="cancelComp" type="button">Cancel</button></div>
       </div>
-      <details class="inner"><summary>See the prompts</summary><pre class="prompt" id="promptPre" style="margin-top:6px"></pre></details>
     </div>
   </details>
 
   <details class="adv" id="advLog">
     <summary>Deal log &amp; backtest <span class="sub" id="logSub"></span></summary>
     <div class="adv-body">
-      <p class="small" style="margin:0;max-width:75ch">To test the system, run houses Twin already sold without telling the AIs the sale price. Save each one, then type the real sale price here. The error columns show who is most accurate: the engine, Claude or Juan.</p>
+      <p class="small" style="margin:0;max-width:75ch">To test the system, run houses Twin already sold without telling the AIs the sale price. Save each one, then type the real sale price here. The error columns show who is most accurate: the engine, ChatGPT or Juan.</p>
       <div class="kpis" id="accuracy" style="grid-template-columns:repeat(3,minmax(0,1fr))"></div>
       <div class="tblwrap"><table id="logTable"></table></div>
       <span class="status" id="logStatus"></span>
@@ -388,34 +383,7 @@ const CONDS = [[1,"Fixer","heavy work"],[2,"Dated","original"],[3,"Clean","cosme
 const condLabel = c => { const f=CONDS.find(x=>x[0]===Number(c)); return f?f[1]:"—"; };
 const TYPES = ["SFR","Condo","Townhome","2-4 Unit"];
 const RADII = [0.25,0.5,1,2,3];
-const AGENTS = [
-  {key:"chatgpt", name:"ChatGPT", job:"Finds the best sold comps",
-   task:`YOUR ROLE: Appraiser. Run a traditional comparable sales analysis.
-Search outward in steps: 0.25 mi, then 0.5, 0.75, 1 mi. Sold in last 90 days first, then 180, then 365 only if needed.
-Match property type, living area (±20% preferred), beds/baths, lot, age/style, parking, condition and micro-location.
-Return 10–15 legitimate SOLD comps, plus PENDING and ACTIVE listings that would compete with the subject after renovation.`},
-  {key:"perplexity", name:"Perplexity", job:"Checks every fact and source",
-   task:`YOUR ROLE: Investigator / fact verification. Value is secondary.
-First verify the SUBJECT's facts (beds, baths, living sf, lot, year, coordinates) from public records and report them in "subject_facts".
-Then find sold comps, checking each across multiple public sources (county records, Redfin, Zillow, Realtor.com, brokerage sites).
-Confirm sale price, sale date, living area, beds/baths, lot, and whether it was renovated before sale. When sources disagree, report the conflict in "notes".
-Every comp MUST have at least one source URL. If you cannot find a source, leave the comp out.`},
-  {key:"grok", name:"Grok", job:"Tries to prove the value wrong",
-   task:`YOUR ROLE: Devil's advocate. Try to prove the obvious value WRONG in both directions.
-Find sold comps that argue for a LOWER value and comps that argue for a HIGHER value.
-Hunt for: busy streets, freeway/rail noise, commercial next door, corner lots, cul-de-sacs, views, slope and lot usability, school boundaries, unpermitted additions, outlier sales, investor flips.
-List every risk in "risks".`},
-  {key:"gemini", name:"Gemini / Kimi", job:"Knows the block and boundaries",
-   task:`YOUR ROLE: Micro-market analyst. Explain what is special about THIS location, block by block, not ZIP code.
-Identify neighborhood and school boundaries, major streets, commercial areas, freeway noise, hills and views, walkability, lot orientation.
-Return sold comps in the SAME micro-market as the subject, and list nearby sales that should be REJECTED because they sit across a meaningful boundary ("reject" with the reason).`},
-  {key:"deepseek", name:"DeepSeek", job:"Checks the math (send last)", quant:true,
-   task:`YOUR ROLE: Quant. Do NOT search for new comps. Use ONLY the verified comp dataset below.
-Compute median, mean, trimmed mean and weighted median of sold $/sf.
-Estimate adjustment rates from the data where possible (size $/sf, per bath, lot, condition step, monthly trend).
-Value the subject four ways: weighted comparable model, median $/sf model, simple regression (price ~ sqft + condition + lot), and nearest-neighbor (k=3).
-Give an as-is value and an ARV (renovated to condition 4).`}
-];
+const AGENTS = [{key:"chatgpt",name:"ChatGPT"},{key:"mls",name:"MLS"}];
 
 const EXAMPLE = {
   subject:{address:"1466 Scenic Ave, Berkeley, CA 94708",lat:37.8792,lng:-122.2594,beds:3,baths:2,sqft:1036,lot:7290,year:1924,type:"SFR",cond:2,ask:1050000,notes:"Berkeley Hills edge, quiet street, some bay view potential"},
@@ -459,7 +427,7 @@ function freshState(example){
   }
   return base;
 }
-const LS_KEY = "twin-comp-ai-draft-v2";
+const LS_KEY = "twin-comp-ai-draft-v3";
 let S=null;
 try{ const raw=localStorage.getItem(LS_KEY); if(raw) S=JSON.parse(raw); }catch(e){}
 if(!S || !S.subject) S = freshState(true);
@@ -476,7 +444,7 @@ const street = a => String(a||"").split(",")[0];
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true,2400); }
 async function copyText(text, msg){
   try{ await navigator.clipboard.writeText(text); toast(msg||"Copied"); return true; }
-  catch(e){ const pre=$("promptPre"); pre.textContent=text; $("advComps").open=true; pre.parentElement.open=true; const r=document.createRange(); r.selectNodeContents(pre); const s=getSelection(); s.removeAllRanges(); s.addRange(r); pre.scrollIntoView({block:"center"}); toast("Copy was blocked. The text is selected below; press Ctrl/Cmd+C."); return false; }
+  catch(e){ const ta=$("copyFallback"); ta.value=text; ta.hidden=false; ta.focus(); ta.select(); toast("Copy was blocked. The text is selected; press Ctrl/Cmd+C."); return false; }
 }
 function haversine(a,b,c,d){ const R=3958.8,t=x=>x*Math.PI/180; const dl=t(c-a),dn=t(d-b); const h=Math.sin(dl/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(dn/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
 function monthsAgo(ds){ if(!ds) return null; const d=new Date(ds+"T12:00:00"); if(isNaN(d)) return null; return Math.max(0,(Date.now()-d.getTime())/(30.44*864e5)); }
@@ -604,7 +572,8 @@ function render(){
   $("factsSummary").textContent = facts.length? facts.join(" · ") : "blank, the AIs will fill these in";
   $("condRow").innerHTML = CONDS.map(([v,l,d])=>`<button type="button" class="condbtn" aria-pressed="${Number(s.cond)===v}" data-v="${v}"><b>${l}</b><span>${d}</span></button>`).join("");
   $("condRow").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.subject.cond=Number(b.dataset.v); render();});
-  renderAgents(); renderAnswer(); renderPool(); renderMap(); renderClaude(); renderRules();
+  renderAnswer(); renderPool(); renderMap(); renderRules();
+  const rep=S.agentReports.chatgpt; $("summaryLine").textContent = rep&&rep.summary? rep.summary : "";
 }
 function renderRules(){
   const f=R.f;
@@ -616,84 +585,7 @@ function renderRules(){
   $("methods").innerHTML = set.value? `<table><tbody>${Object.entries(set.methods).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${kmoney(v)}</td><td class="n muted">${v?((v-set.value)/set.value>=0?"+":"")+pct((v-set.value)/set.value):""}</td></tr>`).join("")}</tbody></table><p class="muted" style="margin:6px 0 0">ARV by five methods. If they spread more than 5%, the comps disagree.</p>` : `<span class="muted">No value yet.</span>`;
 }
 
-/* ---------- step 2 ---------- */
-let lastCopied = null;
-function renderAgents(){
-  const nComps=S.comps.length, usable=R.arv.cands.length;
-  const done=AGENTS.filter(a=>S.agentReports[a.key]).length;
-  $("progress").innerHTML = `<b>${done}</b> of 5 AIs in · <b>${nComps}</b> comps found · <b>${usable}</b> usable`;
-  $("aiGrid").innerHTML = AGENTS.map(a=>{ const d=!!S.agentReports[a.key];
-    return `<div class="ai ${d?'done':''}"><div class="nm">${esc(a.name)}${d?'<span class="ck">✓ in</span>':''}</div><div class="jb">${esc(a.job)}</div>
-    <button class="btn ${d?'':'primary'} small" type="button" data-k="${a.key}">${d?"Copy again":"Copy prompt"}</button></div>`; }).join("");
-  $("aiGrid").querySelectorAll("button").forEach(b=>b.onclick=async()=>{
-    const ag=AGENTS.find(x=>x.key===b.dataset.k);
-    if(ag.quant && R.arv.cands.length<3){ toast("Get comps from the other AIs first"); return; }
-    if(!S.subject.address){ toast("Type the address first"); $("s_address").focus(); return; }
-    lastCopied=ag.key; $("pasteFrom").value=ag.key;
-    await copyText(agentPrompt(ag), `${ag.name} prompt copied. Paste it into ${ag.name}.`);
-  });
-  const sel=$("pasteFrom"), cur=sel.value||lastCopied||"auto";
-  sel.innerHTML=`<option value="auto">Detect automatically</option>`+AGENTS.map(a=>`<option value="${a.key}">${esc(a.name)}</option>`).join("");
-  sel.value=cur;
-}
-const JSON_SPEC = `Return ONLY one JSON object, no other text, in exactly this shape:
-{
-  "agent": "<your name>",
-  "subject_facts": {"beds":0,"baths":0,"sqft":0,"lot_sqft":0,"year_built":0,"property_type":"SFR","lat":0.0,"lng":0.0},
-  "comps": [
-    {"address": "full street address, city, state zip",
-     "status": "Sold" | "Pending" | "Active" | "Withdrawn",
-     "price": 0, "date": "YYYY-MM-DD",
-     "beds": 0, "baths": 0, "sqft": 0, "lot_sqft": 0, "year_built": 0,
-     "property_type": "SFR" | "Condo" | "Townhome" | "2-4 Unit",
-     "condition": 1-5,
-     "lat": 0.0, "lng": 0.0, "distance_mi": 0.0,
-     "source_urls": ["https://..."],
-     "notes": "view, busy street, remodel details, conflicting facts"}
-  ],
-  "reject": [{"address": "...", "reason": "..."}],
-  "value_as_is": 0,
-  "value_arv": 0,
-  "risks": ["..."]
-}
-Condition scale: 1 heavy fixer, 2 dated/original, 3 clean cosmetic, 4 updated kitchen and baths, 5 high-end remodel. Judge it from listing photos and remarks.
-RULES: Only real, verifiable transactions. Never invent an address, price or date. If you are not sure a sale happened, leave it out. A short honest list beats a long guessed one. Numbers without $ or commas. Give lat/lng for every comp if you can.`;
-function subjectFile(){
-  const s=S.subject, f=R.f, v=x=>x==null||x===""?"unknown, look it up":x;
-  return `SUBJECT PROPERTY
-Address: ${s.address||"(not set)"}
-Type: ${v(s.type)} · Beds: ${v(s.beds)} · Baths: ${v(s.baths)} · Living sf: ${v(s.sqft)} · Lot sf: ${v(s.lot)} · Year built: ${v(s.year)}
-Coordinates: ${s.lat!=null?s.lat+", "+s.lng:"unknown, look it up"}
-Condition today: ${s.cond} (${condLabel(s.cond)})
-Notes: ${s.notes||"none"}
-Today's date: ${new Date().toISOString().slice(0,10)}
-
-COMP RULES
-Up to ${f.radius} mi · ${f.types.join("/")} only · sold within ${f.months} months${s.beds!=null?` · ${f.bedsMin}-${f.bedsMax} beds`:""}${s.sqft?` · ${f.sqftMin}-${f.sqftMax} sf`:""}
-We need TWO comp sets: AS-IS comps (dated/original, condition 1-3) and ARV comps (renovated and staged, condition 4-5).`;
-}
-function poolDataset(){ return R.rows.filter(r=>r.eligible).map(r=>{ const c=R.arv.cands.find(x=>x.id===r.id); return {address:r.address,status:r.status,price:r.price,date:r.date,beds:r.beds,baths:r.baths,sqft:r.sqft,lot:r.lot,year:r.year,condition:r.cond,distance_mi:r.dist!=null?+r.dist.toFixed(2):null,price_per_sf:r.ppsf?Math.round(r.ppsf):null,similarity:c?Math.round(c.score):null,notes:r.notes||""}; }); }
-function agentPrompt(ag){
-  let p=`You are one of five independent research agents valuing a house for Twin Home Buyer, a Bay Area fix-and-flip buyer. The other agents will not see your answer.\n\n${ag.task}\n\n${subjectFile()}\n`;
-  if(ag.quant) p+=`\nVERIFIED COMP DATASET (JSON):\n${JSON.stringify(poolDataset(),null,1)}\n\nCurrent adjustment rates: size $${R.glaRate}/sf, bed $${S.adj.bed}, bath $${S.adj.bath}, lot $${S.adj.lot}/sf, condition step ${S.adj.cond}% of price, trend ${S.adj.time}%/mo.\n\nReturn ONLY one JSON object: {"agent":"DeepSeek","value_as_is":0,"value_arv":0,"methods":{"weighted_comps":0,"median_ppsf":0,"regression":0,"nearest_neighbor":0},"suggested_rates":{"gla_per_sf":0,"per_bath":0,"lot_per_sf":0,"condition_step_pct":0,"trend_pct_per_month":0},"risks":["..."]}`;
-  else p+=`\n${JSON_SPEC}`;
-  return p;
-}
-function extractJSON(text){
-  const t=String(text||"").trim(); if(!t) throw new Error("Paste the AI's reply first.");
-  try{ return JSON.parse(t); }catch(e){}
-  const fence=t.match(/```(?:json)?\s*([\s\S]*?)```/i); if(fence){ try{ return JSON.parse(fence[1]); }catch(e){} }
-  const a=t.indexOf("{"), b=t.lastIndexOf("}"); if(a>=0&&b>a){ const body=t.slice(a,b+1).replace(/,\s*([}\]])/g,"$1"); try{ return JSON.parse(body); }catch(e){} }
-  throw new Error("No JSON found in that reply. Ask the AI: “Return only the JSON object.”");
-}
-function detectAgent(j){
-  const sel=$("pasteFrom").value; if(sel!=="auto") return sel;
-  const n=String(j.agent||"").toLowerCase();
-  const hit=AGENTS.find(a=>n.includes(a.key)||n.includes(a.name.toLowerCase().split(" ")[0])||(a.key==="gemini"&&n.includes("kimi"))||(a.key==="chatgpt"&&(n.includes("gpt")||n.includes("openai"))));
-  if(hit) return hit.key;
-  if(j.methods||j.suggested_rates) return "deepseek";
-  return lastCopied;
-}
+/* ---------- run comps (ChatGPT via /api/comps) ---------- */
 const mapType = t=>{ t=String(t||"").toLowerCase(); if(t.includes("condo")) return "Condo"; if(t.includes("town")) return "Townhome"; if(/duplex|triplex|2-4|multi|fourplex/.test(t)) return "2-4 Unit"; return "SFR"; };
 const mapStatus = t=>{ t=String(t||"sold").toLowerCase(); if(t.startsWith("pend")||t.includes("contract")) return "Pending"; if(t.startsWith("act")||t.includes("list")) return "Active"; if(t.startsWith("with")||t.startsWith("exp")) return "Withdrawn"; return "Sold"; };
 const agentName = k => (AGENTS.find(a=>a.key===k)||{name:k?k:"import"}).name;
@@ -725,24 +617,42 @@ function fillSubject(sf){
   if(sf.property_type && !s._typeSet){ s.type=mapType(sf.property_type); }
   return n;
 }
-$("pasteBtn").onclick=()=>{
-  const st=$("pasteStatus");
+const PW_KEY="twin-comp-ai-pw";
+const getPw=()=>{ try{ return localStorage.getItem(PW_KEY)||""; }catch(e){ return ""; } };
+$("pwSave").onclick=()=>{ try{ localStorage.setItem(PW_KEY,$("pwIn").value); }catch(e){} $("pwRow").hidden=true; runComps(); };
+let runCtl=null, tick=null;
+async function runComps(){
+  const s=S.subject, st=$("runStatus");
+  if(!s.address||s.address.trim().length<6){ toast("Type the full address first"); $("s_address").focus(); return; }
+  runCtl=new AbortController();
+  $("runBtn").disabled=true; $("cancelRun").hidden=false; st.className="status"; st.textContent="ChatGPT is searching sold records and checking sources… usually 1–3 minutes.";
+  const t0=Date.now(); clearInterval(tick); tick=setInterval(()=>{ const sec=Math.round((Date.now()-t0)/1000); $("elapsed").textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,"0")}`; },1000);
   try{
-    const j=extractJSON($("pasteIn").value);
-    const key=detectAgent(j);
-    if(!key) throw new Error("Pick which AI this answer came from.");
-    const parts=[];
-    const nf=fillSubject(j.subject_facts); if(nf) parts.push(`filled ${nf} property details`);
-    if(Array.isArray(j.comps)){ const r=mergeComps(j.comps,key); parts.push(`${r.added} new comps, ${r.merged} already found${r.conflicts?`, ${r.conflicts} facts disagree`:""}`); }
-    if(Array.isArray(j.reject)) for(const r of j.reject){ const ex=S.comps.find(x=>normAddr(x.address)===normAddr(r.address)); if(ex) ex.conflicts=[...(ex.conflicts||[]),`${agentName(key)} would reject: ${r.reason}`]; }
-    S.agentReports[key]={value_as_is:num(j.value_as_is),value_arv:num(j.value_arv),risks:j.risks||[],count:(j.comps||[]).length,suggested_rates:j.suggested_rates||null};
-    if(key==="deepseek" && j.suggested_rates){ const sr=j.suggested_rates; parts.push("suggested rates saved under All comps & rules"); S.dsRates=sr; }
-    S.example=false; S.claude=null;
-    $("pasteIn").value=""; $("pasteFrom").value="auto";
+    const r=await fetch("/api/comps",{method:"POST",headers:{"Content-Type":"application/json","x-app-password":getPw()},signal:runCtl.signal,
+      body:JSON.stringify({subject:{address:s.address,type:s.type,beds:s.beds,baths:s.baths,sqft:s.sqft,lot:s.lot,year:s.year,cond:s.cond,notes:s.notes},rules:{radius:R.f.radius,months:R.f.months}})});
+    const j=await r.json().catch(()=>({error:"The server sent back something unreadable."}));
+    if(r.status===401){ $("pwRow").hidden=false; $("pwIn").focus(); throw new Error("Enter the team password, then press Save password."); }
+    if(!r.ok) throw new Error(j.error||`Server error ${r.status}.`);
+    // A new run replaces ChatGPT's earlier comps; your own MLS rows and hand-added comps stay.
+    S.comps=S.comps.filter(c=>!(c.agents||[]).includes("chatgpt")||(c.agents||[]).length>1).map(c=>({...c,agents:(c.agents||[]).filter(a=>a!=="chatgpt")}));
+    if(S.example){ S.comps=[]; S.example=false; }
+    const nf=fillSubject(j.subject_facts);
+    const m=mergeComps(j.comps||[],"chatgpt");
+    const cites=(j.citations||[]).map(c=>c.url);
+    for(const c of S.comps) if((c.agents||[]).includes("chatgpt")&&!(c.src||[]).length){ const hit=cites.find(u=>u.toLowerCase().includes(normAddr(c.address).split(" ").slice(0,2).join("-"))); if(hit) c.src=[hit]; }
+    for(const x of j.reject||[]){ const ex=S.comps.find(c=>normAddr(c.address)===normAddr(x.address)); if(ex){ ex.include=false; ex.conflicts=[...(ex.conflicts||[]),`ChatGPT: ${x.reason}`]; } }
+    S.agentReports={chatgpt:{value_as_is:num(j.value_as_is),value_arv:num(j.value_arv),risks:j.risks||[],summary:j.summary||"",count:(j.comps||[]).length,model:j.model}};
     render();
-    $("pasteStatus").className="status ok"; $("pasteStatus").textContent=`${agentName(key)}: ${parts.join(", ")||"estimate saved"}.`;
-  }catch(e){ st.className="status err"; st.textContent=e.message; }
-};
+    st.className="status ok"; st.textContent=`Done. ${m.added} comps found${nf?`, ${nf} property details filled in`:""}${j.mock?" (MOCK DATA, no OpenAI key set)":""}.`;
+    $("h3s").scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(e){
+    if(e.name==="AbortError"){ st.className="status"; st.textContent="Cancelled."; }
+    else { st.className="status err"; st.textContent=e.message==="Failed to fetch"?"Can't reach the server. Is it running?":e.message; }
+  }finally{ clearInterval(tick); $("elapsed").textContent=""; $("runBtn").disabled=false; $("cancelRun").hidden=true; }
+}
+$("runBtn").onclick=runComps;
+$("cancelRun").onclick=()=>runCtl&&runCtl.abort();
+$("s_address").addEventListener("keydown",e=>{ if(e.key==="Enter") runComps(); });
 
 /* ---------- step 3 ---------- */
 function currentARV(){
@@ -762,7 +672,7 @@ function whyLine(u){
   if(s.sqft&&u.sqft){ const d=(u.sqft-s.sqft)/s.sqft; bits.push(Math.abs(d)<0.1?"same size":`${Math.round(Math.abs(d)*100)}% ${d>0?"bigger":"smaller"}`); }
   bits.push(condLabel(u.cond).toLowerCase());
   if(u.months!=null) bits.push(u.months<1?"sold this month":`sold ${Math.round(u.months)} mo ago`);
-  if((u.agents||[]).length>1) bits.push(`${u.agents.length} AIs found it`);
+  if((u.agents||[]).includes("mls")) bits.push("in your MLS data");
   return bits.join(" · ");
 }
 function renderAnswer(){
@@ -771,7 +681,7 @@ function renderAnswer(){
   $("basisChips").innerHTML = S.claude&&S.claude.arv && !S.deal.juan ? [["1","Claude's ARV"],["0","Engine ARV"]].map(([v,l])=>`<button type="button" class="chipbtn" aria-pressed="${String(!!S.deal.useClaude?1:0)===v}" data-v="${v}">${l}</button>`).join("") : (S.deal.juan?`<span class="pill info">Using Juan's ARV</span>`:"");
   $("basisChips").querySelectorAll("button").forEach(b=>b.onclick=()=>{S.deal.useClaude=b.dataset.v==="1"; render();});
   if(!cur.v){
-    $("verdict").innerHTML=`<div class="verdict review"><span class="big">WAITING</span><span class="line">Copy the prompts in step 2 and paste at least a few AI answers. The value appears here as soon as 1 comp passes the rules.</span></div>`;
+    $("verdict").innerHTML=`<div class="verdict review"><span class="big">WAITING</span><span class="line">Type the address and press <b>Run comps</b>. The value shows up here when ChatGPT is done.</span></div>`;
     $("kpis").innerHTML=""; $("alerts").innerHTML=""; $("compList").innerHTML=""; return;
   }
   const dm=dealMath(cur.v);
@@ -779,7 +689,7 @@ function renderAnswer(){
   const ask=s.ask;
   let cls,word,line;
   const profitAtAsk = ask? cur.v-dm.costs-ask : null;
-  if(!ask){ cls="review"; word="OFFER UP TO"; line=`<b>${money(dm.max)}</b>. Start at <b>${money(dm.target)}</b>. Type the asking price in step 1 to get BUY / REVIEW / PASS.`; }
+  if(!ask){ cls="review"; word="OFFER UP TO"; line=`<b>${money(dm.max)}</b>. Start at <b>${money(dm.target)}</b>. Type the asking price above to get BUY / REVIEW / PASS.`; }
   else if(ask<=dm.max && conf>=80){ cls="buy"; word="BUY"; line=`At <b>${money(ask)}</b> Twin makes about <b>${money(profitAtAsk)}</b>. Max offer is <b>${money(dm.max)}</b>.`; }
   else if(ask<=dm.max*1.04){ cls="review"; word="REVIEW"; line= ask<=dm.max ? `The numbers work (<b>${money(profitAtAsk)}</b> profit at ${money(ask)}), but confidence is only ${Math.round(conf)}%. Juan should look at the comps.` : `Asking <b>${money(ask)}</b> is just over the max offer of <b>${money(dm.max)}</b>. Profit would be ${money(profitAtAsk)}. Negotiate.`; }
   else { cls="pass"; word="PASS"; line=`Asking <b>${money(ask)}</b> is ${money(ask-dm.max)} over the max offer of <b>${money(dm.max)}</b>. Profit would be only ${money(profitAtAsk)}.`; }
@@ -787,12 +697,12 @@ function renderAnswer(){
   const cc = conf>=90?"good":conf>=75?"warn":"bad";
   const estsAll=AGENTS.filter(a=>S.agentReports[a.key]&&S.agentReports[a.key].value_arv).map(a=>S.agentReports[a.key].value_arv);
   const spreadAll=estsAll.length?(Math.max(...estsAll,arv.value)-Math.min(...estsAll,arv.value))/arv.value:0;
-  const escal = (conf<75||spreadAll>0.10) ? {short:"order a BPO / desktop appraisal",cls:"bad",msg:`<b>Next step: order a BPO or desktop appraisal.</b> Confidence is under 75% or the AIs are more than 10% apart, so don't rely on this number alone.`}
+  const escal = (conf<75||spreadAll>0.10) ? {short:"order a BPO / desktop appraisal",cls:"bad",msg:`<b>Next step: order a BPO or desktop appraisal.</b> Confidence is under 75% or the estimates are more than 10% apart, so don't rely on this number alone.`}
     : conf<90 ? {short:"Juan reviews the comps",cls:"warn",msg:`<b>Next step: Juan reviews the 5 comps.</b> Confidence is 75–90%.`}
     : {short:"accepted for offer",cls:"good",msg:`<b>Confidence is over 90%.</b> This value can go straight to an offer.`};
   const arvRange = cur.src==="Claude"&&S.claude.arv_range? S.claude.arv_range : [arv.low,arv.high];
   $("kpis").innerHTML=`
-    <div class="kpi hero"><div class="k">ARV · ${cur.src}</div><div class="v">${kmoney(cur.v)}</div><div class="r">${kmoney(arvRange[0])} – ${kmoney(arvRange[1])}</div></div>
+    <div class="kpi hero"><div class="k">ARV${cur.src==="Juan"?" · Juan":""}</div><div class="v">${kmoney(cur.v)}</div><div class="r">${kmoney(arvRange[0])} – ${kmoney(arvRange[1])}</div></div>
     <div class="kpi"><div class="k">As-is value</div><div class="v">${kmoney(cur.src==="Claude"&&S.claude.as_is_value?S.claude.as_is_value:asis.value)}</div><div class="r">today's condition</div></div>
     <div class="kpi"><div class="k">Twin buy (max)</div><div class="v">${kmoney(dm.max)}</div><div class="r">start at ${kmoney(dm.target)}</div></div>
     <div class="kpi"><div class="k">Expected profit</div><div class="v">${kmoney(ask?profitAtAsk:S.deal.profit)}</div><div class="r">${ask?"at asking price":"at max offer"} · reno ${kmoney(S.deal.reno)}</div></div>
@@ -805,9 +715,9 @@ function renderAnswer(){
   const ests=AGENTS.filter(a=>S.agentReports[a.key]&&S.agentReports[a.key].value_arv).map(a=>({n:a.name,v:S.agentReports[a.key].value_arv}));
   if(S.claude&&S.claude.arv) ests.push({n:"Claude",v:S.claude.arv});
   if(ests.length){ const all=[...ests.map(e=>e.v),arv.value]; const spread=(Math.max(...all)-Math.min(...all))/arv.value;
-    const list=ests.map(e=>`${esc(e.n)} ${kmoney(e.v)}`).join(" · ")+` · Engine ${kmoney(arv.value)}`;
-    al.push(spread>0.07?`<div class="alert warn"><b>The AIs disagree by ${pct(spread,0)}.</b> ${list}. Have Claude check it, and look at which comps drive the high and low numbers.</div>`:`<div class="alert good"><b>The AIs agree within ${pct(spread,0)}.</b> ${list}</div>`); }
-  if(arv.used.length<3) al.push(`<div class="alert bad"><b>Only ${arv.used.length} comp${arv.used.length===1?"":"s"} pass the rules.</b> Get answers from more AIs, or widen the radius under All comps &amp; rules.</div>`);
+    const list=ests.map(e=>`${esc(e.n)} ${kmoney(e.v)}`).join(" · ")+` · Comp math ${kmoney(arv.value)}`;
+    al.push(spread>0.07?`<div class="alert warn"><b>ChatGPT's own ARV and the comp math are ${pct(spread,0)} apart.</b> ${list}. Look at which comps drive the difference.</div>`:`<div class="alert good"><b>ChatGPT's own ARV and the comp math agree within ${pct(spread,0)}.</b> ${list}</div>`); }
+  if(arv.used.length<3) al.push(`<div class="alert bad"><b>Only ${arv.used.length} comp${arv.used.length===1?"":"s"} pass the rules.</b> Run it again, add your MLS export, or widen the radius under All comps &amp; rules.</div>`);
   const comp=R.competition;
   al.push(comp.length? `<div class="alert ${comp.length>4?'warn':'good'}"><b>${comp.length} competing listing${comp.length===1?"":"s"} nearby:</b> ${comp.map(c=>`${esc(street(c.address))} ${c.status.toLowerCase()} at ${kmoney(c.price)}`).join(" · ")}</div>`
     : `<div class="alert good"><b>No competing listings nearby.</b> Low supply supports the top half of the range.</div>`);
@@ -907,71 +817,6 @@ function parseCSV(text){
 }
 $("csvBtn").onclick=()=>{ try{ const r=mergeComps(parseCSV($("csvIn").value),"mls"); S.example=false; S.claude=null; render(); $("csvStatus").className="status ok"; $("csvStatus").textContent=`${r.added} added, ${r.merged} matched`; }catch(e){ $("csvStatus").className="status err"; $("csvStatus").textContent=e.message; } };
 
-/* ---------- Claude ---------- */
-function claudePrompt(){
-  const set=R.arv, as=R.asis;
-  const pack={subject:S.subject,rules:R.f,
-    adjustment_rates:{size_per_sf:R.glaRate,per_bed:S.adj.bed,per_bath:S.adj.bath,lot_per_sf:S.adj.lot,condition_step_pct:S.adj.cond,trend_pct_per_month:S.adj.time,arv_target_condition:S.adj.arvCond},
-    comps:R.rows.map(r=>{ const a=set.cands.find(x=>x.id===r.id), b=as.cands.find(x=>x.id===r.id); return {address:r.address,status:r.status,price:r.price,date:r.date,beds:r.beds,baths:r.baths,sqft:r.sqft,lot:r.lot,year:r.year,type:r.type,condition:r.cond,distance_mi:r.dist!=null?+r.dist.toFixed(2):null,found_by:r.agents||[],has_source:!!(r.src||[]).length,flags:r.conflicts||[],notes:r.notes,rejected_by_rules:r.why,arv_match:a?Math.round(a.score):null,arv_adjusted:a?Math.round(a.adjusted):null,asis_match:b?Math.round(b.score):null,asis_adjusted:b?Math.round(b.adjusted):null}; }),
-    engine:{as_is:Math.round(as.value||0),arv:Math.round(set.value||0),arv_range:[Math.round(set.low||0),Math.round(set.high||0)],confidence:Math.round(set.conf)},
-    agent_opinions:S.agentReports,
-    active_competition:R.competition.map(c=>({address:c.address,status:c.status,price:c.price,sqft:c.sqft,condition:c.cond}))};
-  return `You are the CHIEF APPRAISER for Twin Home Buyer, a Bay Area fix-and-flip company. Five AI research agents and a weighted adjustment engine produced the evidence below.
-
-RULES
-1. Do NOT average the agents' opinions. Ignore their numbers until the end.
-2. Work from the comps. Reject weak ones (wrong type, across a neighborhood boundary, busy street vs quiet, very different size or lot, stale sale, no source, facts that disagree) and say why.
-3. Rank the survivors by how well they explain THIS house. A comp several agents found, with sources, is stronger evidence.
-4. AS-IS value comes from comps in similar condition to the subject. ARV comes from renovated comps (condition 4-5), adjusted for differences.
-5. Active and pending listings show competition and direction, not sold evidence.
-6. Compare your answer with the engine and each agent; explain any gap over 5%.
-7. Be brief. Plain English for a busy investor. Use only addresses from the data.
-
-EVIDENCE (JSON):
-${JSON.stringify(pack)}
-
-Reply with ONLY one JSON object:
-{"as_is_value":0,"as_is_range":[0,0],"arv":0,"arv_range":[0,0],"confidence":0,
- "top_comps":[{"address":"...","weight_pct":0,"why":"one short sentence"}],
- "rejected":[{"address":"...","reason":"..."}],
- "why_this_value":"three sentences max",
- "what_could_make_us_wrong":"three sentences max",
- "recommended_list_price":0,
- "flags_for_juan":["..."]}`;
-}
-function renderClaude(){
-  const c=S.claude, el=$("claudeReport");
-  if(!c){ el.innerHTML=""; return; }
-  el.innerHTML=`<div class="report">
-    <h3>Claude's check: ARV ${kmoney(c.arv)} (${c.arv_range?kmoney(c.arv_range[0])+"–"+kmoney(c.arv_range[1]):""}) · as-is ${kmoney(c.as_is_value)} · ${c.confidence!=null?Math.round(c.confidence)+"% confident":""}${c.recommended_list_price?` · list at ${kmoney(c.recommended_list_price)}`:""}</h3>
-    ${c.why_this_value?`<p><b>Why this value.</b> ${esc(c.why_this_value)}</p>`:""}
-    ${c.what_could_make_us_wrong?`<p><b>What could make us wrong.</b> ${esc(c.what_could_make_us_wrong)}</p>`:""}
-    ${(c.flags_for_juan||[]).length?`<div class="alert warn"><b>For Juan:</b> ${c.flags_for_juan.map(esc).join(" · ")}</div>`:""}
-    ${(c.rejected||[]).length?`<details class="inner"><summary>Comps Claude threw out (${c.rejected.length})</summary><ul class="small" style="margin-top:6px">${c.rejected.map(r=>`<li><b>${esc(street(r.address))}</b>: ${esc(r.reason)}</li>`).join("")}</ul></details>`:""}
-  </div>`;
-}
-function normClaude(j){ for(const k of ["arv","as_is_value","confidence","recommended_list_price"]) j[k]=num(j[k]); return j; }
-$("copyClaude").onclick=()=>copyText(claudePrompt(),"Claude prompt copied. Paste it into claude.ai, then paste the reply in step 2's box.");
-let sampleFn=null, ctl=null;
-(async()=>{ try{ if(window.claude&&claude.use) sampleFn=await claude.use("sample"); }catch(e){ sampleFn=null; } if(sampleFn){ $("runClaude").hidden=false; $("copyClaude").hidden=true; } })();
-const SAMPLE_ERR={rate_limited:"Claude is busy or your usage limit was hit. Try again in a bit.",session_expired:"Sign in to claude.ai again, then retry.",refused:"Claude declined this one.",invalid_json:"Claude's reply came back garbled. Click again.",prompt_too_large:"Too many comps. Throw out the weak ones and retry.",empty_completion:"Claude returned nothing. Click again."};
-$("runClaude").onclick=async()=>{
-  if(!R.arv.cands.length){ toast("Get some comps first"); return; }
-  const st=$("claudeStatus"), stream=$("claudeStream"); ctl=new AbortController();
-  $("runClaude").disabled=true; $("stopClaude").hidden=false; st.className="status"; st.textContent="Claude is checking the comps… up to a minute"; stream.hidden=false; stream.textContent="";
-  try{
-    const j=await sampleFn.json(claudePrompt(),{modelTier:"complex",signal:ctl.signal,onText:({text})=>{ stream.textContent=text.slice(-900); stream.scrollTop=stream.scrollHeight; }});
-    S.claude=normClaude(j); S.deal.useClaude=true; st.className="status ok"; st.textContent="Claude's check is in"; render();
-  }catch(e){
-    if(["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"].includes(e.code)){ $("runClaude").hidden=true; $("copyClaude").hidden=false; st.className="status"; st.textContent="Claude can't run inside this page here. Use “Copy Claude check prompt”."; }
-    else if(e.code!=="cancelled"){ st.className="status err"; st.textContent=SAMPLE_ERR[e.code]||"Couldn't reach Claude. Try again."; } else st.textContent="Stopped";
-  }finally{ stream.hidden=true; $("runClaude").disabled=false; $("stopClaude").hidden=true; }
-};
-$("stopClaude").onclick=()=>ctl&&ctl.abort();
-// Claude reply pasted into the step-2 box
-const _paste=$("pasteBtn").onclick;
-$("pasteBtn").onclick=()=>{ try{ const j=extractJSON($("pasteIn").value); if(j.arv!==undefined && j.top_comps){ S.claude=normClaude(j); S.deal.useClaude=true; $("pasteIn").value=""; render(); $("pasteStatus").className="status ok"; $("pasteStatus").textContent="Claude's check loaded into step 3."; return; } }catch(e){} _paste(); };
-
 /* ---------- REI BlackBook summary ---------- */
 $("copyBB").onclick=()=>{
   const cur=currentARV(); if(!cur.v){ toast("No value yet"); return; }
@@ -987,38 +832,36 @@ $("copyBB").onclick=()=>{
 };
 
 /* ---------- deal log ---------- */
-let db=null, logRows=[];
+let logRows=[];
 const LOG_LS="twin-comp-ai-log-v1";
 const lsLog=()=>{ try{ return JSON.parse(localStorage.getItem(LOG_LS)||"[]"); }catch(e){ return []; } };
 const lsSave=rows=>{ try{ localStorage.setItem(LOG_LS,JSON.stringify(rows)); }catch(e){} };
 function renderLog(){
   const rows=[...logRows].sort((a,b)=>String(b.created).localeCompare(String(a.created)));
-  const err=(p,a)=>p&&a?(p-a)/a:null, acc={engine:[],claude:[],juan:[]};
+  const err=(p,a)=>p&&a?(p-a)/a:null, acc={engine:[],chatgpt:[],juan:[]};
   rows.forEach(r=>{ if(r.actual) for(const k of Object.keys(acc)){ const e=err(r[k+"_arv"],r.actual); if(e!=null) acc[k].push(Math.abs(e)); } });
   const sold=rows.filter(r=>r.actual).length;
-  $("logSub").textContent=`${rows.length} saved · ${sold} with a sale price${db?" · shared with your team":" · this browser only"}`;
-  $("accuracy").innerHTML=Object.entries(acc).map(([k,v])=>`<div class="kpi"><div class="k">${k==="engine"?"Engine":k==="claude"?"Claude":"Juan"} average miss</div><div class="v" style="font-size:20px">${v.length?pct(mean(v)):"—"}</div><div class="r">${v.length} sold · target ±3–5%${v.length?(mean(v)<=0.05?" · on target":" · not there yet"):""}</div></div>`).join("");
-  $("logTable").innerHTML=rows.length?`<thead><tr><th>Saved</th><th>Address</th><th class="n">Engine ARV</th><th class="n">Claude ARV</th><th class="n">Juan ARV</th><th class="n">Sold for</th><th class="n">Engine</th><th class="n">Claude</th><th class="n">Juan</th><th></th></tr></thead><tbody>`+
+  $("logSub").textContent=`${rows.length} saved · ${sold} with a sale price · saved in this browser`;
+  $("accuracy").innerHTML=Object.entries(acc).map(([k,v])=>`<div class="kpi"><div class="k">${k==="engine"?"Engine":k==="chatgpt"?"ChatGPT":"Juan"} average miss</div><div class="v" style="font-size:20px">${v.length?pct(mean(v)):"—"}</div><div class="r">${v.length} sold · target ±3–5%${v.length?(mean(v)<=0.05?" · on target":" · not there yet"):""}</div></div>`).join("");
+  $("logTable").innerHTML=rows.length?`<thead><tr><th>Saved</th><th>Address</th><th class="n">Engine ARV</th><th class="n">ChatGPT ARV</th><th class="n">Juan ARV</th><th class="n">Sold for</th><th class="n">Engine</th><th class="n">ChatGPT</th><th class="n">Juan</th><th></th></tr></thead><tbody>`+
     rows.map(r=>{ const f=k=>{ const e=err(r[k],r.actual); return e==null?"—":`<span style="color:${Math.abs(e)>0.05?'var(--bad)':'var(--good)'}">${e>=0?"+":""}${pct(e)}</span>`; };
-      return `<tr data-id="${esc(r._id)}"><td>${esc(String(r.created).slice(0,10))}</td><td>${esc(street(r.address))}</td><td class="n">${kmoney(r.engine_arv)}</td><td class="n">${kmoney(r.claude_arv)}</td><td class="n">${kmoney(r.juan_arv)}</td>
-      <td class="n"><input type="number" data-act="actual" value="${r.actual??""}" placeholder="sold $" style="width:120px" aria-label="Actual sale price"></td><td class="n">${f("engine_arv")}</td><td class="n">${f("claude_arv")}</td><td class="n">${f("juan_arv")}</td>
-      <td><button class="btn small" data-act="del" type="button">Delete</button></td></tr>`; }).join("")+"</tbody>":`<tbody><tr><td class="muted">Nothing saved yet. Use “Save to deal log” in step 3.</td></tr></tbody>`;
+      return `<tr data-id="${esc(r._id)}"><td>${esc(String(r.created).slice(0,10))}</td><td>${esc(street(r.address))}</td><td class="n">${kmoney(r.engine_arv)}</td><td class="n">${kmoney(r.chatgpt_arv)}</td><td class="n">${kmoney(r.juan_arv)}</td>
+      <td class="n"><input type="number" data-act="actual" value="${r.actual??""}" placeholder="sold $" style="width:120px" aria-label="Actual sale price"></td><td class="n">${f("engine_arv")}</td><td class="n">${f("chatgpt_arv")}</td><td class="n">${f("juan_arv")}</td>
+      <td><button class="btn small" data-act="del" type="button">Delete</button></td></tr>`; }).join("")+"</tbody>":`<tbody><tr><td class="muted">Nothing saved yet. Use “Save to deal log” above.</td></tr></tbody>`;
   $("logTable").querySelectorAll("tr[data-id]").forEach(tr=>{ const id=tr.dataset.id;
     tr.querySelector('[data-act=actual]').onchange=e=>updateLog(id,{actual:num(e.target.value)});
     const del=tr.querySelector('[data-act=del]'); del.onclick=()=>{ if(del.dataset.c) deleteLog(id); else { del.dataset.c="1"; del.textContent="Confirm"; } }; });
 }
-async function updateLog(id,patch){ if(db){ try{ await db.doc("valuations/"+id).update(patch); }catch(e){ $("logStatus").className="status err"; $("logStatus").textContent="Couldn't save. You may have view-only access."; } } else { logRows=logRows.map(r=>r._id===id?{...r,...patch}:r); lsSave(logRows); renderLog(); } }
-async function deleteLog(id){ if(db){ try{ await db.doc("valuations/"+id).delete(); }catch(e){ $("logStatus").className="status err"; $("logStatus").textContent="Couldn't delete."; } } else { logRows=logRows.filter(r=>r._id!==id); lsSave(logRows); renderLog(); } }
+function updateLog(id,patch){ logRows=logRows.map(r=>r._id===id?{...r,...patch}:r); lsSave(logRows); renderLog(); }
+function deleteLog(id){ logRows=logRows.filter(r=>r._id!==id); lsSave(logRows); renderLog(); }
 $("saveVal").onclick=async()=>{
   if(!R.arv.value){ toast("Nothing to save yet"); return; }
-  const rec={address:S.subject.address||"(no address)",created:new Date().toISOString(),engine_asis:Math.round(R.asis.value||0),engine_arv:Math.round(R.arv.value||0),claude_arv:S.claude&&S.claude.arv?Math.round(S.claude.arv):null,juan_arv:S.deal.juan||null,confidence:Math.round(R.arv.conf),comps_used:R.arv.used.map(u=>u.address),agents:Object.keys(S.agentReports),actual:null,example:!!S.example};
-  if(db){ try{ await db.collection("valuations").add(rec); toast("Saved to the team deal log"); }catch(e){ toast("Couldn't save. You may have view-only access."); } }
-  else { logRows.push({...rec,_id:"l"+Date.now().toString(36)}); lsSave(logRows); renderLog(); toast("Saved in this browser"); }
+  const rec={address:S.subject.address||"(no address)",created:new Date().toISOString(),engine_asis:Math.round(R.asis.value||0),engine_arv:Math.round(R.arv.value||0),chatgpt_arv:S.agentReports.chatgpt&&S.agentReports.chatgpt.value_arv?Math.round(S.agentReports.chatgpt.value_arv):null,juan_arv:S.deal.juan||null,confidence:Math.round(R.arv.conf),comps_used:R.arv.used.map(u=>u.address),agents:Object.keys(S.agentReports),actual:null,example:!!S.example};
+  logRows.push({...rec,_id:"l"+Date.now().toString(36)}); lsSave(logRows); renderLog(); toast("Saved to the deal log");
 };
 logRows=lsLog(); renderLog();
-(async()=>{ try{ if(window.claude&&claude.use) db=await claude.use("db"); }catch(e){ db=null; }
-  if(db) db.collection("valuations").onSnapshot(snap=>{ logRows=snap.docs.map(d=>({...d.data(),_id:d.id})); renderLog(); },()=>{ db=null; logRows=lsLog(); renderLog(); }); })();
-
 render();
 })();
 </script>
+</body>
+</html>

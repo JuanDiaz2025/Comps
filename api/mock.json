@@ -1,0 +1,266 @@
+{
+ "subject_facts": {
+  "beds": 3,
+  "baths": 2,
+  "sqft": 1036,
+  "lot_sqft": 7290,
+  "year_built": 1924,
+  "property_type": "SFR",
+  "lat": 37.8792,
+  "lng": -122.2594
+ },
+ "comps": [
+  {
+   "address": "1444 Scenic Ave, Berkeley, CA 94708",
+   "status": "Sold",
+   "price": 1300000,
+   "date": "2026-01-07",
+   "beds": 4,
+   "baths": 2,
+   "sqft": 1583,
+   "lot_sqft": 7200,
+   "year_built": 1925,
+   "property_type": "SFR",
+   "condition": 3,
+   "lat": 37.8781,
+   "lng": -122.259,
+   "source_urls": [
+    "https://www.redfin.com/"
+   ],
+   "notes": ""
+  },
+  {
+   "address": "1079 Keith Ave, Berkeley, CA 94708",
+   "status": "Sold",
+   "price": 1145000,
+   "date": "2025-11-15",
+   "beds": 2,
+   "baths": 1,
+   "sqft": 1012,
+   "lot_sqft": 5000,
+   "year_built": 1924,
+   "property_type": "SFR",
+   "condition": 3,
+   "lat": 37.8832,
+   "lng": -122.2695,
+   "source_urls": [
+    "https://www.zillow.com/"
+   ],
+   "notes": ""
+  },
+  {
+   "address": "2925 Shasta Rd, Berkeley, CA 94708",
+   "status": "Sold",
+   "price": 1225000,
+   "date": "2025-10-28",
+   "beds": 3,
+   "baths": 1,
+   "sqft": 1196,
+   "lot_sqft": 5200,
+   "year_built": 1930,
+   "property_type": "SFR",
+   "condition": 3,
+   "lat": 37.8887,
+   "lng": -122.2508,
+   "source_urls": [],
+   "notes": "Upper hills, winding road"
+  },
+  {
+   "address": "1460 Olympus Ave, Berkeley, CA 94708",
+   "status": "Sold",
+   "price": 1250000,
+   "date": "2025-09-12",
+   "beds": 3,
+   "baths": 2,
+   "sqft": 1248,
+   "lot_sqft": 6000,
+   "year_built": 1932,
+   "property_type": "SFR",
+   "condition": 3,
+   "lat": 37.8761,
+   "lng": -122.2552,
+   "source_urls": [
+    "https://www.redfin.com/"
+   ],
+   "notes": ""
+  },
+  {
+   "address": "1622 Scenic Ave, Berkeley, CA 94709",
+   "status": "Sold",
+   "price": 1727000,
+   "date": "2025-08-03",
+   "beds": 3,
+   "baths": 2,
+   "sqft": 1815,
+   "lot_sqft": 7150,
+   "year_built": 1928,
+   "property_type": "SFR",
+   "condition": 5,
+   "lat": 37.8704,
+   "lng": -122.2629,
+   "source_urls": [
+    "https://www.realtor.com/"
+   ],
+   "notes": "Full remodel, staged"
+  },
+  {
+   "address": "1510 Arch St, Berkeley, CA 94708",
+   "status": "Sold",
+   "price": 1495000,
+   "date": "2026-04-18",
+   "beds": 3,
+   "baths": 2,
+   "sqft": 1310,
+   "lot_sqft": 6100,
+   "year_built": 1926,
+   "property_type": "SFR",
+   "condition": 4,
+   "lat": 37.8768,
+   "lng": -122.2695,
+   "source_urls": [
+    "https://www.redfin.com/"
+   ],
+   "notes": "Updated kitchen and baths"
+  },
+  {
+   "address": "1350 Hawthorne Ter, Berkeley, CA 94708",
+   "status": "Sold",
+   "price": 1560000,
+   "date": "2026-06-02",
+   "beds": 3,
+   "baths": 2,
+   "sqft": 1240,
+   "lot_sqft": 5800,
+   "year_built": 1935,
+   "property_type": "SFR",
+   "condition": 4,
+   "lat": 37.8827,
+   "lng": -122.2552,
+   "source_urls": [
+    "https://www.zillow.com/"
+   ],
+   "notes": "Renovated 2024"
+  },
+  {
+   "address": "1400 Le Roy Ave, Berkeley, CA 94708",
+   "status": "Sold",
+   "price": 1080000,
+   "date": "2026-03-09",
+   "beds": 3,
+   "baths": 1,
+   "sqft": 1100,
+   "lot_sqft": 5500,
+   "year_built": 1922,
+   "property_type": "SFR",
+   "condition": 2,
+   "lat": 37.881,
+   "lng": -122.2574,
+   "source_urls": [
+    "https://www.redfin.com/"
+   ],
+   "notes": "Original condition, estate sale"
+  },
+  {
+   "address": "1520 Euclid Ave #3, Berkeley, CA 94708",
+   "status": "Sold",
+   "price": 865000,
+   "date": "2026-02-20",
+   "beds": 2,
+   "baths": 2,
+   "sqft": 1080,
+   "lot_sqft": 0,
+   "year_built": 1972,
+   "property_type": "Condo",
+   "condition": 3,
+   "lat": 37.8739,
+   "lng": -122.2618,
+   "source_urls": [],
+   "notes": "Condo, wrong type"
+  },
+  {
+   "address": "1733 Spruce St, Berkeley, CA 94709",
+   "status": "Sold",
+   "price": 1395000,
+   "date": "2026-05-14",
+   "beds": 3,
+   "baths": 2,
+   "sqft": 1420,
+   "lot_sqft": 4800,
+   "year_built": 1915,
+   "property_type": "SFR",
+   "condition": 4,
+   "lat": 37.8689,
+   "lng": -122.275,
+   "source_urls": [
+    "https://www.redfin.com/"
+   ],
+   "notes": "Busier street, across Spruce"
+  },
+  {
+   "address": "1195 Oxford St, Berkeley, CA 94707",
+   "status": "Sold",
+   "price": 1610000,
+   "date": "2025-05-30",
+   "beds": 4,
+   "baths": 3,
+   "sqft": 1980,
+   "lot_sqft": 6500,
+   "year_built": 1938,
+   "property_type": "SFR",
+   "condition": 4,
+   "lat": 37.892,
+   "lng": -122.275,
+   "source_urls": [],
+   "notes": "Older sale, larger"
+  },
+  {
+   "address": "1488 Scenic Ave, Berkeley, CA 94708",
+   "status": "Active",
+   "price": 1549000,
+   "date": "2026-09-02",
+   "beds": 3,
+   "baths": 2,
+   "sqft": 1290,
+   "lot_sqft": 6900,
+   "year_built": 1927,
+   "property_type": "SFR",
+   "condition": 4,
+   "lat": 37.8801,
+   "lng": -122.2603,
+   "source_urls": [
+    "https://www.redfin.com/"
+   ],
+   "notes": "Renovated flip on market, 22 DOM"
+  },
+  {
+   "address": "1360 Cedar St, Berkeley, CA 94702",
+   "status": "Pending",
+   "price": 1325000,
+   "date": "2026-08-20",
+   "beds": 3,
+   "baths": 2,
+   "sqft": 1260,
+   "lot_sqft": 5000,
+   "year_built": 1924,
+   "property_type": "SFR",
+   "condition": 4,
+   "lat": 37.8744,
+   "lng": -122.2893,
+   "source_urls": [],
+   "notes": ""
+  }
+ ],
+ "reject": [
+  {
+   "address": "1733 Spruce St, Berkeley, CA 94709",
+   "reason": "Busier street across Spruce, different micro-market"
+  }
+ ],
+ "value_as_is": 1160000,
+ "value_arv": 1385000,
+ "risks": [
+  "Two of the strongest renovated sales sit on quieter, higher streets with better views than the subject."
+ ],
+ "summary": "MOCK DATA. These sales are made up to test the page without an OpenAI key.",
+ "citations": []
+}

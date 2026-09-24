@@ -1,25 +1,48 @@
 # Twin Comp AI
 
-A multi-AI comparable sales engine for Twin Home Buyer. **The goal: one address in, one trusted valuation out.** That means one ARV, five comps, one confidence score and one buy price.
+Juan types an address and presses **Run comps**. ChatGPT searches the web through the OpenAI API: it looks up the property, finds and verifies sold comps with source links, and flags risks. The page then scores and adjusts the comps and shows:
 
-The main screen has three steps: **1. The property** (address, condition, asking price, reno budget), **2. Get the comps** (copy a prompt to each AI, paste the answers back), **3. The answer** (BUY / REVIEW / PASS, ARV, as-is, max offer, expected profit, confidence, main risk, the 5 best comps with a map, Claude check, copy for REI BlackBook). Everything below is under the collapsed sections.
+- **BUY / REVIEW / PASS** (or "offer up to" when there's no asking price)
+- **ARV, as-is value, Twin max buy, expected profit, confidence**
+- The next step: over 90% confidence goes straight to an offer. At 75–90%, Juan reviews the comps. Under 75%, or when the estimates are more than 10% apart, order a BPO.
+- The main risk, active competition, and the **5 best comps with why** on a map
+- **Copy for REI BlackBook** and **Save to deal log** (backtest: enter the sale price later, target ±3–5%)
 
-Escalation rule: confidence over 90% goes straight to an offer. At 75–90%, Juan reviews the comps. Under 75%, or when the AIs are more than 10% apart, order a BPO or desktop appraisal. Backtest target: ±3–5% error against the actual sale price.
+Deal numbers, comp rules, adjustment rates, the full comp list and MLS CSV import are in collapsed sections Juan doesn't need to open.
 
-Details:
+## Files
 
-1. **Subject file**: address, lat/lng, beds, baths, sf, lot, year, current condition (1–5), comp rules.
-2. **Research agents**: copy the role-specific prompt into each AI and paste its JSON reply back.
-   - ChatGPT: Appraiser (traditional comp search)
-   - Perplexity: Investigator (verifies facts and sources, flags conflicts)
-   - Grok: Devil's advocate (evidence for a lower and a higher value)
-   - Gemini / Kimi: Micro-market (boundaries, streets, schools, views)
-   - DeepSeek: Quant (gets the cleaned pool and does the math; can suggest adjustment rates)
-   - MLS / CSV: paste your own export. This is your ground truth.
-3. **Comp pool**: comps are de-duplicated by address. Each one shows how many AIs found it, whether it has a source, fact conflicts between agents, and why the rules rejected it.
-4. **Engine**: 100-point similarity score (location 30, size 20, type 15, condition 15, bed/bath 7, lot 5, recency 5, AI consensus 3). Paired adjustments cover time, GLA, beds, baths, lot and condition. The value is a score²-weighted average of the adjusted top N comps, run twice: once as-is and once as ARV at the target renovated condition. Confidence comes from dispersion, comp count, average score and gross adjustment. A method check compares weighted, median, trimmed mean, $/sf and nearest-neighbor results.
-5. **Claude, Chief Appraiser**: reconciles the evidence and does not average opinions. It runs in-page on claude.ai, or you can copy the prompt.
-6. **Twin buy price**: ARV minus reno, selling costs, holding, contingency and profit gives the max offer, with a BUY / REVIEW / PASS verdict against the asking price.
-7. **Deal log & backtest**: save each valuation, then enter the actual sale price later to track engine, Claude and Juan error.
+| File | What it does |
+|---|---|
+| `public/index.html` | The whole screen and the comp math (runs in the browser) |
+| `api/comps.js` | Calls ChatGPT (OpenAI Responses API with web search) and returns the comps as JSON. Your API key stays on the server. |
+| `api/mock.json` | Fake sample data for testing without a key (`MOCK=1`) |
+| `server.js` | Runs everything on your own computer |
 
-The example Berkeley data is placeholder, not verified sales.
+## Put it online (Vercel, about 5 minutes)
+
+1. Get an OpenAI API key at platform.openai.com → API keys. Add a payment method; each run costs cents.
+2. At vercel.com, sign in with GitHub, click **Add New → Project**, and import this repo. Keep the defaults.
+3. Under **Settings → Environment Variables**, add:
+   - `OPENAI_API_KEY` = your key
+   - `APP_PASSWORD` = a team password (strongly recommended, so strangers can't spend your credits)
+   - optional: `OPENAI_MODEL` (default `gpt-5.5`), `OPENAI_REASONING` (`low` / `medium` / `high`, default `medium`)
+4. Deploy. Send Juan the URL. The first run asks for the team password once.
+
+A run usually takes 1–3 minutes, because ChatGPT is searching. `vercel.json` allows up to 5 minutes.
+
+## Run it on your own computer
+
+```
+cp .env.example .env    # put your OPENAI_API_KEY in .env
+npm start               # open http://localhost:3000
+npm run mock            # try it with fake data, no key needed
+```
+
+Needs Node 18 or newer. There are no packages to install.
+
+## Next steps
+
+1. Backtest: run 10 houses Twin already sold (don't enter the sale price), save each one, then enter the real price in the deal log.
+2. Add a second opinion: Claude as Chief Appraiser (Anthropic API), then Perplexity, Grok, Gemini and DeepSeek. Each is another call like `api/comps.js`.
+3. Send the result straight to REI BlackBook and Airtable instead of copying it.
