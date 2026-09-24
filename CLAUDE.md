@@ -64,6 +64,7 @@ One internal valuation system that gives a defensible property value without rel
   - **C or a falling market turns a YES into NEEDS JUAN'S ATTENTION.**
 
   Value at today's prices; never add expected appreciation to the ARV.
+- **Profit target for good locations: $100K.** For a grade A or B location, $100K net is enough: the page lowers the target from $175K to $100K when the result arrives (it never raises a lower, price-adjusted target). C and D locations keep the normal target. Say so in the reply.
 - Separate as-is comps (condition 1–3) from ARV comps (condition 4–5). Use active and pending listings as competition, not as sold evidence.
 - **No guessing what the seller will get.** Claude is the decision maker: decide on facts only, meaning the offer range from the comps and the asking price when there is one. Don't set `likely_sale_price` and don't write "the seller will likely get". When the ask is under the max offer (common with bait list prices), the offer range runs from the ask up to the max, and the max is the ceiling if others bid.
 - Flag thin data (few 2026 sales, no dates, no condition) with lower confidence instead of false precision.
