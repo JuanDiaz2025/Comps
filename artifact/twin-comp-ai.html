@@ -185,6 +185,13 @@ details.adv>summary .sub{font-family:var(--body);font-size:13px;color:var(--mute
 .range span{color:var(--muted);font-size:12px}
 .chk{display:flex;gap:6px;align-items:center;font-size:13.5px;color:var(--ink-2)}
 .tblwrap{overflow-x:auto}
+.calc td{vertical-align:middle}
+.calcat{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.calcat .btn{padding:6px 10px;font-size:13px}
+.calc .calcin{white-space:normal}
+.calc .ci{display:inline-flex;align-items:center;gap:4px;margin:2px 8px 2px 0;white-space:nowrap}
+.calc .ci input{width:92px;padding:4px 6px;font:inherit;font-size:13px;text-align:right}
+@media (max-width:600px){ .calc tr{display:grid;grid-template-columns:1fr auto;gap:0 8px;border-bottom:1px solid var(--line,#e5e5e5);padding:4px 0} .calc td{border:0!important;padding:2px 4px} .calc td.calcin{grid-column:1/-1;padding-top:0} }
 table{border-collapse:collapse;width:100%;font-size:13px}
 th,td{padding:6px 8px;border-bottom:1px solid var(--line-2);text-align:left;white-space:nowrap}
 th{font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.03em;text-transform:uppercase;background:var(--surface-2)}
@@ -274,7 +281,7 @@ details.inner summary{cursor:pointer;font-weight:600;font-size:13.5px;color:var(
         <button class="btn" id="copyBB" type="button">Copy for REI BlackBook</button>
         <button class="btn" id="saveVal" type="button">Save to deal log</button>
       </div>
-      <details class="inner" id="calcBox"><summary id="calcSum">Profit calculator</summary><div class="tblwrap" style="margin-top:8px"><table id="calcTable"></table></div></details>
+      <details class="inner" id="calcBox"><summary id="calcSum">Profit calculator</summary><p class="small muted" style="margin:8px 0 0">Type over any number. The verdict and max offer update as you go. Leave a box blank to use the default.</p><div id="calcAt" class="calcat"></div><div class="tblwrap" style="margin-top:8px"><table id="calcTable" class="calc"></table></div><button class="btn" id="calcReset" type="button" style="margin-top:8px">Reset calculator</button></details>
       <p class="small muted" id="summaryLine" style="margin:0"></p>
       <textarea id="copyFallback" rows="6" hidden aria-label="Text to copy"></textarea>
     </div>
@@ -430,7 +437,7 @@ const EXAMPLE = {
 
 const DEFAULT_FILTERS = {auto:true,radius:1,types:["SFR"],bedsMin:2,bedsMax:4,bathsMin:1,bathsMax:3,sqftMin:800,sqftMax:1600,yearMin:1900,yearMax:1950,months:12,includeListings:false,topN:6};
 const DEFAULT_ADJ = {glaAuto:1,gla:450,bed:25000,bath:35000,lot:15,cond:6,time:0.3,arvCond:4};
-const DEFAULT_DEAL = {reno:120000,renoAuto:true,city:"",months:3,sell:5,mariaelena:2.5,loanPct:100,rate:10,points:1,crate:12,cpoints:5,ptax:1.2,staging:5000,ins:1500,escrow:1000,other:2000,contPct:10,profit:175000,juan:null,useClaude:true};
+const DEFAULT_DEAL = {reno:120000,renoAuto:true,city:"",months:3,sell:5,mariaelena:2.5,loanPct:100,rate:10,points:1,crate:12,cpoints:5,ptax:1.2,staging:5000,ins:1500,escrow:1000,other:2000,contPct:10,profit:175000,juan:null,useClaude:true,ttOverride:null,calcPrice:null};
 
 function freshState(example){
   const base = {subject:{address:"",lat:null,lng:null,beds:null,baths:null,sqft:null,lot:null,year:null,type:"SFR",cond:2,ask:null,notes:""},
@@ -585,7 +592,7 @@ function resetIfNewAddress(){
   if(!n || !S.factsFor || n===S.factsFor) return false;
   Object.assign(S.subject,{beds:null,baths:null,sqft:null,lot:null,year:null,lat:null,lng:null,notes:"",ask:null});
   S.comps=S.comps.filter(c=>(c.agents||[]).includes("mls")); S.agentReports={}; S.claude=null; S.factsFor=null;
-  Object.assign(S.deal,{renoAuto:true,reno:DEFAULT_DEAL.reno,months:DEFAULT_DEAL.months,profit:DEFAULT_DEAL.profit});
+  Object.assign(S.deal,{renoAuto:true,reno:DEFAULT_DEAL.reno,months:DEFAULT_DEAL.months,profit:DEFAULT_DEAL.profit,juan:null,calcPrice:null,ttOverride:null});
   const st=$("runStatus"); st.className="status"; st.textContent="";
   return true;
 }
@@ -1090,7 +1097,8 @@ function cityOf(){
   const k=parts.findIndex(x=>/^(CA|California)\b/i.test(x));
   return (k>0?parts[k-1]:parts[1]||"").toUpperCase();
 }
-function ttRate(p){ const f=TT[cityOf()]; return f? f(p) : 1.10; }
+function cityTT(p){ const f=TT[cityOf()]; return f? f(p) : 1.10; }
+function ttRate(p){ return S.deal.ttOverride!=null&&S.deal.ttOverride!==""? Number(S.deal.ttOverride) : cityTT(p); }
 function autoReno(){
   const sf=S.subject.sqft; if(!sf) return null;
   const rate = S.subject.cond<=2?140 : S.subject.cond==3?60 : S.subject.cond==4?30 : 0;
@@ -1120,30 +1128,60 @@ function dealMath(arv){
     return {p, v, fixed, net, gross, cash, roi: cash>1000? net/cash*12/m : null}; };
   return {max, target:max-Math.round(arv*0.02/5000)*5000, profitAt, breakdown, city:cityOf(), m};
 }
+// Editable profit calculator: every input writes to S.deal, so the verdict and max offer follow.
+// juan = ARV override, ttOverride = transfer tax per $1,000, calcPrice = what-if purchase price (calculator only).
+const CALC_ROWS = [
+  {id:"arv", label:"Estimated sale (ARV)", val:c=>c.arv, inp:[{k:"juan",pre:"$",ph:c=>Math.round(c.autoArv)}], note:c=>S.deal.juan?"your ARV (blank = "+c.arvSrc+")":c.arvSrc+"'s ARV"},
+  {id:"comm", label:"− Sale commission", val:c=>-c.f.commission, inp:[{k:"sell",post:"% of sale"}]},
+  {id:"stt", label:"− Transfer tax on resale", val:c=>-c.f.saleTT, inp:[{k:"ttOverride",pre:"$",post:"per $1,000",ph:c=>cityTT(c.arv).toFixed(2)}], note:c=>S.deal.ttOverride?"your rate, both sides":(c.dm.city||"city")+" rate"},
+  {id:"btt", label:"− Transfer tax on purchase", val:c=>-c.v.buyTT, note:c=>`$${ttRate(c.p).toFixed(2)} per $1,000`},
+  {id:"reno", label:"− Renovation (hard costs)", val:c=>-c.f.reno, inp:[{k:"reno",pre:"$"}], note:()=>S.deal.renoAuto?"from sq ft":"entered"},
+  {id:"cont", label:"− Contingency", val:c=>-c.f.cont, inp:[{k:"contPct",post:"% of reno"}]},
+  {id:"pts", label:"− Purchase loan points", val:c=>-c.v.points, inp:[{k:"points",post:"pts"},{k:"loanPct",post:"% loan"}], note:c=>`on ${money(c.v.loan)}, charged once`},
+  {id:"int", label:"− Purchase loan interest", val:c=>-c.v.interest, inp:[{k:"rate",post:"%"},{k:"months",post:"months"}]},
+  {id:"cpts", label:"− Construction loan points", val:c=>-c.f.cPoints, inp:[{k:"cpoints",post:"pts on reno"}]},
+  {id:"cint", label:"− Construction loan interest", val:c=>-c.f.cInterest, inp:[{k:"crate",post:"%"}], note:c=>`for ${c.dm.m} months`},
+  {id:"ptax", label:"− Property tax", val:c=>-c.v.ptax, inp:[{k:"ptax",post:"%/yr"}]},
+  {id:"stg", label:"− Staging", val:c=>-c.f.staging, inp:[{k:"staging",pre:"$"}]},
+  {id:"ins", label:"− Insurance", val:c=>-c.f.ins, inp:[{k:"ins",pre:"$"}]},
+  {id:"esc", label:"− Escrow", val:c=>-c.f.escrow, inp:[{k:"escrow",pre:"$"}]},
+  {id:"oth", label:"− Other", val:c=>-c.f.other, inp:[{k:"other",pre:"$"}]},
+  {id:"price", label:"− Purchase price", val:c=>-c.p, inp:[{k:"calcPrice",pre:"$",ph:c=>Math.round(c.baseP)}], note:c=>S.deal.calcPrice?"what-if (verdict still uses the likely price)":c.p===c.dm.max?"max offer: net equals your target profit":"likely price the house will sell for"},
+  {id:"net", label:"<b>Net profit</b>", strong:true, val:c=>c.b.net, note:()=>"after paying the full commission"},
+  {id:"gross", label:"Gross profit", val:c=>c.b.gross, inp:[{k:"mariaelena",post:"% back"}], note:()=>"Mariaelena's share comes back in-house"},
+  {id:"max", label:"Max offer", val:c=>c.dm.max, inp:[{k:"profit",pre:"$",post:"target profit"}]},
+  {id:"cash", label:"Cash needed", val:c=>c.b.cash, note:()=>"down payment + purchase transfer tax + escrow"},
+  {id:"roi", label:"ROI (annualized)", text:c=>c.b.roi==null?"n/a":c.b.roi>10?"over 1,000%":c.b.roi<-10?"under −1,000%":Math.round(c.b.roi*100)+"%", note:c=>c.b.roi==null||Math.abs(c.b.roi)>10?"almost no cash in at "+S.deal.loanPct+"% financing, so ROI isn't meaningful":""}
+];
+const CALC_NULLABLE = new Set(["juan","ttOverride","calcPrice"]);
+function buildCalc(){
+  const t=$("calcTable"); if(t.dataset.built) return; t.dataset.built="1";
+  t.innerHTML="<tbody>"+CALC_ROWS.map(r=>`<tr><td>${r.label}</td><td class="n" id="cv_${r.id}"></td><td class="small muted calcin">${(r.inp||[]).map(i=>`<label class="ci">${i.pre||""}<input type="number" inputmode="decimal" step="any" data-k="${i.k}" aria-label="${r.label.replace(/<[^>]+>|− /g,"")} ${i.post||""}">${i.post?`<span>${i.post}</span>`:""}</label>`).join("")}<span id="cn_${r.id}"></span></td></tr>`).join("")+"</tbody>";
+  t.addEventListener("input",e=>{ const el=e.target, k=el.dataset&&el.dataset.k; if(!k) return;
+    const v=el.value===""?null:num(el.value);
+    S.deal[k] = v==null ? (CALC_NULLABLE.has(k)?null:(k==="reno"?0:DEFAULT_DEAL[k])) : v;
+    if(k==="reno") S.deal.renoAuto=false;
+    render(); });
+  $("calcReset").onclick=()=>{ const keep={city:S.deal.city,useClaude:S.deal.useClaude};
+    S.deal={...DEFAULT_DEAL,...keep,renoAuto:true,juan:null,calcPrice:null,ttOverride:null}; render(); toast("Calculator reset to Twin's defaults"); };
+}
 function renderCalc(arv, price){
-  const box=$("calcBox"); if(!arv){ box.hidden=true; return; } box.hidden=false;
-  const dm=dealMath(arv), p=price||dm.max, b=dm.breakdown(p), f=b.fixed, v=b.v;
-  $("calcSum").textContent=`Profit calculator at ${money(p)} (${price?"likely/asking price":"max offer"}) · ${dm.city||"city not found"} · ${dm.m} months`;
-  const row=(k,val,note)=>`<tr><td>${k}</td><td class="n">${money(val)}</td><td class="small muted" style="white-space:normal">${note||""}</td></tr>`;
-  $("calcTable").innerHTML=`<tbody>
-    ${row("Estimated sale (ARV)",arv)}
-    ${row("− Sale commission",-f.commission,`${S.deal.sell}% of sale`)}
-    ${row("− Transfer tax on resale",-f.saleTT,`$${ttRate(arv).toFixed(2)} per $1,000`)}
-    ${row("− Transfer tax on purchase",-v.buyTT,`$${ttRate(p).toFixed(2)} per $1,000`)}
-    ${row("− Renovation (hard costs)",-f.reno,S.deal.renoAuto?"from sq ft":"entered")}
-    ${row("− Contingency",-f.cont,`${S.deal.contPct}% of reno`)}
-    ${row("− Purchase loan points",-v.points,`${S.deal.points} pt on ${money(v.loan)}, charged once`)}
-    ${row("− Purchase loan interest",-v.interest,`${S.deal.rate}% for ${dm.m} months`)}
-    ${row("− Construction loan points",-f.cPoints,`${S.deal.cpoints} pts on the reno, charged once`)}
-    ${row("− Construction loan interest",-f.cInterest,`${S.deal.crate}% for ${dm.m} months`)}
-    ${row("− Property tax",-v.ptax,`${S.deal.ptax}%/yr for ${dm.m} months`)}
-    ${row("− Staging, insurance, escrow, other",-(f.staging+f.ins+f.escrow+f.other))}
-    ${row("− Purchase price",-p)}
-    <tr><td><b>Net profit</b></td><td class="n"><b style="color:var(--${b.net<0?'bad':'good'})">${money(b.net)}</b></td><td class="small muted">after paying the full commission</td></tr>
-    ${row("Gross profit",b.gross,`adds back Mariaelena's ${S.deal.mariaelena}%`)}
-    ${row("Cash needed",b.cash,"down payment + purchase transfer tax + escrow")}
-    <tr><td>ROI (annualized)</td><td class="n">${b.roi==null?"n/a":b.roi>10?"over 1,000%":Math.round(b.roi*100)+"%"}</td><td class="small muted">${b.roi==null||b.roi>10?"almost no cash in at "+S.deal.loanPct+"% financing, so ROI isn't meaningful":""}</td></tr>
-  </tbody>`;
+  const box=$("calcBox"); if(!arv){ box.hidden=true; return; } box.hidden=false; buildCalc();
+  const cur=currentARV(), autoArv = S.deal.useClaude&&S.claude&&S.claude.arv ? S.claude.arv : R.arv.value;
+  const dm=dealMath(arv), atLikely=S.calcAt==="likely"&&price, baseP=atLikely?price:dm.max, p=S.deal.calcPrice||baseP, b=dm.breakdown(p);
+  $("calcAt").innerHTML = `<span class="small muted">Show the deal at:</span> <button type="button" class="btn${!atLikely&&!S.deal.calcPrice?" primary":""}" data-at="max">Max offer ${money(dm.max)}</button>`+(price?` <button type="button" class="btn${atLikely&&!S.deal.calcPrice?" primary":""}" data-at="likely">Likely price ${money(price)} · net ${money(dm.profitAt(price))}</button>`:"");
+  $("calcAt").onclick=e=>{ const at=e.target.closest("button")?.dataset.at; if(!at) return; S.calcAt=at; S.deal.calcPrice=null; render(); };
+  const c={arv,autoArv,arvSrc:S.deal.useClaude&&S.claude&&S.claude.arv?"Claude":"engine",dm,p,baseP,b,f:b.fixed,v:b.v};
+  $("calcSum").textContent=`Profit calculator (editable) at ${money(p)} (${S.deal.calcPrice?"what-if price":atLikely?"likely price":"max offer"}) · ${dm.city||"city not found"} · ${dm.m} months · net ${money(b.net)}`;
+  for(const r of CALC_ROWS){
+    const cell=$("cv_"+r.id);
+    if(r.text) cell.textContent=r.text(c);
+    else { const val=r.val(c); cell.innerHTML = r.strong?`<b style="color:var(--${val<0?'bad':'good'})">${money(val)}</b>`:money(val); }
+    $("cn_"+r.id).textContent = r.note? r.note(c) : "";
+    for(const i of (r.inp||[])){ const el=$("calcTable").querySelector(`input[data-k="${i.k}"]`); if(!el) continue;
+      if(i.ph) el.placeholder=i.ph(c);
+      if(document.activeElement!==el) el.value = S.deal[i.k]??""; }
+  }
 }
 function whyLine(u){
   const s=S.subject, bits=[];
@@ -1185,7 +1223,7 @@ function renderAnswer(){
   $("mapbox").classList.remove("searching");
   const dm=dealMath(cur.v);
   const conf = cur.src==="Claude"&&S.claude.confidence? S.claude.confidence : arv.conf;
-  const ask=s.ask, likely = cur.src==="Claude"&&S.claude.likely_sale_price? S.claude.likely_sale_price : null;
+  const ask=s.ask, likely = S.deal.useClaude&&S.claude&&S.claude.likely_sale_price? S.claude.likely_sale_price : null;
   const price = Math.max(ask||0, likely||0) || null;
   const priceLabel = likely && (!ask || likely>ask) ? "at the likely sale price" : "at asking price";
   const profitAt = p => dm.profitAt(p);
