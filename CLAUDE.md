@@ -99,6 +99,11 @@ Source: Twin's Google Sheet profit calculator (fileId 1Kp52OUCR2tIQI4Lj9J1Mmbq60
 
   **First question from the photos: is it already a nice house?** Well kept, move-in ready, attractive original features in good shape, recent systems. If yes, it has no flip upside even if the kitchen or baths are older but clean and working. Set `cond` to 4 (the page's automatic NO, DO NOT BUY) and say so. Don't price a remodel to manufacture a deal. Only budget a renovation when the photos show real work Twin can add value with (worn, broken, original-and-tired, fixer).
 
+  Before you save a budget, check it:
+  - Divide the total by the sq ft. If it's outside the local range ($200–250/sf in SF and the inner Bay Area), rework it, or say why in the summary.
+  - Every line cites a photo number, or says "allowance, unseen".
+  - Anything the photos show in fair shape (roof, siding, hardwood) gets repair or refinish money, not replacement.
+
   Budget only what the photos show needs work. Keep good original features (wood trim, built-ins, hardwood), and cite photo numbers in the budget lines.
 - **Claude sets the renovation budget.** Build an itemized budget for the scope needed to reach the ARV comps' finish level:
   - Items: kitchen, baths, electrical, plumbing, floors, paint, exterior, windows, roof, foundation/seismic, permits, landscaping.
