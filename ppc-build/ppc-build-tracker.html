@@ -92,11 +92,12 @@ ul.tasks{list-style:none;margin:0;padding:0}
 .task{display:grid;grid-template-columns:auto 1fr;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line)}
 .task:last-child{border-bottom:0}
 .task[data-status="done"] .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
-.chip{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;width:78px;padding:4px 0;text-align:center;border-radius:3px;border:1px solid var(--line);background:var(--bg);cursor:pointer;height:fit-content}
+.chip{appearance:none;-webkit-appearance:none;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;width:92px;padding:5px 20px 5px 8px;border-radius:3px;border:1px solid var(--line);background-color:var(--bg);color:var(--ink);cursor:pointer;height:fit-content;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 11px) 50%,calc(100% - 7px) 50%;background-size:4px 4px;background-repeat:no-repeat}
+.chip option{text-transform:none;color:var(--ink);background:var(--surface)}
 .chip[data-s="doing"]{background:var(--warn-soft);color:var(--warn);border-color:transparent}
 .chip[data-s="done"]{background:var(--ok-soft);color:var(--ok);border-color:transparent}
 .chip[data-s="blocked"]{background:var(--bad-soft);color:var(--bad);border-color:transparent}
-.chip:disabled{cursor:default;opacity:.85}
+.chip:disabled{cursor:default;opacity:.6}
 .tbody{display:grid;gap:4px;min-width:0}
 .tt{font-weight:500}
 .td{color:var(--muted);font-size:14px}
@@ -137,9 +138,14 @@ table.alarms tr:last-child td{border-bottom:0}
   .doctrine{grid-template-columns:1fr}
   .rules{grid-template-columns:1fr}
 }
+@media (max-width:600px){
+  .bar{position:static}
+  .bar-in{gap:8px 12px}
+  .bar .name{font-size:18px}
+}
 @media (max-width:480px){
   .task{grid-template-columns:1fr}
-  .chip{width:auto;justify-self:start;padding-inline:10px}
+  .chip{justify-self:start}
 }
 @media (prefers-reduced-motion:reduce){.pbar i{transition:none}}
 </style>
@@ -221,7 +227,7 @@ Problem     "SJ Sellers" spent $611 with 0 qualified in 5 days.
 Waste       11 search terms, $298, look like jobs/rentals. Review list ready.
 Verdict     NO BIDDING CHANGE. Approve or reject the 11 negatives.</div>
 
-<p class="foot">Status on each task is shared: anyone on the team who opens this page sees the same checkmarks and notes, live. Click a status chip to cycle it (to do → doing → done → blocked). Housing ads note: Google's US housing policy bars targeting by age, gender, parental status, marital status or ZIP code. Use city or compliant radius targeting only, and let the app block anything else.</p>
+<p class="foot">Status on each task is shared: anyone on the team who opens this page sees the same checkmarks and notes, live. Pick a status from the menu on each task (To do, Doing, Done, Blocked) and add a note for blockers. Housing ads note: Google's US housing policy bars targeting by age, gender, parental status, marital status or ZIP code. Use city or compliant radius targeting only, and let the app block anything else.</p>
 </div>
 
 <script>
@@ -438,7 +444,8 @@ Then build the budget simulator from each campaign's historical spend vs qualifi
 const STATUSES = ["todo","doing","done","blocked"];
 const LABEL = {todo:"To do",doing:"Doing",done:"Done",blocked:"Blocked"};
 const state = {};           // taskId -> {status, note, by, at}
-let db = null, user = null, myId = null, canWrite = true;
+let db = null, user = null, myId = null, canWrite = false;
+const writeChain = {};      // taskId -> promise, so saves to one task never overlap
 const profileCache = {};
 let filter = "all";
 try { filter = localStorage.getItem("ppc-filter") || "all"; } catch(e) {}
@@ -457,7 +464,7 @@ function buildPage(){
       </div>
       <ul class="tasks">${p.tasks.map(([id,t,d]) => `
         <li class="task" id="t-${id}" data-status="todo">
-          <button type="button" class="chip" data-id="${id}" data-s="todo" aria-label="Status for: ${esc(t)}">To do</button>
+          <select class="chip" id="s-${id}" data-id="${id}" data-s="todo" aria-label="Status for: ${esc(t)}" disabled>${STATUSES.map(v => `<option value="${v}">${LABEL[v]}</option>`).join("")}</select>
           <div class="tbody">
             <div class="tt">${esc(t)}</div>
             ${d ? `<div class="td">${esc(d)}</div>` : ""}
@@ -500,7 +507,7 @@ async function refresh(){
       const li = document.getElementById("t-"+id);
       li.dataset.status = st;
       const chip = li.querySelector(".chip");
-      chip.dataset.s = st; chip.textContent = LABEL[st]; chip.disabled = !canWrite;
+      chip.dataset.s = st; if (document.activeElement !== chip) chip.value = st; chip.disabled = !canWrite;
       const note = document.getElementById("n-"+id);
       if (document.activeElement !== note) note.value = s.note || "";
       note.disabled = !canWrite;
@@ -519,6 +526,10 @@ async function refresh(){
   if (user && ids.size){
     try { Object.assign(profileCache, await user.profiles([...ids])); } catch(e) {}
   }
+  renderWho();
+}
+
+function renderWho(){
   for (const p of PHASES) for (const [id] of p.tasks){
     const s = state[id]; const w = document.getElementById("w-"+id);
     if (!s || !s.at){ w.textContent = ""; continue; }
@@ -527,28 +538,25 @@ async function refresh(){
   }
 }
 
-async function save(id, patch){
-  if (!db){ setSync("err","Not saved: sharing unavailable in this view"); return; }
+function save(id, patch){
+  if (!db || !canWrite) return;
   const prev = state[id] || {};
   const next = { status: prev.status || "todo", note: prev.note || "", ...patch, by: myId || prev.by || "", at: new Date().toISOString() };
   state[id] = next; refresh();
-  try { await db.doc("tasks/"+id).set(next); }
-  catch(e){
+  const run = () => db.doc("tasks/"+id).set(next).then(() => {
+    setSync("live", "Live · shared with team");
+  }, e => {
     if (e && e.code === "invalid_argument"){ canWrite = false; setSync("err","View only: you can't change status"); refresh(); }
-    else setSync("err","Save failed, try again");
-  }
+    else if (e && e.code === "unavailable"){ return new Promise(r => setTimeout(r, 400 + Math.random()*600)).then(() => db.doc("tasks/"+id).set(next)).then(() => setSync("live","Live · shared with team"), () => setSync("err","Save failed. Check your connection and try again")); }
+    else setSync("err","Save failed. Check your connection and try again");
+  });
+  writeChain[id] = (writeChain[id] || Promise.resolve()).then(run, run);
 }
 
 function setSync(kind, text){ const el = $("#sync"); el.className = "sync " + (kind||""); el.textContent = text; }
 
 /* ---------- events ---------- */
 document.addEventListener("click", e => {
-  const chip = e.target.closest(".chip");
-  if (chip && canWrite){
-    const id = chip.dataset.id; const cur = (state[id] && state[id].status) || "todo";
-    save(id, { status: STATUSES[(STATUSES.indexOf(cur)+1) % STATUSES.length] });
-    return;
-  }
   const copy = e.target.closest(".copy");
   if (copy){
     const pre = document.getElementById(copy.dataset.pre);
@@ -566,6 +574,13 @@ document.addEventListener("click", e => {
   }
 });
 document.addEventListener("change", e => {
+  const c = e.target.closest(".chip");
+  if (c && canWrite){
+    const id = c.dataset.id;
+    if (STATUSES.includes(c.value) && c.value !== ((state[id] && state[id].status) || "todo")) save(id, { status: c.value });
+    c.blur();
+    return;
+  }
   const n = e.target.closest(".note");
   if (n && canWrite){
     const id = n.dataset.id; const v = n.value.trim().slice(0,500);
@@ -578,16 +593,19 @@ document.addEventListener("keydown", e => { if (e.key==="Enter" && e.target.clas
 buildPage();
 document.querySelectorAll(".filters button").forEach(b => b.setAttribute("aria-pressed", b.dataset.f===filter ? "true" : "false"));
 refresh();
+setInterval(renderWho, 60000);
 
 (async () => {
   if (!window.claude || !window.claude.use){ setSync("", "Local copy · status not shared"); return; }
   const [d, u] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
   db = d; user = u;
-  if (!db){ setSync("", "Read only · status not shared"); canWrite = false; refresh(); return; }
+  if (!db){ setSync("", "Read only · status not shared"); refresh(); return; }
+  canWrite = true;
   if (user){
     try { myId = await user.id(); } catch(e) {}
     try { const c = await user.can("data.write"); if (c === false) canWrite = false; } catch(e) {}
   }
+  refresh();
   db.collection("tasks").onSnapshot(snap => {
     for (const doc of snap.docs) state[doc.id] = doc.data();
     for (const ch of snap.docChanges()) if (ch.type==="removed") delete state[ch.doc.id];
