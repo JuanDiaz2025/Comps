@@ -1,0 +1,598 @@
+<title>Twin Home Buyer PPC Brain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F2F4F1; --surface:#FFFFFF; --sunk:#E8ECE8; --ink:#15201C; --muted:#56635D; --line:#D3DAD5;
+  --accent:#0E5C70; --accent-ink:#FFFFFF; --accent-soft:#DCEBEF;
+  --ok:#2E7A4C; --ok-soft:#DDEFE3; --warn:#A96A12; --warn-soft:#F6EAD3; --bad:#B0281F; --bad-soft:#F6DEDB;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0E1412; --surface:#161F1C; --sunk:#1D2825; --ink:#E4EBE7; --muted:#95A39C; --line:#2A3632;
+    --accent:#5EB2C8; --accent-ink:#06171C; --accent-soft:#16333B;
+    --ok:#6CC08C; --ok-soft:#173424; --warn:#E0A548; --warn-soft:#3A2C12; --bad:#EE7B70; --bad-soft:#3D1B18;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E1412; --surface:#161F1C; --sunk:#1D2825; --ink:#E4EBE7; --muted:#95A39C; --line:#2A3632;
+  --accent:#5EB2C8; --accent-ink:#06171C; --accent-soft:#16333B;
+  --ok:#6CC08C; --ok-soft:#173424; --warn:#E0A548; --warn-soft:#3A2C12; --bad:#EE7B70; --bad-soft:#3D1B18;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;padding-inline:16px;padding-block:0 64px}
+.wrap{max-width:1120px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:.01em;text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(34px,6vw,56px)}
+h2{font-size:28px}
+h3{font-size:19px;letter-spacing:.02em}
+p{margin:0}
+.mono{font-family:var(--mono)}
+.label{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+button{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* sticky desk bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-16px;padding:10px 16px}
+.bar-in{max-width:1120px;margin:0 auto;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.bar .name{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:.03em}
+.meter{flex:1 1 220px;display:flex;align-items:center;gap:10px;min-width:0}
+.track{flex:1;height:8px;background:var(--sunk);border-radius:4px;overflow:hidden;display:flex}
+.track i{display:block;height:100%}
+.track .d{background:var(--ok)} .track .w{background:var(--warn)} .track .b{background:var(--bad)}
+.pct{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13px;white-space:nowrap}
+.sync{font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
+.sync::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);margin-right:6px;vertical-align:1px}
+.sync.live::before{background:var(--ok)} .sync.err::before{background:var(--bad)}
+.filters{display:flex;gap:4px}
+.filters button{border:1px solid var(--line);background:var(--surface);padding:4px 10px;border-radius:4px;font-size:13px;cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* hero */
+.hero{padding-block:40px 28px;display:grid;gap:22px}
+.hero .lede{font-size:18px;max-width:64ch;color:var(--ink)}
+.loop{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-family:var(--mono);font-size:12.5px}
+.loop span{background:var(--surface);border:1px solid var(--line);padding:4px 8px;border-radius:3px}
+.loop span.g{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.loop b{color:var(--muted);font-weight:400}
+.doctrine{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+.doctrine div{background:var(--surface);padding:14px 16px;display:grid;gap:4px}
+.doctrine strong{font-family:var(--display);font-size:22px;letter-spacing:.02em}
+.doctrine p{color:var(--muted);font-size:14px}
+
+.rules{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 28px;counter-reset:r;padding:0;margin:0;list-style:none}
+.rules li{counter-increment:r;display:grid;grid-template-columns:28px 1fr;font-size:14.5px}
+.rules li::before{content:counter(r);font-family:var(--mono);color:var(--accent);font-weight:500}
+
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap;margin-block:40px 14px;border-bottom:2px solid var(--ink);padding-bottom:8px}
+
+/* layout */
+.cols{display:grid;grid-template-columns:200px 1fr;gap:32px;align-items:start}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 64px);display:grid;gap:2px;font-size:13.5px}
+nav.rail a{display:grid;grid-template-columns:1fr auto;gap:6px;padding:5px 8px;border-radius:4px;color:var(--ink);text-decoration:none}
+nav.rail a:hover{background:var(--sunk)}
+nav.rail a .n{font-family:var(--mono);font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+nav.rail a.complete .n{color:var(--ok)}
+
+.phase{background:var(--surface);border:1px solid var(--line);border-radius:6px;margin-bottom:18px;scroll-margin-top:80px}
+.phase-h{padding:16px 18px 12px;display:grid;gap:6px;border-bottom:1px solid var(--line)}
+.phase-top{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.hours{font-family:var(--mono);font-size:12px;background:var(--accent-soft);color:var(--ink);padding:2px 8px;border-radius:3px;white-space:nowrap}
+.why{color:var(--muted);font-size:14.5px;max-width:72ch}
+.pbar{height:4px;background:var(--sunk);border-radius:2px;overflow:hidden;margin-top:4px}
+.pbar i{display:block;height:100%;background:var(--ok);transition:width .3s}
+
+ul.tasks{list-style:none;margin:0;padding:0}
+.task{display:grid;grid-template-columns:auto 1fr;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line)}
+.task:last-child{border-bottom:0}
+.task[data-status="done"] .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.chip{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;width:78px;padding:4px 0;text-align:center;border-radius:3px;border:1px solid var(--line);background:var(--bg);cursor:pointer;height:fit-content}
+.chip[data-s="doing"]{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.chip[data-s="done"]{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.chip[data-s="blocked"]{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.chip:disabled{cursor:default;opacity:.85}
+.tbody{display:grid;gap:4px;min-width:0}
+.tt{font-weight:500}
+.td{color:var(--muted);font-size:14px}
+.meta{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted)}
+.note{flex:1 1 220px;min-width:0;border:1px solid transparent;background:transparent;font:inherit;font-size:13px;color:var(--ink);padding:3px 6px;border-radius:3px}
+.note:hover{border-color:var(--line)} .note:focus{border-color:var(--accent);background:var(--bg);outline:none}
+.note::placeholder{color:var(--muted);opacity:.7}
+.who{font-family:var(--mono);font-size:11.5px}
+.task.hide{display:none}
+
+.dod{padding:12px 18px;background:var(--sunk);font-size:14px;display:grid;gap:2px}
+details.prompt{border-top:1px solid var(--line)}
+details.prompt summary{padding:10px 18px;cursor:pointer;font-weight:500;font-size:14px;display:flex;justify-content:space-between;gap:10px;list-style:none}
+details.prompt summary::-webkit-details-marker{display:none}
+details.prompt summary::after{content:"Show";font-family:var(--mono);font-size:11.5px;color:var(--accent)}
+details.prompt[open] summary::after{content:"Hide"}
+.pwrap{padding:0 18px 16px;display:grid;gap:8px}
+.pwrap pre{margin:0;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:12px 14px;font-family:var(--mono);font-size:12.5px;line-height:1.55;white-space:pre-wrap;overflow-x:auto;max-height:420px;overflow-y:auto}
+.copy{justify-self:start;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:5px 12px;border-radius:4px;font-size:13px;cursor:pointer}
+
+.warnbox{border:1px solid var(--warn);background:var(--warn-soft);border-radius:6px;padding:12px 16px;font-size:14px;display:grid;gap:4px}
+.warnbox strong{color:var(--warn)}
+
+table.alarms{width:100%;border-collapse:collapse;font-size:14px}
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+table.alarms th,table.alarms td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+table.alarms th{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+table.alarms tr:last-child td{border-bottom:0}
+.sev{font-family:var(--mono);font-size:11px;padding:2px 6px;border-radius:3px;white-space:nowrap}
+.sev.r{background:var(--bad-soft);color:var(--bad)} .sev.y{background:var(--warn-soft);color:var(--warn)}
+
+.brief{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px;font-family:var(--mono);font-size:13px;white-space:pre-wrap;line-height:1.6;overflow-x:auto}
+.foot{margin-top:40px;color:var(--muted);font-size:13px;max-width:72ch}
+
+@media (max-width:860px){
+  .cols{grid-template-columns:1fr}
+  nav.rail{display:none}
+  .doctrine{grid-template-columns:1fr}
+  .rules{grid-template-columns:1fr}
+}
+@media (max-width:480px){
+  .task{grid-template-columns:1fr}
+  .chip{width:auto;justify-self:start;padding-inline:10px}
+}
+@media (prefers-reduced-motion:reduce){.pbar i{transition:none}}
+</style>
+
+<div class="bar"><div class="bar-in">
+  <span class="name">PPC Brain · Build</span>
+  <div class="meter">
+    <div class="track" aria-hidden="true"><i class="d" id="md"></i><i class="w" id="mw"></i><i class="b" id="mb"></i></div>
+    <span class="pct" id="pct">0 / 0 done</span>
+  </div>
+  <div class="filters" role="group" aria-label="Filter tasks">
+    <button type="button" data-f="all" aria-pressed="true">All</button>
+    <button type="button" data-f="open" aria-pressed="false">Open</button>
+    <button type="button" data-f="blocked" aria-pressed="false">Blocked</button>
+  </div>
+  <span class="sync" id="sync">Connecting…</span>
+</div></div>
+
+<div class="wrap">
+<header class="hero">
+  <div class="label">Twin Home Buyer · Google Ads operating system · Build plan for the Claude Code team</div>
+  <h1>Teach Google what a real seller looks like.</h1>
+  <p class="lede">We are not building another Google Ads dashboard. We are building the system between our business and Google: one landing page that works, tracking that never lies, lead grading, and a feed of qualified-seller and contract outcomes back to Google so its bidding chases sellers who sign, not form fills.</p>
+  <div class="loop" aria-label="The loop">
+    <span>Click</span><b>→</b><span>Landing page</span><b>→</b><span>Lead</span><b>→</b><span>Qualified</span><b>→</b><span>Appointment</span><b>→</b><span>Offer</span><b>→</b><span>Contract</span><b>→</b><span>Closed $</span><b>→</b><span class="g">Back to Google</span>
+  </div>
+  <div class="doctrine">
+    <div><strong>Google runs the auction</strong><p>Smart Bidding sees auction signals we never will. We don't try to outbid it by hand.</p></div>
+    <div><strong>Claude runs the intelligence</strong><p>Watches spend, grades leads, finds waste, writes the morning brief, flags fires early.</p></div>
+    <div><strong>Humans make the calls</strong><p>Nothing changes in Google Ads without a named person approving it and a logged reason.</p></div>
+  </div>
+</header>
+
+<div class="section-head"><h2>House rules</h2><span class="label">Put these at the top of CLAUDE.md in the repo</span></div>
+<ol class="rules">
+  <li>Optimize toward qualified sellers, then contracts and profit. Never toward clicks or raw form fills when better data exists.</li>
+  <li>Never make a meaningful change without recording who, why, and what happened after.</li>
+  <li>Never let broken tracking teach Google. If tracking breaks, stop trusting the numbers until it's fixed.</li>
+  <li>Never judge a campaign on immature data. Real estate leads take weeks to become contracts.</li>
+  <li>Change one variable at a time. Five changes at once teaches nobody anything.</li>
+  <li>One control landing page. We improve it with tests; we don't throw it out after three days.</li>
+  <li>Claude observes and recommends. Humans approve anything that spends money or changes targeting.</li>
+  <li>"No action" is a valid recommendation. Leaving Smart Bidding alone is often the right call.</li>
+</ol>
+
+<div class="section-head"><h2>The build</h2><span class="label">~20 focused hours · then a week live on real traffic</span></div>
+
+<div class="warnbox" style="margin-bottom:18px">
+  <strong>Start the slow approvals in hour zero.</strong>
+  <span>A Google Ads API developer token needs Google's review before it works on the live account, and that can take days. Apply first thing, build against a test account while you wait. Also confirm today, in Google's own current docs, which API accepts offline and enhanced-conversion-for-leads uploads for our account (Google has been moving this to the Data Manager API). Build to whatever that doc says, not to an old tutorial.</span>
+</div>
+
+<div class="cols">
+  <nav class="rail" id="rail" aria-label="Phases"></nav>
+  <main id="phases"></main>
+</div>
+
+<div class="section-head"><h2>Alarms to build</h2><span class="label">Claude watches; humans get pinged</span></div>
+<div class="tablewrap"><table class="alarms">
+  <thead><tr><th>Alarm</th><th>Trigger (starting point, tune after week 1)</th><th>Level</th><th>First move</th></tr></thead>
+  <tbody>
+    <tr><td>Tracking dead</td><td>Clicks coming in, zero form/call conversions for 3+ hours in business hours</td><td><span class="sev r">RED</span></td><td>Run the synthetic lead test. Consider a Google data exclusion for the outage window.</td></tr>
+    <tr><td>Landing page down</td><td>Health check fails twice in a row, or form submit errors</td><td><span class="sev r">RED</span></td><td>Page the owner. Pause only if it stays down.</td></tr>
+    <tr><td>Upload failing</td><td>Google rejects conversion uploads, or accepted count ≠ our queued count</td><td><span class="sev r">RED</span></td><td>Open the exception queue. Fix and re-send; nothing silently dropped.</td></tr>
+    <tr><td>Spend pace</td><td>Campaign on pace for 150%+ of its normal day</td><td><span class="sev y">YELLOW</span></td><td>Check search terms and CPC. Human decides.</td></tr>
+    <tr><td>Quality collapse</td><td>Lead count normal, qualified rate below 7-day baseline by 40%+</td><td><span class="sev y">YELLOW</span></td><td>Look at new search terms and geography. Then the sales side.</td></tr>
+    <tr><td>Money with no sellers</td><td>Any campaign, ad group or term over $300 with zero qualified leads in 30 days</td><td><span class="sev y">YELLOW</span></td><td>Negative-keyword or restructure candidate, pending review.</td></tr>
+    <tr><td>CPC spike</td><td>Average CPC 35%+ above 14-day median</td><td><span class="sev y">YELLOW</span></td><td>Check auction insights. Usually watch, don't touch.</td></tr>
+    <tr><td>Conversion drop</td><td>Landing page conversion rate below half its 7-day rate with normal traffic</td><td><span class="sev y">YELLOW</span></td><td>Test the page on mobile. Check page speed and form.</td></tr>
+  </tbody>
+</table></div>
+
+<div class="section-head"><h2>What the morning brief reads like</h2><span class="label">Example format · fake numbers</span></div>
+<div class="brief">PPC MORNING BRIEF — Thu (example)
+Yesterday   Spend $2,842 · 19 leads · 7 qualified · 3 appts · 1 offer
+            Cost/qualified $406 (7-day avg $388, within normal range)
+Tracking    All green. 7 qualified conversions queued, 7 accepted by Google.
+Problem     "SJ Sellers" spent $611 with 0 qualified in 5 days.
+Waste       11 search terms, $298, look like jobs/rentals. Review list ready.
+Verdict     NO BIDDING CHANGE. Approve or reject the 11 negatives.</div>
+
+<p class="foot">Status on each task is shared: anyone on the team who opens this page sees the same checkmarks and notes, live. Click a status chip to cycle it (to do → doing → done → blocked). Housing ads note: Google's US housing policy bars targeting by age, gender, parental status, marital status or ZIP code. Use city or compliant radius targeting only, and let the app block anything else.</p>
+</div>
+
+<script>
+const PHASES = [
+{ id:"p0", name:"Access & setup", hours:"Hour 0–1",
+  why:"Everything else waits on credentials. Get every login and API key in one place before writing code.",
+  tasks:[
+    ["p0a","Apply for Google Ads API developer token (Standard/Basic access)","Takes Google review time. Use a test account until approved."],
+    ["p0b","Google Cloud project + OAuth client; enable Google Ads API and Data Manager API","Service account or OAuth refresh token stored in secrets, never in the repo."],
+    ["p0c","Confirm the current upload path for offline conversions in Google's docs","Write the link and the date checked into docs/google-apis.md."],
+    ["p0d","Collect access: Google Ads (MCC + account ID), GTM, GA4, call-tracking provider API, landing page host, CRM","One shared credentials checklist. Missing access = blocked task here."],
+    ["p0e","Create repo + CLAUDE.md with the house rules, spec, task list, and changelog","Claude maintains the spec and task list as it builds."],
+    ["p0f","Pick the stack: Postgres (e.g. Supabase), Next.js app, scheduled jobs, Anthropic API key","Keep it boring. The data model matters more than the framework."]
+  ],
+  dod:"Can pull yesterday's campaign spend from the Google Ads API (test or live) with a script.",
+  prompt:`Read CLAUDE.md. We are building an internal Google Ads operating system for Twin Home Buyer (we buy houses from sellers). Set up the repo:
+1. Next.js + TypeScript app, Postgres via Supabase, a jobs folder for scheduled tasks.
+2. Environment config for: Google Ads API (developer token, OAuth client, refresh token, customer ID, login customer ID), Data Manager API, call-tracking provider API, Anthropic API key. Never commit secrets.
+3. Write scripts/ping-google-ads.ts that runs a GAQL query for yesterday's spend, clicks and conversions by campaign and prints a table.
+4. Create docs/spec.md, docs/tasks.md, docs/changelog.md, docs/google-apis.md. Keep them updated as you work.
+Before writing any Google upload code, fetch Google's current documentation for enhanced conversions for leads / offline conversion import and record in docs/google-apis.md which API and endpoint we must use and the date you checked.`
+},
+{ id:"p1", name:"Data foundation", hours:"Hours 1–3",
+  why:"Build the database before any screen. Six months from now we must be able to ask: which clicks produced over $75k profit?",
+  tasks:[
+    ["p1a","leads table: lead_id, created_at, source (form/call), name, phone, email, property address, lp_version, test flag","lead_id is our permanent key and doubles as Google's order ID for dedupe."],
+    ["p1b","attribution table: gclid, gbraid, wbraid, UTMs, campaign/ad group/keyword/match type, search term if known, device, city, landing URL","One row per lead, captured at first touch."],
+    ["p1c","lead_stage_events: every stage change with who, when, reason (append-only)","New → Contacted → Qualified → Appointment → Offer → Contract → Closed, plus Lost/Unqualified."],
+    ["p1d","deal economics: offer, purchase price, rehab, resale, gross profit, net contribution","Filled in as deals progress."],
+    ["p1e","conversion_events queue: lead_id, action, time, value, status, Google response, retries, error","Nothing gets sent to Google without a row here."],
+    ["p1f","ads_daily tables: campaign / ad group / keyword / search term metrics by day","Nightly import plus intraday pulls for today."],
+    ["p1g","changes_ledger, recommendations, alerts tables","Institutional memory: who changed what, why, and what happened."]
+  ],
+  dod:"Schema migrated, seed script creates 20 fake leads flowing through every stage, and one SQL query links a closed deal back to its keyword.",
+  prompt:`Design and migrate the Postgres schema in docs/spec.md for a closed-loop PPC system. Tables: leads, attribution, lead_stage_events (append-only), deal_economics, conversion_events (upload queue with status, attempts, last_error, google_response), ads_campaign_daily, ads_adgroup_daily, ads_keyword_daily, ads_search_term_daily, landing_page_versions, changes_ledger, recommendations, alerts.
+Rules: lead_id is a UUID and is also the order_id we send Google for dedupe. Stage changes are events, never overwrites. Every lead has a test boolean so synthetic test leads never reach Google or the stats.
+Write a seed script that creates 20 realistic fake leads across all stages including 2 closed deals with profit, and a SQL view lead_full_path that joins a lead to its campaign, keyword, search term, landing page version, stages and profit. Add tests for the view.`
+},
+{ id:"p2", name:"Landing page that works", hours:"Hours 3–6",
+  why:"We have burned money rebuilding pages that were never tested. Build one control page right, prove every piece fires, then only improve it with controlled tests.",
+  tasks:[
+    ["p2a","Control page: one clear offer, phone number + short form, fast on mobile, trust proof, local relevance","One obvious action. Loads fast on a phone over 4G."],
+    ["p2b","Capture gclid / gbraid / wbraid / UTMs on landing; keep them in a first-party cookie and hidden form fields","Must survive page navigation and a later return visit."],
+    ["p2c","Stamp lp_version on every lead","So every test compares qualified-lead rate, not form fills."],
+    ["p2d","Form submit writes the lead to our database first, then fires the Google conversion tag","Our database is the source of truth; the tag is a copy."],
+    ["p2e","Enhanced conversions: pass email/phone to the Google tag on submit (hashed by the tag)","Improves Google's matching of leads to clicks."],
+    ["p2f","Privacy notice and consent language on the form","Required for using the data this way."],
+    ["p2g","Health monitor: every 10 min a headless browser loads the page and submits a flagged test lead","Alert on failure. Test leads never go to Google."],
+    ["p2h","Block double submits; handle form errors visibly","A seller who hits submit twice is one lead."]
+  ],
+  dod:"On iPhone and desktop: submit a test form and see the lead, its gclid/UTMs, and lp_version in the database within seconds. Health monitor runs green.",
+  prompt:`Build the control landing page for Twin Home Buyer (cash home buyer; sellers of homes that need work, inherited, need to sell fast).
+- One page, mobile-first, fast (target LCP under 2.5s on mobile). Headline, the offer, click-to-call phone number, short form (name, phone, email, property address, timeline), trust section, privacy notice.
+- On load: read gclid, gbraid, wbraid and utm_* from the URL, store in a first-party cookie for 90 days, copy into hidden fields.
+- On submit: POST to /api/leads (write to DB, return lead_id), then fire the Google Ads conversion with enhanced conversion user data (email, phone) and transaction_id = lead_id. Prevent double submits.
+- Record lp_version on every lead.
+- Build jobs/lp-health.ts: Playwright loads the page, checks HTTP 200, no console errors, submits a lead with test=true, confirms it arrived in the DB, and raises an alert row if any step fails. Schedule every 10 minutes.
+Write Playwright tests for the whole flow on a mobile viewport and desktop.`
+},
+{ id:"p3", name:"Tracking & lead intake", hours:"Hours 6–8",
+  why:"Every lead, form or call, lands in one place with its attribution. Each lead shows a green/red tracking checklist so nobody has to guess.",
+  tasks:[
+    ["p3a","Google tag / GTM installed site-wide; form conversion action verified in Google Ads","Check the tag diagnostics page in Google Ads."],
+    ["p3b","Call tracking: dynamic number on the page, calls post to our webhook with recording + transcript","Call leads get the same attribution as forms."],
+    ["p3c","Dedupe: same phone/email within 30 days merges into one lead","Stops double-counting and double uploads."],
+    ["p3d","Per-lead tracking checklist: click ID ✓ UTM ✓ form/call event ✓ enhanced data ✓ uploaded ✓ Google accepted ✓","Red items show on the lead and roll up to an alarm."],
+    ["p3e","Nightly Google Ads import (campaign → search term) + hourly pull for today's spend","Store raw; compute later."]
+  ],
+  dod:"A test call and a test form each create one lead with attribution and a mostly-green checklist; yesterday's Google Ads data sits in ads_daily tables.",
+  prompt:`Add lead intake and tracking:
+1. /api/webhooks/calls receives call-tracking events (caller number, tracking number, duration, recording URL, transcript, gclid/UTMs if the provider passes them). Create or merge a lead.
+2. Dedupe rule: same normalized phone or email within 30 days merges into the existing lead and logs a stage event "duplicate_merged".
+3. Compute a tracking_checklist per lead (click_id, utm, conversion_event, enhanced_data, uploaded, google_accepted) and show it as green/red.
+4. jobs/import-google-ads.ts: nightly GAQL import of campaign, ad group, keyword and search-term metrics for the last 3 days (upsert, to catch late data), plus an hourly pull of today's spend by campaign.
+Tests for dedupe, webhook parsing, and the import upsert.`
+},
+{ id:"p4", name:"Lead grading", hours:"Hours 8–10",
+  why:"A form fill is not success. A few clear stages, a reason for every lost lead, and Claude doing the first read so humans only confirm.",
+  tasks:[
+    ["p4a","Stage buttons: New, Contacted, Qualified, Appointment, Offer, Contract, Closed, Lost/Unqualified","Keep it to these. No 50-status CRM."],
+    ["p4b","Lost reasons: wrong number, renter, agent/vendor, not owner, outside area, unrealistic, no motivation, spam, duplicate, already sold, retail only, other","Required when marking Lost."],
+    ["p4c","Claude reads transcript + form answers and suggests stage, reason and confidence","e.g. 'Likely qualified: owner, inherited, wants out in 30 days, needs work.'"],
+    ["p4d","Human confirms or overrides in one tap; overrides are stored","This becomes our own training set for what a real Twin Home Buyer seller is."],
+    ["p4e","Write the qualified-seller definition with Juan and put it in the grading prompt","Owner or decision-maker, in area, motivated, open to a cash offer."]
+  ],
+  dod:"Ten sample transcripts graded by Claude; team agrees with at least 8; overrides are saved with reasons.",
+  prompt:`Build lead grading.
+- Stages: new, contacted, qualified, appointment, offer, contract, closed, lost. Lost requires a reason from a fixed list (wrong_number, renter, agent_vendor, not_owner, outside_area, unrealistic_price, no_motivation, spam, duplicate, already_sold, retail_only, other).
+- lib/grade-lead.ts calls the Claude API with the transcript, form answers and notes, and our written qualified-seller definition from docs/qualified-seller.md. It returns JSON: suggested_stage, lost_reason (if any), confidence 0-1, one-sentence reason, key facts (owner?, timeline, condition, motivation).
+- The lead screen shows the suggestion; one tap confirms, or pick another stage. Store both the AI suggestion and the human decision in lead_stage_events.
+- A report page: AI vs human agreement rate by week, and the most common override patterns.
+The AI never changes a stage on its own; a person always confirms.`
+},
+{ id:"p5", name:"Feed Google the truth", hours:"Hours 10–13",
+  why:"This is the moat. Most competitors tell Google 'someone filled a form'. We tell Google which clicks became qualified sellers, contracts, and money.",
+  tasks:[
+    ["p5a","Create conversion actions in Google Ads: Qualified Lead, Appointment, Contract, Closed (with value)","Decide with Juan which one is the primary bidding goal. Don't flip goals casually."],
+    ["p5b","When a lead hits a stage, queue a conversion_event with lead_id as order ID","Test leads and duplicates never queue."],
+    ["p5c","Upload job using the API confirmed in p0c; upload at least daily, ideally every few hours","Send gclid/gbraid/wbraid when we have them plus hashed email/phone."],
+    ["p5d","Retries with backoff; rejected events go to an exception queue with Google's reason","Nothing disappears silently."],
+    ["p5e","Daily reconciliation: queued vs sent vs accepted by Google, per action","Mismatch raises the 'upload failing' alarm."],
+    ["p5f","Lead value engine v1: starting values per stage set by Juan; recalc monthly from real stage-to-close rates","e.g. value of a qualified lead = P(close) × average profit."]
+  ],
+  dod:"A test lead moved to Qualified appears in Google Ads conversion diagnostics as received, once, with no duplicate on re-run.",
+  prompt:`Build the conversion feedback loop to Google. Follow the API and field names recorded in docs/google-apis.md (checked against Google's current docs); do not rely on older tutorials.
+1. On stage change to qualified, appointment, contract or closed, insert a conversion_events row (lead_id as order/transaction id, conversion action, event time with timezone, value, currency USD, gclid/gbraid/wbraid if present, SHA-256 normalized email and phone). Skip test leads and merged duplicates.
+2. jobs/upload-conversions.ts runs every 3 hours: sends pending events in batches, stores Google's per-row response, retries transient failures with exponential backoff up to 5 times, moves permanent failures to status=exception with the reason.
+3. jobs/reconcile-conversions.ts runs daily: counts queued vs sent vs accepted per action and raises an alert on any gap.
+4. lib/lead-value.ts: value per stage from config (docs/lead-values.md) today; add a monthly job that computes P(closed | stage) × average gross profit from our own history and proposes new values for a human to approve.
+Tests: idempotency (re-running never double-sends), hashing/normalization, retry and exception paths.`
+},
+{ id:"p6", name:"Trading desk", hours:"Hours 13–16",
+  why:"The screen the team lives in. It shows cost per qualified seller and per contract, not just cost per lead.",
+  tasks:[
+    ["p6a","Top row: spend, clicks, calls, forms, leads, qualified, appts, offers, contracts, cost per each, conversion value","Today / yesterday / 7 / 14 / 30 / 90 days with change vs prior period."],
+    ["p6b","Breakdowns: campaign, ad group, keyword, search term, landing page version, device, hour, day of week, city","Every table sortable by cost per qualified seller."],
+    ["p6c","Campaign tiles: green / yellow / red set by rules, not feelings","Rules come from the alarm table below."],
+    ["p6d","Conversion-lag view: leads by age bucket (0–1, 2–7, 8–14, 15–30, 30+ days) and where they are now","Stops people calling a campaign dead on week-old data."],
+    ["p6e","Google automation panel: AI Max, search-term matching, text customization, final URL expansion, bid strategy per campaign","Google's automation should never be invisible to us."],
+    ["p6f","Works on a phone","Juan checks it from the truck."]
+  ],
+  dod:"Numbers on the desk match the Google Ads UI for spend and clicks yesterday (within rounding), and qualified counts match our DB.",
+  prompt:`Build the Trading Desk page.
+- KPI row: spend, clicks, calls, forms, leads, qualified, appointments, offers, contracts, cost per lead, cost per qualified, cost per appointment, cost per contract, conversion value. Period selector (today, yesterday, 7, 14, 30, 90 days) with % change vs the prior equal period.
+- Breakdown tables: campaign, ad group, keyword, search term, lp_version, device, hour of day, day of week, city. Sort by any column; default sort cost per qualified desc.
+- Campaign tiles colored by rules in lib/health-rules.ts (green within normal range, yellow investigate, red urgent).
+- Conversion lag panel: leads grouped by age bucket showing current stage mix.
+- Automation panel per campaign: bid strategy, target, AI Max on/off and its sub-settings (search-term matching, text customization, final URL expansion) pulled from the Google Ads API.
+- Mobile layout works at 390px wide.
+Add a reconciliation check test: yesterday's spend and clicks from our tables vs a live API query must match within 1%.`
+},
+{ id:"p7", name:"Intelligence & alarms", hours:"Hours 16–18",
+  why:"Nobody should stare at screens all day. Claude watches, catches fires while they're small, and says 'no action' when nothing needs touching.",
+  tasks:[
+    ["p7a","Alarm engine running every 15 min with the rules in the alarm table","Each alert: what, evidence, suggested first move."],
+    ["p7b","Search-term classifier: daily, Claude tags each term high intent / questionable / junk with a reason","Pull Google's search-term insight categories too."],
+    ["p7c","Negative-keyword candidate list with spend and zero-qualified evidence; human approves each","Never bulk-add negatives automatically."],
+    ["p7d","Morning brief at 7am: yesterday, what changed, problems, waste, verdict (change / watch / no action)","Readable in 60 seconds."],
+    ["p7e","Ask box: Claude answers questions from our data with read-only SQL, shows the query it ran","'Which search terms spent $300+ with no qualified seller?'"],
+    ["p7f","Every recommendation shows evidence, confidence, downside, and what would change its mind","Bigger action, higher bar of evidence."]
+  ],
+  dod:"On seeded data: an injected tracking outage fires RED within 15 minutes; the morning brief generates and matches the desk numbers.",
+  prompt:`Build the intelligence layer.
+1. jobs/alarms.ts every 15 minutes: evaluate rules (tracking dead, landing page down, upload failing, spend pace, quality collapse, money with no sellers, CPC spike, conversion drop) with thresholds in config. Write alerts with severity, evidence numbers and a suggested first move. Send RED alerts by SMS/Slack/email (whatever we use).
+2. jobs/search-terms.ts daily: send new search terms with spend, clicks, leads and qualified counts to Claude; get back intent class (high / questionable / junk), reason, and whether it's a negative candidate. Store results. Also pull Google's search-term insight categories via the API.
+3. jobs/morning-brief.ts at 7:00 local: build yesterday's numbers from the DB, ask Claude to write the brief in this format: Yesterday / Tracking / Problem / Waste / Opportunity / Verdict (CHANGE, WATCH or NO ACTION with one reason). Deliver by email and pin on the desk.
+4. /ask: Claude gets the schema and a read-only DB role, writes SQL, runs it, and answers with the numbers and the SQL shown. Reject any non-SELECT.
+Every recommendation row stores: action, evidence, confidence, downside, what would change the recommendation.
+The dashboard must keep working if the Claude API is down.`
+},
+{ id:"p8", name:"Guardrails", hours:"Hours 18–19",
+  why:"Stop random fiddling with the account and keep us inside Google's housing rules automatically.",
+  tasks:[
+    ["p8a","Three permission levels: Observe, Recommend, Execute (only named users can push changes to Google)","Start with no autonomous changes at all."],
+    ["p8b","Change ledger: every change pushed or made in Google Ads recorded with who, why, before/after","Also import Google's change history so manual UI changes show up."],
+    ["p8c","After-change review: 7 and 14 days later, show what happened to cost per qualified","Learn from our own changes."],
+    ["p8d","Housing policy validator: block ZIP, age, gender, parental or marital targeting","City or compliant radius only."],
+    ["p8e","Budget pacing guardrails per campaign: expected, warning, emergency levels","Alert on warning. Auto-pause only by an explicit hard rule Juan signs off."],
+    ["p8f","Google recommendations queue: show Google's suggestion next to Claude's read of it against our qualified/contract data","Google's suggestions are inputs, not orders."]
+  ],
+  dod:"A Recommend-level user cannot push a change; an attempted ZIP-code targeting change is blocked with the reason shown.",
+  prompt:`Add guardrails:
+- Roles: observer, recommender, executor. Only executors can push changes to Google Ads through our app; every push requires a reason and writes changes_ledger (who, when, entity, before, after, reason, linked recommendation).
+- jobs/import-change-history.ts: pull Google Ads change history daily so changes made in the Google UI also land in the ledger.
+- After-change review: for each ledger entry, compute cost per qualified and qualified volume for the 14 days before vs 7 and 14 days after, shown on the entry.
+- lib/policy.ts: reject any targeting change using ZIP/postal codes, age, gender, parental status or marital status (Google US housing ads policy). Show the reason.
+- Budget pacing per campaign with expected/warning/emergency thresholds; warning and emergency raise alerts. No automatic pausing unless a hard rule is configured and approved.
+- Pull Google Ads recommendations; show each next to a Claude assessment based on our qualified and contract data, with Accept/Dismiss that logs to the ledger.
+Tests for the policy validator and role checks.`
+},
+{ id:"p9", name:"Go-live test", hours:"Hours 19–20",
+  why:"Before real money goes through it, prove the whole loop end to end with real clicks and real calls.",
+  tasks:[
+    ["p9a","Real form lead from iPhone: lead created, attribution captured, desk updates","Use a real ad click where practical."],
+    ["p9b","Real call lead: lead created, transcript appears, Claude grades it","Call from a phone not on any internal list."],
+    ["p9c","Move a real test lead to Qualified: conversion queued, sent, accepted by Google","Check Google Ads conversion diagnostics."],
+    ["p9d","Repeat on desktop and on a second landing page version","All paths, not just the happy one."],
+    ["p9e","Kill the form on purpose: health monitor alerts within 10 minutes","Then restore it."],
+    ["p9f","Juan reads a morning brief and understands the account in 60 seconds","If not, fix the brief, not Juan."]
+  ],
+  dod:"Every box above is checked. Only then do we scale spend.",
+  prompt:`Write docs/go-live-checklist.md and a script scripts/e2e-live-check.ts that walks a human through the go-live test and verifies each step against the database and the Google Ads API: lead created, attribution present, transcript present (calls), AI grade present, stage change queued a conversion, upload sent, Google accepted it, desk totals updated. Print a pass/fail line per step. Mark any lead used as a test so it can be excluded from stats after Google receives it.`
+},
+{ id:"p10", name:"Week 1 live", hours:"Days 2–8",
+  why:"The software is fast to build. Knowing whether its calls are right takes real clicks, real sellers, and real contracts.",
+  tasks:[
+    ["p10a","Reconcile daily: Google spend = desk spend; conversions sent = accepted","Log any gap and its fix."],
+    ["p10b","No bidding or goal changes this week unless something is broken","Let the baseline form."],
+    ["p10c","Review search-term junk list daily; approve negatives with evidence","Human signs every one."],
+    ["p10d","Track AI grading vs human decisions; tune the qualified-seller definition","Target 85%+ agreement."],
+    ["p10e","Write down the first landing page test hypothesis (one variable) for week 2","Headline, form length, phone-first, or trust proof. One."],
+    ["p10f","End of week: Juan + team review cost per qualified seller by campaign and decide next moves","From data, logged in the ledger."]
+  ],
+  dod:"Seven days of reconciled data, qualified conversions flowing to Google daily, and a written plan for week 2.",
+  prompt:`Each day this week: run the reconciliation report and write any mismatch and its cause to docs/changelog.md; list new junk search terms with spend; report AI vs human grading agreement; list open alerts. At the end of the week, write docs/week1-review.md: cost per qualified seller by campaign and landing page version, conversion lag distribution so far, what Google accepted, and three evidence-backed recommendations, each with confidence and what would change it. Recommend NO ACTION where the data is too thin.`
+},
+{ id:"p11", name:"After V1", hours:"Weeks 2+",
+  why:"Once the loop is trustworthy, turn it into a capital-allocation tool.",
+  tasks:[
+    ["p11a","Landing page experiments: one change at a time, judged on visitor → qualified and → contract","50 forms and 0 contracts loses to 20 forms and 3 contracts."],
+    ["p11b","AI Max test: one campaign as a Google experiment vs control, judged on qualified sellers and contracts","Not clicks, not Google's optimization score. Allow for conversion lag."],
+    ["p11c","Switch bidding toward value once qualified/contract volume is steady","Coordinate goal changes; they reset Smart Bidding learning."],
+    ["p11d","Budget simulator: 'what if this campaign goes from $1,000 to $1,500 a day' from our marginal history","Clearly marked as an estimate."],
+    ["p11e","True profit view: ad spend + other costs vs gross profit, traced back to campaign and search intent","The north-star report."],
+    ["p11f","Second-model audit on big recommendations; disagreement goes to a human","Investment committee, not one analyst."]
+  ],
+  dod:"Monthly review uses profit per campaign, not Google ROAS, to set budgets.",
+  prompt:`Add the experiment manager: define an experiment (landing page variant or Google campaign experiment), its single variable, start date, and the metrics to judge it (visitor→qualified, visitor→appointment, visitor→contract, cost per qualified, conversion value). Exclude leads younger than the median conversion lag from the verdict. Report significance honestly and say "not enough data" when that's the truth.
+Then build the budget simulator from each campaign's historical spend vs qualified leads curve, and the profit report tracing gross profit back to campaign, search-term class and landing page version.`
+}
+];
+
+/* ---------- state ---------- */
+const STATUSES = ["todo","doing","done","blocked"];
+const LABEL = {todo:"To do",doing:"Doing",done:"Done",blocked:"Blocked"};
+const state = {};           // taskId -> {status, note, by, at}
+let db = null, user = null, myId = null, canWrite = true;
+const profileCache = {};
+let filter = "all";
+try { filter = localStorage.getItem("ppc-filter") || "all"; } catch(e) {}
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function buildPage(){
+  const main = $("#phases"), rail = $("#rail");
+  main.innerHTML = PHASES.map(p => `
+    <section class="phase" id="${p.id}">
+      <div class="phase-h">
+        <div class="phase-top"><h3>${esc(p.name)}</h3><span class="hours">${esc(p.hours)}</span></div>
+        <p class="why">${esc(p.why)}</p>
+        <div class="pbar"><i id="pb-${p.id}" style="width:0%"></i></div>
+      </div>
+      <ul class="tasks">${p.tasks.map(([id,t,d]) => `
+        <li class="task" id="t-${id}" data-status="todo">
+          <button type="button" class="chip" data-id="${id}" data-s="todo" aria-label="Status for: ${esc(t)}">To do</button>
+          <div class="tbody">
+            <div class="tt">${esc(t)}</div>
+            ${d ? `<div class="td">${esc(d)}</div>` : ""}
+            <div class="meta">
+              <input class="note" id="n-${id}" data-id="${id}" placeholder="Add a note or blocker…" aria-label="Note">
+              <span class="who" id="w-${id}"></span>
+            </div>
+          </div>
+        </li>`).join("")}
+      </ul>
+      <div class="dod"><span class="label">Done means</span><span>${esc(p.dod)}</span></div>
+      <details class="prompt">
+        <summary>Claude Code prompt for this phase</summary>
+        <div class="pwrap">
+          <pre id="pr-${p.id}">${esc(p.prompt)}</pre>
+          <button type="button" class="copy" data-pre="pr-${p.id}">Copy prompt</button>
+        </div>
+      </details>
+    </section>`).join("");
+  rail.innerHTML = PHASES.map(p => `<a href="#${p.id}" id="r-${p.id}"><span>${esc(p.name)}</span><span class="n" id="rn-${p.id}">0/${p.tasks.length}</span></a>`).join("");
+}
+
+function ago(iso){
+  const t = Date.parse(iso); if (!t) return "";
+  const m = Math.round((Date.now()-t)/60000);
+  if (m < 1) return "just now"; if (m < 60) return m+"m ago";
+  const h = Math.round(m/60); if (h < 24) return h+"h ago";
+  return Math.round(h/24)+"d ago";
+}
+
+async function refresh(){
+  let total=0, done=0, doing=0, blocked=0;
+  const ids = new Set();
+  for (const p of PHASES){
+    let pd = 0;
+    for (const [id] of p.tasks){
+      const s = state[id] || {};
+      const st = STATUSES.includes(s.status) ? s.status : "todo";
+      total++; if (st==="done"){done++;pd++;} if (st==="doing") doing++; if (st==="blocked") blocked++;
+      const li = document.getElementById("t-"+id);
+      li.dataset.status = st;
+      const chip = li.querySelector(".chip");
+      chip.dataset.s = st; chip.textContent = LABEL[st]; chip.disabled = !canWrite;
+      const note = document.getElementById("n-"+id);
+      if (document.activeElement !== note) note.value = s.note || "";
+      note.disabled = !canWrite;
+      li.classList.toggle("hide", filter==="open" ? st==="done" : filter==="blocked" ? st!=="blocked" : false);
+      if (s.by) ids.add(s.by);
+    }
+    document.getElementById("pb-"+p.id).style.width = (pd/p.tasks.length*100)+"%";
+    document.getElementById("rn-"+p.id).textContent = pd+"/"+p.tasks.length;
+    document.getElementById("r-"+p.id).classList.toggle("complete", pd===p.tasks.length);
+  }
+  $("#md").style.width = (done/total*100)+"%";
+  $("#mw").style.width = (doing/total*100)+"%";
+  $("#mb").style.width = (blocked/total*100)+"%";
+  $("#pct").textContent = `${done} / ${total} done` + (blocked ? ` · ${blocked} blocked` : "");
+  // names
+  if (user && ids.size){
+    try { Object.assign(profileCache, await user.profiles([...ids])); } catch(e) {}
+  }
+  for (const p of PHASES) for (const [id] of p.tasks){
+    const s = state[id]; const w = document.getElementById("w-"+id);
+    if (!s || !s.at){ w.textContent = ""; continue; }
+    const nm = (s.by && profileCache[s.by] && profileCache[s.by].name) || "Someone";
+    w.textContent = `${nm} · ${ago(s.at)}`;
+  }
+}
+
+async function save(id, patch){
+  if (!db){ setSync("err","Not saved: sharing unavailable in this view"); return; }
+  const prev = state[id] || {};
+  const next = { status: prev.status || "todo", note: prev.note || "", ...patch, by: myId || prev.by || "", at: new Date().toISOString() };
+  state[id] = next; refresh();
+  try { await db.doc("tasks/"+id).set(next); }
+  catch(e){
+    if (e && e.code === "invalid_argument"){ canWrite = false; setSync("err","View only: you can't change status"); refresh(); }
+    else setSync("err","Save failed, try again");
+  }
+}
+
+function setSync(kind, text){ const el = $("#sync"); el.className = "sync " + (kind||""); el.textContent = text; }
+
+/* ---------- events ---------- */
+document.addEventListener("click", e => {
+  const chip = e.target.closest(".chip");
+  if (chip && canWrite){
+    const id = chip.dataset.id; const cur = (state[id] && state[id].status) || "todo";
+    save(id, { status: STATUSES[(STATUSES.indexOf(cur)+1) % STATUSES.length] });
+    return;
+  }
+  const copy = e.target.closest(".copy");
+  if (copy){
+    const pre = document.getElementById(copy.dataset.pre);
+    const done = () => { copy.textContent = "Copied"; setTimeout(()=>copy.textContent="Copy prompt",1600); };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); copy.textContent = "Selected, press Copy"; };
+    try { navigator.clipboard.writeText(pre.textContent).then(done, fallback); } catch(err){ fallback(); }
+    return;
+  }
+  const f = e.target.closest(".filters button");
+  if (f){
+    filter = f.dataset.f;
+    try { localStorage.setItem("ppc-filter", filter); } catch(err) {}
+    document.querySelectorAll(".filters button").forEach(b => b.setAttribute("aria-pressed", b===f ? "true" : "false"));
+    refresh();
+  }
+});
+document.addEventListener("change", e => {
+  const n = e.target.closest(".note");
+  if (n && canWrite){
+    const id = n.dataset.id; const v = n.value.trim().slice(0,500);
+    if (v !== ((state[id] && state[id].note) || "")) save(id, { note: v });
+  }
+});
+document.addEventListener("keydown", e => { if (e.key==="Enter" && e.target.classList.contains("note")) e.target.blur(); });
+
+/* ---------- boot ---------- */
+buildPage();
+document.querySelectorAll(".filters button").forEach(b => b.setAttribute("aria-pressed", b.dataset.f===filter ? "true" : "false"));
+refresh();
+
+(async () => {
+  if (!window.claude || !window.claude.use){ setSync("", "Local copy · status not shared"); return; }
+  const [d, u] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+  db = d; user = u;
+  if (!db){ setSync("", "Read only · status not shared"); canWrite = false; refresh(); return; }
+  if (user){
+    try { myId = await user.id(); } catch(e) {}
+    try { const c = await user.can("data.write"); if (c === false) canWrite = false; } catch(e) {}
+  }
+  db.collection("tasks").onSnapshot(snap => {
+    for (const doc of snap.docs) state[doc.id] = doc.data();
+    for (const ch of snap.docChanges()) if (ch.type==="removed") delete state[ch.doc.id];
+    setSync("live", canWrite ? "Live · shared with team" : "Live · view only");
+    refresh();
+  }, () => setSync("err","Lost connection, reload the page"));
+})();
+</script>
